@@ -7,7 +7,8 @@ import {
   Users,
   Book,
   Play,
-  MessageCircle
+  MessageCircle,
+  Trophy
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -42,6 +43,11 @@ const sidebarItems: SidebarItem[] = [
     title: "Calendário",
     icon: Calendar,
     href: "/calendario",
+  },
+  {
+    title: "Ranking",
+    icon: Trophy,
+    href: "/ranking",
   },
   {
     title: "Mensagens",
