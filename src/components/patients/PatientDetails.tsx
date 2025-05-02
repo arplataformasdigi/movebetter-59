@@ -100,8 +100,8 @@ export function PatientDetails({ patient, onUpdatePatient }: PatientDetailsProps
     const updatedPatient = {
       ...patient,
       medicalRecords: [...(patient.medicalRecords || []), record],
-      progress: Math.min(patient.progress + 5, 100), // Increment progress with each record
-      points: patient.points + 50, // Add points for each record
+      progress: Math.min(patient.progress + 5, 100), // Incrementa progresso com cada registro
+      points: patient.points + 50, // Adiciona pontos para cada registro
     };
     onUpdatePatient(updatedPatient);
   };
