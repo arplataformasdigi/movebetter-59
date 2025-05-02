@@ -84,10 +84,16 @@ export function PatientMedicalRecord({
   });
 
   function onSubmit(values: FormValues) {
+    // Fix: Ensure all required properties are assigned non-optional values
     const newRecord: MedicalRecord = {
       id: `record-${Date.now()}`,
       date: new Date(),
-      ...values,
+      visitReason: values.visitReason,
+      currentCondition: values.currentCondition,
+      medicalHistory: values.medicalHistory,
+      treatmentPlan: values.treatmentPlan,
+      evaluation: values.evaluation,
+      progressScore: values.progressScore,
     };
     
     onAddRecord(patientId, newRecord);
