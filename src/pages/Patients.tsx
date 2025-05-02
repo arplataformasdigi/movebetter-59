@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { 
   Table,
@@ -20,6 +20,19 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Users } from "lucide-react";
+import { AddPatientDialog } from "@/components/patients/AddPatientDialog";
+import { PatientDetails } from "@/components/patients/PatientDetails";
+
+interface MedicalRecord {
+  id: string;
+  date: Date;
+  visitReason: string;
+  currentCondition: string;
+  medicalHistory: string;
+  treatmentPlan: string;
+  evaluation?: string;
+  progressScore: number;
+}
 
 interface Patient {
   id: string;
@@ -31,9 +44,10 @@ interface Patient {
   progress: number;
   points: number;
   status: "active" | "inactive" | "onhold";
+  medicalRecords?: MedicalRecord[];
 }
 
-const patients: Patient[] = [
+const initialPatients: Patient[] = [
   {
     id: "1",
     name: "Marina Oliveira",
@@ -44,6 +58,7 @@ const patients: Patient[] = [
     progress: 78,
     points: 1280,
     status: "active",
+    medicalRecords: [],
   },
   {
     id: "2",
@@ -55,6 +70,7 @@ const patients: Patient[] = [
     progress: 45,
     points: 870,
     status: "active",
+    medicalRecords: [],
   },
   {
     id: "3",
@@ -66,6 +82,7 @@ const patients: Patient[] = [
     progress: 92,
     points: 2140,
     status: "active",
+    medicalRecords: [],
   },
   {
     id: "4",
@@ -77,6 +94,7 @@ const patients: Patient[] = [
     progress: 35,
     points: 560,
     status: "inactive",
+    medicalRecords: [],
   },
   {
     id: "5",
@@ -88,6 +106,7 @@ const patients: Patient[] = [
     progress: 65,
     points: 1430,
     status: "onhold",
+    medicalRecords: [],
   },
   {
     id: "6",
@@ -99,6 +118,7 @@ const patients: Patient[] = [
     progress: 28,
     points: 310,
     status: "active",
+    medicalRecords: [],
   },
 ];
 
@@ -153,6 +173,25 @@ const getStatusDetails = (status: Patient["status"]) => {
 };
 
 export function Patients() {
+  const [patients, setPatients] = useState<Patient[]>(initialPatients);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const handleAddPatient = (newPatient: Patient) => {
+    setPatients([...patients, newPatient]);
+  };
+
+  const handleUpdatePatient = (updatedPatient: Patient) => {
+    setPatients(patients.map(patient => 
+      patient.id === updatedPatient.id ? updatedPatient : patient
+    ));
+  };
+
+  const filteredPatients = patients.filter(patient => 
+    patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    patient.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    patient.phone.includes(searchQuery)
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -164,9 +203,7 @@ export function Patients() {
             Gerencie seus pacientes e seus planos de tratamento.
           </p>
         </div>
-        <Button className="bg-movebetter-primary hover:bg-movebetter-primary/90">
-          Adicionar Paciente
-        </Button>
+        <AddPatientDialog onAddPatient={handleAddPatient} />
       </div>
 
       <Card>
@@ -177,7 +214,12 @@ export function Patients() {
               <CardDescription>Gerencie todos os pacientes registrados</CardDescription>
             </div>
             <div className="flex items-center space-x-2">
-              <Input placeholder="Buscar pacientes..." className="w-64" />
+              <Input 
+                placeholder="Buscar pacientes..." 
+                className="w-64"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}  
+              />
             </div>
           </div>
         </CardHeader>
@@ -195,7 +237,7 @@ export function Patients() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {patients.map((patient) => {
+              {filteredPatients.map((patient) => {
                 const planType = getPlanTypeDetails(patient.planType);
                 const status = getStatusDetails(patient.status);
                 
@@ -243,9 +285,10 @@ export function Patients() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="sm">
-                        Detalhes
-                      </Button>
+                      <PatientDetails 
+                        patient={patient}
+                        onUpdatePatient={handleUpdatePatient}
+                      />
                     </TableCell>
                   </TableRow>
                 );
