@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -84,7 +83,7 @@ export function PatientMedicalRecord({
   });
 
   function onSubmit(values: FormValues) {
-    // Fix: Ensure all required properties are assigned non-optional values
+    // Garantindo que todas as propriedades obrigatórias são atribuídas com valores não-opcionais
     const newRecord: MedicalRecord = {
       id: `record-${Date.now()}`,
       date: new Date(),
