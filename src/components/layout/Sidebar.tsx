@@ -8,14 +8,17 @@ import {
   Book,
   Play,
   MessageCircle,
-  Trophy
+  Trophy,
+  UserPlus
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface SidebarItem {
   title: string;
   icon: React.ElementType;
   href: string;
+  roles: string[];
 }
 
 const sidebarItems: SidebarItem[] = [
@@ -23,46 +26,67 @@ const sidebarItems: SidebarItem[] = [
     title: "Dashboard",
     icon: Activity,
     href: "/",
+    roles: ["admin", "manager", "professional"],
   },
   {
     title: "Pacientes",
     icon: Users,
     href: "/pacientes",
+    roles: ["admin", "manager", "professional"],
   },
   {
     title: "Planos",
     icon: Book,
     href: "/planos",
+    roles: ["admin", "manager", "professional"],
   },
   {
     title: "Exercícios",
     icon: Play,
     href: "/exercicios",
+    roles: ["admin", "manager", "professional"],
   },
   {
     title: "Calendário",
     icon: Calendar,
     href: "/calendario",
+    roles: ["admin", "manager", "professional"],
   },
   {
     title: "Ranking",
     icon: Trophy,
     href: "/ranking",
+    roles: ["admin", "manager", "professional"],
   },
   {
     title: "Mensagens",
     icon: MessageCircle,
     href: "/mensagens",
+    roles: ["admin", "manager", "professional"],
+  },
+  {
+    title: "Usuários",
+    icon: UserPlus,
+    href: "/usuarios",
+    roles: ["admin", "manager"],
   }
 ];
 
 export function Sidebar() {
+  const { user } = useAuth();
+  const roleString = user?.role || "";
+
+  // Filtrar itens com base na role do usuário
+  const filteredItems = sidebarItems.filter(
+    item => item.roles.includes(roleString)
+  );
+
   return (
     <div className="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 min-h-[calc(100vh-4rem)]">
       <div className="p-4">
         <h2 className="text-lg font-semibold mb-4 text-gray-700">Menu</h2>
         <nav className="space-y-1">
-          {sidebarItems.map((item) => (
+          {filteredItems.map((item) => (
             <NavLink
               key={item.href}
               to={item.href}
