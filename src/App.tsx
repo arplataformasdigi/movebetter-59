@@ -22,6 +22,9 @@ import PatientDashboard from "./pages/patient/PatientDashboard";
 import PatientAppointments from "./pages/patient/PatientAppointments";
 import PatientPlans from "./pages/patient/PatientPlans";
 import PatientMedicalRecords from "./pages/patient/PatientMedicalRecords";
+import AccountAccess from "./pages/AccountAccess";
+import PersonalData from "./pages/PersonalData";
+import Subscription from "./pages/Subscription";
 
 const queryClient = new QueryClient();
 
@@ -79,22 +82,28 @@ const App = () => (
               </ProtectedRoute>
             } />
 
-            <Route path="/mensagens" element={
-              <ProtectedRoute allowedRoles={["admin", "manager", "professional"]}>
-                <AppLayout>
-                  <div className="min-h-screen flex items-center justify-center">
-                    <div className="text-center">
-                      <h1 className="text-2xl font-bold mb-4">Mensagens</h1>
-                      <p className="text-gray-600">Em construção</p>
-                    </div>
-                  </div>
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-
             <Route path="/usuarios" element={
               <ProtectedRoute allowedRoles={["admin", "manager"]}>
                 <AppLayout><Users /></AppLayout>
+              </ProtectedRoute>
+            } />
+
+            {/* Novas rotas de perfil */}
+            <Route path="/dados-pessoais" element={
+              <ProtectedRoute>
+                <AppLayout><PersonalData /></AppLayout>
+              </ProtectedRoute>
+            } />
+
+            <Route path="/acesso" element={
+              <ProtectedRoute>
+                <AppLayout><AccountAccess /></AppLayout>
+              </ProtectedRoute>
+            } />
+
+            <Route path="/assinatura" element={
+              <ProtectedRoute allowedRoles={["admin", "manager", "professional"]}>
+                <AppLayout><Subscription /></AppLayout>
               </ProtectedRoute>
             } />
 
@@ -120,6 +129,19 @@ const App = () => (
             <Route path="/paciente/prontuario" element={
               <ProtectedRoute allowedRoles={["patient"]}>
                 <PatientLayout><PatientMedicalRecords /></PatientLayout>
+              </ProtectedRoute>
+            } />
+
+            {/* Rotas de perfil para pacientes */}
+            <Route path="/paciente/dados-pessoais" element={
+              <ProtectedRoute allowedRoles={["patient"]}>
+                <PatientLayout><PersonalData /></PatientLayout>
+              </ProtectedRoute>
+            } />
+
+            <Route path="/paciente/acesso" element={
+              <ProtectedRoute allowedRoles={["patient"]}>
+                <PatientLayout><AccountAccess /></PatientLayout>
               </ProtectedRoute>
             } />
 

@@ -7,9 +7,11 @@ import {
   Users,
   Book,
   Play,
-  MessageCircle,
   Trophy,
-  UserPlus
+  UserPlus,
+  User,
+  Shield,
+  CreditCard
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -59,16 +61,29 @@ const sidebarItems: SidebarItem[] = [
     roles: ["admin", "manager", "professional"],
   },
   {
-    title: "Mensagens",
-    icon: MessageCircle,
-    href: "/mensagens",
-    roles: ["admin", "manager", "professional"],
-  },
-  {
     title: "Usuários",
     icon: UserPlus,
     href: "/usuarios",
     roles: ["admin", "manager"],
+  },
+  // Novas opções de menu para perfil
+  {
+    title: "Meus Dados",
+    icon: User,
+    href: "/dados-pessoais",
+    roles: ["admin", "manager", "professional", "patient"],
+  },
+  {
+    title: "Acesso",
+    icon: Shield,
+    href: "/acesso",
+    roles: ["admin", "manager", "professional", "patient"],
+  },
+  {
+    title: "Assinatura",
+    icon: CreditCard,
+    href: "/assinatura",
+    roles: ["admin", "manager", "professional"],
   }
 ];
 
