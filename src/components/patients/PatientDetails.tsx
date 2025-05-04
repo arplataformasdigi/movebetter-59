@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { PatientMedicalRecord } from "./PatientMedicalRecord";
+import { PatientPreEvaluation } from "./PatientPreEvaluation";
+import { PatientEvolution } from "./PatientEvolution";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface MedicalRecord {
@@ -25,6 +27,22 @@ interface MedicalRecord {
   progressScore: number;
 }
 
+interface PreEvaluation {
+  id: string;
+  createdAt: Date;
+  formData: any;
+}
+
+interface Evolution {
+  id: string;
+  date: Date;
+  queixasRelatos: string;
+  condutaAtendimento: string;
+  observacoes?: string;
+  progressScore: number;
+  previousScore?: number;
+}
+
 interface Patient {
   id: string;
   name: string;
@@ -36,6 +54,8 @@ interface Patient {
   points: number;
   status: "active" | "inactive" | "onhold";
   medicalRecords?: MedicalRecord[];
+  preEvaluations?: PreEvaluation[];
+  evolutions?: Evolution[];
 }
 
 interface PatientDetailsProps {
@@ -100,8 +120,28 @@ export function PatientDetails({ patient, onUpdatePatient }: PatientDetailsProps
     const updatedPatient = {
       ...patient,
       medicalRecords: [...(patient.medicalRecords || []), record],
-      progress: Math.min(patient.progress + 5, 100), // Incrementa progresso com cada registro
-      points: patient.points + 50, // Adiciona pontos para cada registro
+      progress: Math.min(patient.progress + 5, 100),
+      points: patient.points + 50,
+    };
+    onUpdatePatient(updatedPatient);
+  };
+
+  const handleAddPreEvaluation = (patientId: string, evaluation: PreEvaluation) => {
+    const updatedPatient = {
+      ...patient,
+      preEvaluations: [...(patient.preEvaluations || []), evaluation],
+      progress: Math.min(patient.progress + 10, 100),
+      points: patient.points + 100,
+    };
+    onUpdatePatient(updatedPatient);
+  };
+
+  const handleAddEvolution = (patientId: string, evolution: Evolution) => {
+    const updatedPatient = {
+      ...patient,
+      evolutions: [...(patient.evolutions || []), evolution],
+      progress: Math.min(patient.progress + 5, 100),
+      points: patient.points + 50,
     };
     onUpdatePatient(updatedPatient);
   };
@@ -173,10 +213,18 @@ export function PatientDetails({ patient, onUpdatePatient }: PatientDetailsProps
           </div>
 
           <Tabs defaultValue="records">
-            <TabsList className="grid grid-cols-2 w-[400px]">
+            <TabsList className="grid grid-cols-3 w-full">
+              <TabsTrigger value="pre-evaluation">Pré-avaliação</TabsTrigger>
               <TabsTrigger value="records">Prontuário</TabsTrigger>
-              <TabsTrigger value="plans">Planos e Exercícios</TabsTrigger>
+              <TabsTrigger value="evolution">Evolução do Paciente</TabsTrigger>
             </TabsList>
+            <TabsContent value="pre-evaluation" className="pt-4">
+              <PatientPreEvaluation 
+                patientId={patient.id} 
+                preEvaluations={patient.preEvaluations || []} 
+                onAddPreEvaluation={handleAddPreEvaluation} 
+              />
+            </TabsContent>
             <TabsContent value="records" className="pt-4">
               <PatientMedicalRecord 
                 patientId={patient.id} 
@@ -184,14 +232,12 @@ export function PatientDetails({ patient, onUpdatePatient }: PatientDetailsProps
                 onAddRecord={handleAddMedicalRecord} 
               />
             </TabsContent>
-            <TabsContent value="plans" className="pt-4">
-              <div className="text-center p-6 bg-gray-50 rounded-md">
-                <h3 className="font-medium mb-2">Planos de Exercícios</h3>
-                <p className="text-muted-foreground">
-                  Nenhum plano atribuído a este paciente.
-                </p>
-                <Button className="mt-4">Atribuir Plano</Button>
-              </div>
+            <TabsContent value="evolution" className="pt-4">
+              <PatientEvolution 
+                patientId={patient.id} 
+                evolutions={patient.evolutions || []} 
+                onAddEvolution={handleAddEvolution} 
+              />
             </TabsContent>
           </Tabs>
         </div>
