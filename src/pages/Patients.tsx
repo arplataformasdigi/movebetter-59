@@ -26,12 +26,18 @@ import { PatientDetails } from "@/components/patients/PatientDetails";
 interface MedicalRecord {
   id: string;
   date: Date;
+  age: number;
+  gender: string;
+  weight: number;
+  height: number;
+  birthDate: string;
+  profession: string;
+  maritalStatus: string;
   visitReason: string;
   currentCondition: string;
   medicalHistory: string;
   treatmentPlan: string;
   evaluation?: string;
-  progressScore: number;
 }
 
 interface Patient {

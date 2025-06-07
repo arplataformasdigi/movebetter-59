@@ -33,16 +33,23 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 
 const formSchema = z.object({
+  age: z.coerce.number().min(1, { message: "Idade é obrigatória" }),
+  gender: z.string().min(1, { message: "Sexo é obrigatório" }),
+  weight: z.coerce.number().min(1, { message: "Peso é obrigatório" }),
+  height: z.coerce.number().min(1, { message: "Altura é obrigatória" }),
+  birthDate: z.string().min(1, { message: "Data de nascimento é obrigatória" }),
+  profession: z.string().min(2, { message: "Profissão deve ter pelo menos 2 caracteres" }),
+  maritalStatus: z.string().min(1, { message: "Situação é obrigatória" }),
   visitReason: z.string().min(10, { message: "Razão da visita deve ter pelo menos 10 caracteres" }),
   currentCondition: z.string().min(10, { message: "Condição atual deve ter pelo menos 10 caracteres" }),
   medicalHistory: z.string().min(10, { message: "Histórico deve ter pelo menos 10 caracteres" }),
   treatmentPlan: z.string().min(10, { message: "Plano de tratamento deve ter pelo menos 10 caracteres" }),
   evaluation: z.string().optional(),
-  progressScore: z.coerce.number().min(0).max(100),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -50,12 +57,18 @@ type FormValues = z.infer<typeof formSchema>;
 interface MedicalRecord {
   id: string;
   date: Date;
+  age: number;
+  gender: string;
+  weight: number;
+  height: number;
+  birthDate: string;
+  profession: string;
+  maritalStatus: string;
   visitReason: string;
   currentCondition: string;
   medicalHistory: string;
   treatmentPlan: string;
   evaluation?: string;
-  progressScore: number;
 }
 
 interface PatientMedicalRecordProps {
@@ -74,26 +87,37 @@ export function PatientMedicalRecord({
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      age: 0,
+      gender: "",
+      weight: 0,
+      height: 0,
+      birthDate: "",
+      profession: "",
+      maritalStatus: "",
       visitReason: "",
       currentCondition: "",
       medicalHistory: "",
       treatmentPlan: "",
       evaluation: "",
-      progressScore: 0,
     },
   });
 
   function onSubmit(values: FormValues) {
-    // Garantindo que todas as propriedades obrigatórias são atribuídas com valores não-opcionais
     const newRecord: MedicalRecord = {
       id: `record-${Date.now()}`,
       date: new Date(),
+      age: values.age,
+      gender: values.gender,
+      weight: values.weight,
+      height: values.height,
+      birthDate: values.birthDate,
+      profession: values.profession,
+      maritalStatus: values.maritalStatus,
       visitReason: values.visitReason,
       currentCondition: values.currentCondition,
       medicalHistory: values.medicalHistory,
       treatmentPlan: values.treatmentPlan,
       evaluation: values.evaluation,
-      progressScore: values.progressScore,
     };
     
     onAddRecord(patientId, newRecord);
@@ -102,34 +126,15 @@ export function PatientMedicalRecord({
     setOpen(false);
   }
 
-  const getProgressColor = (score: number) => {
-    if (score < 30) return "bg-red-100 text-red-800 border-red-200";
-    if (score < 70) return "bg-amber-100 text-amber-800 border-amber-200";
-    return "bg-green-100 text-green-800 border-green-200";
-  };
-
-  const compareProgress = (records: MedicalRecord[]) => {
-    if (records.length < 2) return null;
-    
-    const latestRecord = records[records.length - 1];
-    const previousRecord = records[records.length - 2];
-    const difference = latestRecord.progressScore - previousRecord.progressScore;
-    
-    if (difference === 0) return "Progresso estável";
-    return difference > 0 
-      ? `Melhorou ${difference}% desde a última avaliação` 
-      : `Diminuiu ${Math.abs(difference)}% desde a última avaliação`;
-  };
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-xl font-semibold">Prontuário do Paciente</h3>
+        <h3 className="text-lg font-semibold">Prontuário do Paciente</h3>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button>Adicionar Registro</Button>
+            <Button size="sm">Adicionar Registro</Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px]">
+          <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Novo Prontuário</DialogTitle>
               <DialogDescription>
@@ -137,7 +142,125 @@ export function PatientMedicalRecord({
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <FormField
+                    control={form.control}
+                    name="age"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Idade</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="Idade" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="gender"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Sexo</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="masculino">Masculino</SelectItem>
+                            <SelectItem value="feminino">Feminino</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <FormField
+                    control={form.control}
+                    name="weight"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Peso (kg)</FormLabel>
+                        <FormControl>
+                          <Input type="number" step="0.1" placeholder="Peso" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="height"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Altura (cm)</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="Altura" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="birthDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Data de Nascimento</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-2 gap-3">
+                  <FormField
+                    control={form.control}
+                    name="profession"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Profissão</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Profissão" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="maritalStatus"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Situação</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="solteiro">Solteiro(a)</SelectItem>
+                            <SelectItem value="casado">Casado(a)</SelectItem>
+                            <SelectItem value="viuvo">Viúvo(a)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
                 <FormField
                   control={form.control}
                   name="visitReason"
@@ -145,7 +268,7 @@ export function PatientMedicalRecord({
                     <FormItem>
                       <FormLabel>Motivo da Consulta</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="Descreva o motivo da consulta" {...field} />
+                        <Textarea placeholder="Descreva o motivo da consulta" className="h-20" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -158,7 +281,7 @@ export function PatientMedicalRecord({
                     <FormItem>
                       <FormLabel>História da Moléstia Atual</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="Descreva a condição atual do paciente" {...field} />
+                        <Textarea placeholder="Descreva a condição atual do paciente" className="h-20" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -171,7 +294,7 @@ export function PatientMedicalRecord({
                     <FormItem>
                       <FormLabel>Histórico Progressivo</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="Descreva o histórico progressivo do paciente" {...field} />
+                        <Textarea placeholder="Descreva o histórico progressivo do paciente" className="h-20" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -184,7 +307,7 @@ export function PatientMedicalRecord({
                     <FormItem>
                       <FormLabel>Plano de Tratamento</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="Descreva o plano de tratamento proposto" {...field} />
+                        <Textarea placeholder="Descreva o plano de tratamento proposto" className="h-20" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -197,20 +320,7 @@ export function PatientMedicalRecord({
                     <FormItem>
                       <FormLabel>Avaliação e Observações</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="Observações adicionais sobre a avaliação" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="progressScore"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Score de Progresso (0-100)</FormLabel>
-                      <FormControl>
-                        <Input type="number" min="0" max="100" {...field} />
+                        <Textarea placeholder="Observações adicionais sobre a avaliação" className="h-20" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -227,37 +337,49 @@ export function PatientMedicalRecord({
 
       {medicalRecords.length === 0 ? (
         <Card>
-          <CardContent className="p-6 text-center text-muted-foreground">
+          <CardContent className="p-4 text-center text-muted-foreground">
             Nenhum registro de prontuário encontrado para este paciente.
           </CardContent>
         </Card>
       ) : (
-        <>
-          {compareProgress(medicalRecords) && (
-            <div className="p-4 bg-movebetter-light rounded-lg mb-4">
-              <p className="font-medium text-movebetter-primary">{compareProgress(medicalRecords)}</p>
-            </div>
-          )}
-          
-          <div className="space-y-4">
-            {medicalRecords.map((record) => (
-              <Card key={record.id}>
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <CardTitle className="text-lg">
-                        Consulta de {format(new Date(record.date), "dd 'de' MMMM 'de' yyyy", {locale: ptBR})}
-                      </CardTitle>
-                      <CardDescription>
-                        {format(new Date(record.date), "HH:mm", {locale: ptBR})}
-                      </CardDescription>
-                    </div>
-                    <Badge variant="outline" className={getProgressColor(record.progressScore)}>
-                      Progresso: {record.progressScore}%
-                    </Badge>
+        <div className="space-y-3">
+          {medicalRecords.map((record) => (
+            <Card key={record.id}>
+              <CardHeader className="pb-2">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle className="text-base">
+                      Consulta de {format(new Date(record.date), "dd 'de' MMMM 'de' yyyy", {locale: ptBR})}
+                    </CardTitle>
+                    <CardDescription>
+                      {format(new Date(record.date), "HH:mm", {locale: ptBR})}
+                    </CardDescription>
                   </div>
-                </CardHeader>
-                <CardContent className="pb-2 space-y-3">
+                </div>
+              </CardHeader>
+              <CardContent className="pb-2 space-y-2">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium text-gray-700">Idade:</span> {record.age} anos
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Sexo:</span> {record.gender}
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Peso:</span> {record.weight}kg
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Altura:</span> {record.height}cm
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Profissão:</span> {record.profession}
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Situação:</span> {record.maritalStatus}
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
                   <div>
                     <h4 className="text-sm font-medium text-gray-700">Motivo da Consulta</h4>
                     <p className="text-sm text-muted-foreground">{record.visitReason}</p>
@@ -280,11 +402,11 @@ export function PatientMedicalRecord({
                       <p className="text-sm text-muted-foreground">{record.evaluation}</p>
                     </div>
                   )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       )}
     </div>
   );

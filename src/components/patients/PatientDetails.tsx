@@ -19,12 +19,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 interface MedicalRecord {
   id: string;
   date: Date;
+  age: number;
+  gender: string;
+  weight: number;
+  height: number;
+  birthDate: string;
+  profession: string;
+  maritalStatus: string;
   visitReason: string;
   currentCondition: string;
   medicalHistory: string;
   treatmentPlan: string;
   evaluation?: string;
-  progressScore: number;
 }
 
 interface PreEvaluation {
@@ -175,11 +181,11 @@ export function PatientDetails({ patient, onUpdatePatient }: PatientDetailsProps
             <div>
               <h2 className="text-2xl font-bold">{patient.name}</h2>
               <div className="flex items-center space-x-2 mt-1">
-                <Badge variant="outline" className={planType.color}>
-                  {planType.label}
+                <Badge variant="outline" className={getPlanTypeDetails(patient.planType).color}>
+                  {getPlanTypeDetails(patient.planType).label}
                 </Badge>
-                <Badge variant="outline" className={status.color}>
-                  {status.label}
+                <Badge variant="outline" className={getStatusDetails(patient.status).color}>
+                  {getStatusDetails(patient.status).label}
                 </Badge>
               </div>
             </div>
@@ -212,7 +218,7 @@ export function PatientDetails({ patient, onUpdatePatient }: PatientDetailsProps
             </div>
           </div>
 
-          <Tabs defaultValue="records">
+          <Tabs defaultValue="pre-evaluation">
             <TabsList className="grid grid-cols-3 w-full">
               <TabsTrigger value="pre-evaluation">Pré-avaliação</TabsTrigger>
               <TabsTrigger value="records">Prontuário</TabsTrigger>
