@@ -56,7 +56,6 @@ interface Patient {
   avatar?: string;
   email: string;
   phone: string;
-  planType: "running" | "pilates" | "mixed";
   progress: number;
   points: number;
   status: "active" | "inactive" | "onhold";
@@ -72,31 +71,6 @@ interface PatientDetailsProps {
 
 export function PatientDetails({ patient, onUpdatePatient }: PatientDetailsProps) {
   const [open, setOpen] = React.useState(false);
-
-  const getPlanTypeDetails = (type: Patient["planType"]) => {
-    switch (type) {
-      case "pilates":
-        return { 
-          label: "Pilates",
-          color: "bg-green-100 text-green-800 border-green-200" 
-        };
-      case "running":
-        return { 
-          label: "Corrida", 
-          color: "bg-blue-100 text-blue-800 border-blue-200" 
-        };
-      case "mixed":
-        return { 
-          label: "Misto", 
-          color: "bg-purple-100 text-purple-800 border-purple-200" 
-        };
-      default:
-        return { 
-          label: "Outro", 
-          color: "bg-gray-100 text-gray-800 border-gray-200" 
-        };
-    }
-  };
 
   const getStatusDetails = (status: Patient["status"]) => {
     switch (status) {
@@ -171,7 +145,6 @@ export function PatientDetails({ patient, onUpdatePatient }: PatientDetailsProps
     onUpdatePatient(updatedPatient);
   };
 
-  const planType = getPlanTypeDetails(patient.planType);
   const status = getStatusDetails(patient.status);
 
   return (
@@ -200,9 +173,6 @@ export function PatientDetails({ patient, onUpdatePatient }: PatientDetailsProps
             <div>
               <h2 className="text-2xl font-bold">{patient.name}</h2>
               <div className="flex items-center space-x-2 mt-1">
-                <Badge variant="outline" className={getPlanTypeDetails(patient.planType).color}>
-                  {getPlanTypeDetails(patient.planType).label}
-                </Badge>
                 <Badge variant="outline" className={getStatusDetails(patient.status).color}>
                   {getStatusDetails(patient.status).label}
                 </Badge>

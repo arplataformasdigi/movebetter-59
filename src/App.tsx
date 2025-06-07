@@ -13,11 +13,9 @@ import Patients from "./pages/Patients";
 import NotFound from "./pages/NotFound";
 import Plans from "./pages/Plans";
 import CreatePlan from "./pages/CreatePlan";
-import ExerciseLibrary from "./pages/ExerciseLibrary";
 import Calendar from "./pages/Calendar";
 import Ranking from "./pages/Ranking";
 import Auth from "./pages/Auth";
-import Users from "./pages/Users";
 import PatientDashboard from "./pages/patient/PatientDashboard";
 import PatientAppointments from "./pages/patient/PatientAppointments";
 import PatientPlans from "./pages/patient/PatientPlans";
@@ -25,6 +23,7 @@ import PatientMedicalRecords from "./pages/patient/PatientMedicalRecords";
 import AccountAccess from "./pages/AccountAccess";
 import PersonalData from "./pages/PersonalData";
 import Subscription from "./pages/Subscription";
+import AppPage from "./pages/App";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +51,12 @@ const App = () => (
               </ProtectedRoute>
             } />
 
+            <Route path="/aplicativo" element={
+              <ProtectedRoute allowedRoles={["admin", "manager", "professional"]}>
+                <AppLayout><AppPage /></AppLayout>
+              </ProtectedRoute>
+            } />
+
             <Route path="/planos" element={
               <ProtectedRoute allowedRoles={["admin", "manager", "professional"]}>
                 <AppLayout><Plans /></AppLayout>
@@ -64,12 +69,6 @@ const App = () => (
               </ProtectedRoute>
             } />
 
-            <Route path="/exercicios" element={
-              <ProtectedRoute allowedRoles={["admin", "manager", "professional"]}>
-                <AppLayout><ExerciseLibrary /></AppLayout>
-              </ProtectedRoute>
-            } />
-
             <Route path="/calendario" element={
               <ProtectedRoute allowedRoles={["admin", "manager", "professional"]}>
                 <AppLayout><Calendar /></AppLayout>
@@ -79,12 +78,6 @@ const App = () => (
             <Route path="/ranking" element={
               <ProtectedRoute allowedRoles={["admin", "manager", "professional"]}>
                 <AppLayout><Ranking /></AppLayout>
-              </ProtectedRoute>
-            } />
-
-            <Route path="/usuarios" element={
-              <ProtectedRoute allowedRoles={["admin", "manager"]}>
-                <AppLayout><Users /></AppLayout>
               </ProtectedRoute>
             } />
 
@@ -126,7 +119,7 @@ const App = () => (
               </ProtectedRoute>
             } />
 
-            <Route path="/paciente/prontuario" element={
+            <Route path="/paciente/evolucao" element={
               <ProtectedRoute allowedRoles={["patient"]}>
                 <PatientLayout><PatientMedicalRecords /></PatientLayout>
               </ProtectedRoute>

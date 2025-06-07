@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -18,7 +19,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Users } from "lucide-react";
+import { Users, Power, PowerOff, Trash2 } from "lucide-react";
 import { AddPatientDialog } from "@/components/patients/AddPatientDialog";
 import { PatientDetails } from "@/components/patients/PatientDetails";
 
@@ -56,7 +57,6 @@ interface Patient {
   avatar?: string;
   email: string;
   phone: string;
-  planType: "running" | "pilates" | "mixed";
   progress: number;
   points: number;
   status: "active" | "inactive" | "onhold";
@@ -71,7 +71,6 @@ const initialPatients: Patient[] = [
     avatar: "",
     email: "marina.o@email.com",
     phone: "(11) 98765-4321",
-    planType: "pilates",
     progress: 78,
     points: 1280,
     status: "active",
@@ -84,7 +83,6 @@ const initialPatients: Patient[] = [
     avatar: "",
     email: "felipe.m@email.com",
     phone: "(11) 97654-3210",
-    planType: "running",
     progress: 45,
     points: 870,
     status: "active",
@@ -97,7 +95,6 @@ const initialPatients: Patient[] = [
     avatar: "",
     email: "carla.s@email.com",
     phone: "(11) 96543-2109",
-    planType: "pilates",
     progress: 92,
     points: 2140,
     status: "active",
@@ -110,7 +107,6 @@ const initialPatients: Patient[] = [
     avatar: "",
     email: "ricardo.a@email.com",
     phone: "(11) 95432-1098",
-    planType: "mixed",
     progress: 35,
     points: 560,
     status: "inactive",
@@ -123,7 +119,6 @@ const initialPatients: Patient[] = [
     avatar: "",
     email: "patricia.m@email.com",
     phone: "(11) 94321-0987",
-    planType: "running",
     progress: 65,
     points: 1430,
     status: "onhold",
@@ -136,7 +131,6 @@ const initialPatients: Patient[] = [
     avatar: "",
     email: "gustavo.t@email.com",
     phone: "(11) 93210-9876",
-    planType: "mixed",
     progress: 28,
     points: 310,
     status: "active",
@@ -144,31 +138,6 @@ const initialPatients: Patient[] = [
     evolutions: [],
   },
 ];
-
-const getPlanTypeDetails = (type: Patient["planType"]) => {
-  switch (type) {
-    case "pilates":
-      return { 
-        label: "Pilates",
-        color: "bg-green-100 text-green-800 border-green-200" 
-      };
-    case "running":
-      return { 
-        label: "Corrida", 
-        color: "bg-blue-100 text-blue-800 border-blue-200" 
-      };
-    case "mixed":
-      return { 
-        label: "Misto", 
-        color: "bg-purple-100 text-purple-800 border-purple-200" 
-      };
-    default:
-      return { 
-        label: "Outro", 
-        color: "bg-gray-100 text-gray-800 border-gray-200" 
-      };
-  }
-};
 
 const getStatusDetails = (status: Patient["status"]) => {
   switch (status) {
@@ -207,6 +176,18 @@ export function Patients() {
     setPatients(patients.map(patient => 
       patient.id === updatedPatient.id ? updatedPatient : patient
     ));
+  };
+
+  const handleToggleStatus = (patientId: string) => {
+    setPatients(patients.map(patient => 
+      patient.id === patientId 
+        ? { ...patient, status: patient.status === "active" ? "inactive" : "active" as Patient["status"] }
+        : patient
+    ));
+  };
+
+  const handleDeletePatient = (patientId: string) => {
+    setPatients(patients.filter(patient => patient.id !== patientId));
   };
 
   const filteredPatients = patients.filter(patient => 
@@ -252,7 +233,6 @@ export function Patients() {
               <TableRow>
                 <TableHead>Nome</TableHead>
                 <TableHead>Contato</TableHead>
-                <TableHead>Plano</TableHead>
                 <TableHead>Progresso</TableHead>
                 <TableHead>Pontos</TableHead>
                 <TableHead>Status</TableHead>
@@ -261,7 +241,6 @@ export function Patients() {
             </TableHeader>
             <TableBody>
               {filteredPatients.map((patient) => {
-                const planType = getPlanTypeDetails(patient.planType);
                 const status = getStatusDetails(patient.status);
                 
                 return (
@@ -284,11 +263,6 @@ export function Patients() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className={planType.color}>
-                        {planType.label}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
                       <div className="flex items-center space-x-2">
                         <div className="h-2 w-16 bg-gray-200 rounded-full overflow-hidden">
                           <div 
@@ -308,10 +282,32 @@ export function Patients() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <PatientDetails 
-                        patient={patient}
-                        onUpdatePatient={handleUpdatePatient}
-                      />
+                      <div className="flex items-center gap-2 justify-end">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleToggleStatus(patient.id)}
+                          className="h-8 w-8 p-0"
+                        >
+                          {patient.status === "active" ? (
+                            <PowerOff className="h-4 w-4 text-red-600" />
+                          ) : (
+                            <Power className="h-4 w-4 text-green-600" />
+                          )}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeletePatient(patient.id)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Trash2 className="h-4 w-4 text-red-600" />
+                        </Button>
+                        <PatientDetails 
+                          patient={patient}
+                          onUpdatePatient={handleUpdatePatient}
+                        />
+                      </div>
                     </TableCell>
                   </TableRow>
                 );

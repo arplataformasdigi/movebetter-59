@@ -6,12 +6,11 @@ import {
   Calendar,
   Users,
   Book,
-  Play,
   Trophy,
-  UserPlus,
   User,
   Shield,
-  CreditCard
+  CreditCard,
+  Smartphone
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -37,15 +36,15 @@ const sidebarItems: SidebarItem[] = [
     roles: ["admin", "manager", "professional"],
   },
   {
-    title: "Planos",
-    icon: Book,
-    href: "/planos",
+    title: "Aplicativo",
+    icon: Smartphone,
+    href: "/aplicativo",
     roles: ["admin", "manager", "professional"],
   },
   {
-    title: "Exercícios",
-    icon: Play,
-    href: "/exercicios",
+    title: "Planos",
+    icon: Book,
+    href: "/planos",
     roles: ["admin", "manager", "professional"],
   },
   {
@@ -59,12 +58,6 @@ const sidebarItems: SidebarItem[] = [
     icon: Trophy,
     href: "/ranking",
     roles: ["admin", "manager", "professional"],
-  },
-  {
-    title: "Usuários",
-    icon: UserPlus,
-    href: "/usuarios",
-    roles: ["admin", "manager"],
   },
   // Novas opções de menu para perfil
   {
