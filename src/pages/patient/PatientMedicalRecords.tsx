@@ -4,57 +4,58 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { FileText, ArrowUp, ArrowDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-interface MedicalRecord {
+interface Evolution {
   id: string;
   date: Date;
-  visitReason: string;
-  currentCondition: string;
-  medicalHistory: string;
-  treatmentPlan: string;
-  evaluation?: string;
+  medicalRecordId: string;
+  queixasRelatos: string;
+  condutaAtendimento: string;
+  observacoes?: string;
   progressScore: number;
   previousScore?: number;
+  medicalRecordInfo?: string;
 }
 
 export default function PatientMedicalRecords() {
-  // Mock de dados para o prontuário médico
-  const medicalRecords: MedicalRecord[] = [
+  // Mock de dados para a evolução do paciente
+  const evolutions: Evolution[] = [
     {
       id: "1",
       date: new Date(2025, 3, 25),
-      visitReason: "Consulta inicial",
-      currentCondition: "Paciente relata dor lombar persistente, especialmente ao sentar por períodos prolongados. Desconforto na região do L4-L5.",
-      medicalHistory: "Sem histórico de lesões graves. Pratica atividade física ocasional. Trabalho em escritório por 8 horas diárias.",
-      treatmentPlan: "Iniciar plano de reabilitação lombar com foco em exercícios de alongamento e fortalecimento do core.",
-      evaluation: "Rigidez na região lombar. Movimento flexão lombar limitado. Força muscular abdominal 3/5.",
-      progressScore: 30
+      medicalRecordId: "prontuario-1",
+      queixasRelatos: "Paciente relata melhora significativa na dor lombar. Não sente mais desconforto ao sentar por períodos prolongados.",
+      condutaAtendimento: "Realizados exercícios de alongamento e fortalecimento do core. Aplicação de técnicas de mobilização articular.",
+      observacoes: "Paciente demonstra boa aderência ao tratamento domiciliar.",
+      progressScore: 8,
+      previousScore: 6,
+      medicalRecordInfo: "Consulta de seguimento - 25/04/2025"
     },
     {
-      id: "2",
+      id: "2", 
       date: new Date(2025, 4, 2),
-      visitReason: "Avaliação de progresso",
-      currentCondition: "Paciente relata melhora nos sintomas de dor. Ainda apresenta desconforto ao permanecer sentado por mais de 3 horas.",
-      medicalHistory: "Paciente está realizando os exercícios prescritos em casa regularmente.",
-      treatmentPlan: "Continuar com plano de reabilitação. Adicionar exercícios de fortalecimento específicos.",
-      evaluation: "Melhora na amplitude de movimento lombar. Força muscular abdominal 4/5.",
-      progressScore: 45,
-      previousScore: 30
+      medicalRecordId: "prontuario-2",
+      queixasRelatos: "Ligeira recidiva da dor após atividade física intensa no final de semana. Dor localizada na região L4-L5.",
+      condutaAtendimento: "Orientações sobre modificação da atividade física. Exercícios específicos para estabilização lombar.",
+      observacoes: "Importante manter regularidade nos exercícios prescritos.",
+      progressScore: 6,
+      previousScore: 8,
+      medicalRecordInfo: "Reavaliação - 02/05/2025"
     },
     {
       id: "3",
       date: new Date(2025, 4, 9),
-      visitReason: "Reavaliação",
-      currentCondition: "Melhora significativa na movimentação. Dor reduzida para 3/10 na escala visual analógica.",
-      medicalHistory: "Seguindo todas as recomendações e realizando exercícios diariamente.",
-      treatmentPlan: "Progredir para exercícios mais avançados. Incluir técnicas de autocorreção postural para o ambiente de trabalho.",
-      evaluation: "Maior mobilidade lombar, redução da tensão muscular na região. Força muscular abdominal 4+/5.",
-      progressScore: 65,
-      previousScore: 45
+      medicalRecordId: "prontuario-3", 
+      queixasRelatos: "Paciente relata estabilização do quadro. Consegue realizar atividades diárias sem limitações.",
+      condutaAtendimento: "Progressão dos exercícios para fortalecimento avançado. Técnicas de autocorreção postural.",
+      observacoes: "Paciente apto para retorno gradual às atividades esportivas.",
+      progressScore: 9,
+      previousScore: 6,
+      medicalRecordInfo: "Consulta de alta - 09/05/2025"
     }
   ];
 
   // Ordenar os registros do mais recente para o mais antigo
-  const sortedRecords = [...medicalRecords].sort((a, b) => b.date.getTime() - a.date.getTime());
+  const sortedEvolutions = [...evolutions].sort((a, b) => b.date.getTime() - a.date.getTime());
 
   // Formatação da data
   const formatDate = (date: Date) => {
@@ -83,17 +84,23 @@ export default function PatientMedicalRecords() {
         ) : (
           <ArrowDown className="h-3 w-3 mr-1" />
         )}
-        {Math.abs(difference)}%
+        {Math.abs(difference)}
       </Badge>
     );
+  };
+
+  const getProgressColor = (score: number) => {
+    if (score < 3) return "bg-red-100 text-red-800 border-red-200";
+    if (score < 7) return "bg-amber-100 text-amber-800 border-amber-200";
+    return "bg-green-100 text-green-800 border-green-200";
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Meu Prontuário</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Minha Evolução</h1>
         <p className="text-muted-foreground">
-          Acompanhe seu histórico médico e evolução do tratamento.
+          Acompanhe o histórico da sua evolução durante o tratamento.
         </p>
       </div>
       
@@ -101,62 +108,67 @@ export default function PatientMedicalRecords() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Histórico de Registros</CardTitle>
+              <CardTitle>Histórico de Evolução</CardTitle>
               <CardDescription>
-                Registros ordenados do mais recente ao mais antigo
+                Registros de evolução ordenados do mais recente ao mais antigo
               </CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-8">
-            {sortedRecords.map((record) => (
-              <div key={record.id} className="border rounded-md p-4">
+            {sortedEvolutions.map((evolution) => (
+              <div key={evolution.id} className="border rounded-md p-4">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center">
                     <div className="bg-movebetter-light p-2 rounded-md mr-3">
                       <FileText className="h-5 w-5 text-movebetter-primary" />
                     </div>
                     <div>
-                      <h3 className="font-medium">{record.visitReason}</h3>
+                      <h3 className="font-medium">
+                        Evolução de {formatDate(evolution.date)}
+                      </h3>
                       <p className="text-sm text-muted-foreground">
-                        {formatDate(record.date)}
+                        {evolution.medicalRecordInfo}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="text-right">
                       <div className="text-sm font-medium">Progresso</div>
-                      <div className="text-xl font-semibold">{record.progressScore}%</div>
+                      <div className="text-xl font-semibold">{evolution.progressScore}/10</div>
                     </div>
-                    {renderProgressDifference(record.progressScore, record.previousScore)}
+                    <Badge variant="outline" className={getProgressColor(evolution.progressScore)}>
+                      Score: {evolution.progressScore}/10
+                    </Badge>
+                    {renderProgressDifference(evolution.progressScore, evolution.previousScore)}
                   </div>
                 </div>
                 
                 <div className="grid gap-4">
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Condição Atual</h4>
-                    <p className="text-sm">{record.currentCondition}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">Queixas e Relatos</h4>
+                    <p className="text-sm">{evolution.queixasRelatos}</p>
                   </div>
-                  
-                  {record.evaluation && (
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-500 mb-1">Avaliação</h4>
-                      <p className="text-sm">{record.evaluation}</p>
-                    </div>
-                  )}
                   
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Plano de Tratamento</h4>
-                    <p className="text-sm">{record.treatmentPlan}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">Conduta no Atendimento</h4>
+                    <p className="text-sm">{evolution.condutaAtendimento}</p>
                   </div>
+                  
+                  {evolution.observacoes && (
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-500 mb-1">Observações</h4>
+                      <p className="text-sm">{evolution.observacoes}</p>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
 
-            {sortedRecords.length === 0 && (
+            {sortedEvolutions.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
-                Nenhum registro médico disponível.
+                Nenhum registro de evolução disponível.
               </div>
             )}
           </div>
