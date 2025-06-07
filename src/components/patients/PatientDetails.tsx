@@ -42,6 +42,7 @@ interface PreEvaluation {
 interface Evolution {
   id: string;
   date: Date;
+  medicalRecordId: string;
   queixasRelatos: string;
   condutaAtendimento: string;
   observacoes?: string;
@@ -152,6 +153,24 @@ export function PatientDetails({ patient, onUpdatePatient }: PatientDetailsProps
     onUpdatePatient(updatedPatient);
   };
 
+  const handleUpdateEvolution = (patientId: string, evolution: Evolution) => {
+    const updatedPatient = {
+      ...patient,
+      evolutions: (patient.evolutions || []).map(e => 
+        e.id === evolution.id ? evolution : e
+      ),
+    };
+    onUpdatePatient(updatedPatient);
+  };
+
+  const handleDeleteEvolution = (patientId: string, evolutionId: string) => {
+    const updatedPatient = {
+      ...patient,
+      evolutions: (patient.evolutions || []).filter(e => e.id !== evolutionId),
+    };
+    onUpdatePatient(updatedPatient);
+  };
+
   const planType = getPlanTypeDetails(patient.planType);
   const status = getStatusDetails(patient.status);
 
@@ -242,7 +261,10 @@ export function PatientDetails({ patient, onUpdatePatient }: PatientDetailsProps
               <PatientEvolution 
                 patientId={patient.id} 
                 evolutions={patient.evolutions || []} 
-                onAddEvolution={handleAddEvolution} 
+                medicalRecords={patient.medicalRecords || []}
+                onAddEvolution={handleAddEvolution}
+                onUpdateEvolution={handleUpdateEvolution}
+                onDeleteEvolution={handleDeleteEvolution}
               />
             </TabsContent>
           </Tabs>

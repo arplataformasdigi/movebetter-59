@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -40,6 +39,17 @@ interface MedicalRecord {
   evaluation?: string;
 }
 
+interface Evolution {
+  id: string;
+  date: Date;
+  medicalRecordId: string;
+  queixasRelatos: string;
+  condutaAtendimento: string;
+  observacoes?: string;
+  progressScore: number;
+  previousScore?: number;
+}
+
 interface Patient {
   id: string;
   name: string;
@@ -51,6 +61,7 @@ interface Patient {
   points: number;
   status: "active" | "inactive" | "onhold";
   medicalRecords?: MedicalRecord[];
+  evolutions?: Evolution[];
 }
 
 const initialPatients: Patient[] = [
@@ -65,6 +76,7 @@ const initialPatients: Patient[] = [
     points: 1280,
     status: "active",
     medicalRecords: [],
+    evolutions: [],
   },
   {
     id: "2",
@@ -77,6 +89,7 @@ const initialPatients: Patient[] = [
     points: 870,
     status: "active",
     medicalRecords: [],
+    evolutions: [],
   },
   {
     id: "3",
@@ -89,6 +102,7 @@ const initialPatients: Patient[] = [
     points: 2140,
     status: "active",
     medicalRecords: [],
+    evolutions: [],
   },
   {
     id: "4",
@@ -101,6 +115,7 @@ const initialPatients: Patient[] = [
     points: 560,
     status: "inactive",
     medicalRecords: [],
+    evolutions: [],
   },
   {
     id: "5",
@@ -113,6 +128,7 @@ const initialPatients: Patient[] = [
     points: 1430,
     status: "onhold",
     medicalRecords: [],
+    evolutions: [],
   },
   {
     id: "6",
@@ -125,6 +141,7 @@ const initialPatients: Patient[] = [
     points: 310,
     status: "active",
     medicalRecords: [],
+    evolutions: [],
   },
 ];
 
