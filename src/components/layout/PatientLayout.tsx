@@ -32,9 +32,9 @@ const sidebarItems: SidebarItem[] = [
     href: "/paciente/agenda",
   },
   {
-    title: "Prontuário",
+    title: "Evolução",
     icon: FileText,
-    href: "/paciente/prontuario",
+    href: "/paciente/evolucao",
   }
 ];
 
