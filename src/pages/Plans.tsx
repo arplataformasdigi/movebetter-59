@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -16,6 +15,12 @@ interface Plan {
   duration: string;
   exercisesCount: number;
   progress: number;
+}
+
+interface PlanType {
+  id: string;
+  name: string;
+  description?: string;
 }
 
 const mockPlans: Plan[] = [
@@ -112,7 +117,7 @@ const PlanCard: React.FC<{ plan: Plan }> = ({ plan }) => {
 
 export default function Plans() {
   const [searchTerm, setSearchTerm] = React.useState("");
-  const [planTypes, setPlanTypes] = React.useState([
+  const [planTypes, setPlanTypes] = React.useState<PlanType[]>([
     { id: "1", name: "Pilates", description: "Exercícios de pilates" },
     { id: "2", name: "Corrida", description: "Exercícios para corredores" },
   ]);

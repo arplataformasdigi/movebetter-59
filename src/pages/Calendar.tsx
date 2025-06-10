@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -196,8 +195,7 @@ export default function Calendar() {
               </div>
             ) : (
               <ScheduleAppointmentForm 
-                onSave={() => setShowAppointmentDialog(false)} 
-                selectedDate={selectedDate}
+                onScheduleAppointment={() => setShowAppointmentDialog(false)} 
               />
             )}
           </DialogContent>
