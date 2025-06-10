@@ -1,9 +1,10 @@
+
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, CheckCircle, Clock, Eye } from "lucide-react";
+import { CalendarIcon, CheckCircle, Clock, Eye, Pause } from "lucide-react";
 import { ExerciseDetailsDialog } from "@/components/exercises/ExerciseDetailsDialog";
 
 interface Exercise {
@@ -27,6 +28,7 @@ interface TreatmentPlan {
   status: "active" | "completed" | "paused";
   progress: number;
   exercises: Exercise[];
+  completedDate?: string; // Data de conclusão
 }
 
 export default function PatientPlans() {
@@ -42,8 +44,9 @@ export default function PatientPlans() {
       professional: "Dra. Maria",
       startDate: "25/04/2025",
       endDate: "25/06/2025",
-      status: "active",
-      progress: 65,
+      status: "completed",
+      progress: 100,
+      completedDate: "15/05/2025",
       exercises: [
         { 
           id: "1", 
@@ -88,7 +91,7 @@ export default function PatientPlans() {
         { 
           id: "5", 
           name: "Alongamento de piriformes", 
-          completed: false,
+          completed: true,
           duration: "5 minutos",
           sets: 3,
           reps: 8,
@@ -98,7 +101,7 @@ export default function PatientPlans() {
         { 
           id: "6", 
           name: "Exercício de rotação lombar", 
-          completed: false,
+          completed: true,
           duration: "8 minutos",
           sets: 3,
           reps: 10,
@@ -108,7 +111,7 @@ export default function PatientPlans() {
         { 
           id: "7", 
           name: "Fortalecimento abdominal", 
-          completed: false,
+          completed: true,
           duration: "12 minutos",
           sets: 4,
           reps: 15,
@@ -118,7 +121,7 @@ export default function PatientPlans() {
         { 
           id: "8", 
           name: "Alongamento final", 
-          completed: false,
+          completed: true,
           duration: "5 minutos",
           sets: 1,
           reps: 5,
@@ -178,6 +181,34 @@ export default function PatientPlans() {
           reps: 8
         }
       ]
+    },
+    {
+      id: "3",
+      title: "Recuperação Muscular",
+      description: "Plano pausado temporariamente pelo administrador",
+      professional: "Dr. Carlos",
+      startDate: "01/05/2025",
+      endDate: "01/07/2025",
+      status: "paused",
+      progress: 45,
+      exercises: [
+        { 
+          id: "1", 
+          name: "Alongamento geral", 
+          completed: true,
+          duration: "10 minutos",
+          sets: 2,
+          reps: 8
+        },
+        { 
+          id: "2", 
+          name: "Massagem terapêutica", 
+          completed: false,
+          duration: "15 minutos",
+          sets: 1,
+          reps: 1
+        }
+      ]
     }
   ]);
 
@@ -197,11 +228,16 @@ export default function PatientPlans() {
           const completedCount = updatedExercises.filter(ex => ex.completed).length;
           const newProgress = Math.round((completedCount / updatedExercises.length) * 100);
           
-          return {
+          // Se o progresso chegou a 100%, marcar como concluído e adicionar data de conclusão
+          const updatedPlan = {
             ...plan,
             exercises: updatedExercises,
-            progress: newProgress
+            progress: newProgress,
+            status: newProgress === 100 ? "completed" as const : plan.status,
+            completedDate: newProgress === 100 ? new Date().toLocaleDateString('pt-BR') : plan.completedDate
           };
+          
+          return updatedPlan;
         }
         return plan;
       })
@@ -212,6 +248,95 @@ export default function PatientPlans() {
   const activePlans = treatmentPlans.filter(plan => plan.status === "active");
   const completedPlans = treatmentPlans.filter(plan => plan.status === "completed");
   const pausedPlans = treatmentPlans.filter(plan => plan.status === "paused");
+
+  const renderPlanCard = (plan: TreatmentPlan) => (
+    <Card key={plan.id}>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle>{plan.title}</CardTitle>
+          {plan.status === "paused" && (
+            <div className="flex items-center gap-1 text-amber-600">
+              <Pause className="h-4 w-4" />
+              <span className="text-xs font-medium">Pausado</span>
+            </div>
+          )}
+          {plan.status === "completed" && (
+            <div className="flex items-center gap-1 text-green-600">
+              <CheckCircle className="h-4 w-4" />
+              <span className="text-xs font-medium">Concluído</span>
+            </div>
+          )}
+        </div>
+        <CardDescription>{plan.description}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <div className="flex items-center">
+              <CalendarIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+              <span>Início: {plan.startDate}</span>
+            </div>
+            <div className="flex items-center">
+              <CalendarIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+              <span>Fim: {plan.endDate}</span>
+            </div>
+          </div>
+          {plan.completedDate && (
+            <div className="flex items-center text-sm text-green-600">
+              <CheckCircle className="h-4 w-4 mr-2" />
+              <span>Concluído em: {plan.completedDate}</span>
+            </div>
+          )}
+          <div className="flex items-center text-sm">
+            <span className="mr-1">Profissional:</span>
+            <span className="font-medium">{plan.professional}</span>
+          </div>
+        </div>
+
+        <div>
+          <div className="flex justify-between items-center mb-1">
+            <span className="text-sm font-medium">Progresso</span>
+            <span className="text-sm font-medium">{plan.progress}%</span>
+          </div>
+          <Progress value={plan.progress} />
+        </div>
+
+        <div className="pt-4">
+          <h4 className="font-medium mb-3">Exercícios ({plan.exercises.filter(e => e.completed).length}/{plan.exercises.length})</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {plan.exercises.map((exercise) => (
+              <div 
+                key={exercise.id} 
+                className={`p-3 border rounded-md flex items-center justify-between cursor-pointer hover:bg-gray-50 ${
+                  exercise.completed ? "bg-green-50 border-green-200" : "bg-gray-50"
+                }`}
+                onClick={() => handleExerciseClick(exercise)}
+              >
+                <div className="flex-1">
+                  <div className="flex items-center">
+                    {exercise.completed ? (
+                      <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                    ) : (
+                      <Clock className="h-4 w-4 text-amber-500 mr-2" />
+                    )}
+                    <span className="font-medium">{exercise.name}</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    <span>{exercise.sets} séries x {exercise.reps} repetições</span>
+                    <span className="mx-1">•</span>
+                    <span>{exercise.duration}</span>
+                  </div>
+                </div>
+                <Button variant="ghost" size="sm">
+                  <Eye className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <div className="space-y-6">
@@ -239,74 +364,7 @@ export default function PatientPlans() {
             
             <TabsContent value="active" className="space-y-6 pt-4">
               {activePlans.length > 0 ? (
-                activePlans.map((plan) => (
-                  <Card key={plan.id}>
-                    <CardHeader>
-                      <CardTitle>{plan.title}</CardTitle>
-                      <CardDescription>{plan.description}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <div className="flex items-center">
-                            <CalendarIcon className="h-4 w-4 mr-2 text-muted-foreground" />
-                            <span>Início: {plan.startDate}</span>
-                          </div>
-                          <div className="flex items-center">
-                            <CalendarIcon className="h-4 w-4 mr-2 text-muted-foreground" />
-                            <span>Fim: {plan.endDate}</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center text-sm">
-                          <span className="mr-1">Profissional:</span>
-                          <span className="font-medium">{plan.professional}</span>
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm font-medium">Progresso</span>
-                          <span className="text-sm font-medium">{plan.progress}%</span>
-                        </div>
-                        <Progress value={plan.progress} />
-                      </div>
-
-                      <div className="pt-4">
-                        <h4 className="font-medium mb-3">Exercícios ({plan.exercises.filter(e => e.completed).length}/{plan.exercises.length})</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {plan.exercises.map((exercise) => (
-                            <div 
-                              key={exercise.id} 
-                              className={`p-3 border rounded-md flex items-center justify-between cursor-pointer hover:bg-gray-50 ${
-                                exercise.completed ? "bg-green-50 border-green-200" : "bg-gray-50"
-                              }`}
-                              onClick={() => handleExerciseClick(exercise)}
-                            >
-                              <div className="flex-1">
-                                <div className="flex items-center">
-                                  {exercise.completed ? (
-                                    <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                                  ) : (
-                                    <Clock className="h-4 w-4 text-amber-500 mr-2" />
-                                  )}
-                                  <span className="font-medium">{exercise.name}</span>
-                                </div>
-                                <div className="text-xs text-muted-foreground mt-1">
-                                  <span>{exercise.sets} séries x {exercise.reps} repetições</span>
-                                  <span className="mx-1">•</span>
-                                  <span>{exercise.duration}</span>
-                                </div>
-                              </div>
-                              <Button variant="ghost" size="sm">
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
+                activePlans.map((plan) => renderPlanCard(plan))
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   Você não possui planos ativos no momento.
@@ -314,9 +372,9 @@ export default function PatientPlans() {
               )}
             </TabsContent>
             
-            <TabsContent value="completed" className="pt-4">
+            <TabsContent value="completed" className="space-y-6 pt-4">
               {completedPlans.length > 0 ? (
-                <div>Planos concluídos</div>
+                completedPlans.map((plan) => renderPlanCard(plan))
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   Você ainda não tem nenhum plano concluído.
@@ -324,9 +382,9 @@ export default function PatientPlans() {
               )}
             </TabsContent>
             
-            <TabsContent value="paused" className="pt-4">
+            <TabsContent value="paused" className="space-y-6 pt-4">
               {pausedPlans.length > 0 ? (
-                <div>Planos pausados</div>
+                pausedPlans.map((plan) => renderPlanCard(plan))
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   Você não tem nenhum plano pausado.
