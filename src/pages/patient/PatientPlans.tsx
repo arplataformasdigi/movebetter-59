@@ -1,10 +1,10 @@
-
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, CheckCircle, Clock, ListChecks } from "lucide-react";
+import { CalendarIcon, CheckCircle, Clock, Eye } from "lucide-react";
+import { ExerciseDetailsDialog } from "@/components/exercises/ExerciseDetailsDialog";
 
 interface Exercise {
   id: string;
@@ -13,6 +13,8 @@ interface Exercise {
   duration: string;
   sets: number;
   reps: number;
+  description?: string;
+  instructions?: string;
 }
 
 interface TreatmentPlan {
@@ -28,8 +30,11 @@ interface TreatmentPlan {
 }
 
 export default function PatientPlans() {
+  const [selectedExercise, setSelectedExercise] = React.useState<Exercise | null>(null);
+  const [showExerciseDialog, setShowExerciseDialog] = React.useState(false);
+  
   // Mock de dados para planos de tratamento
-  const treatmentPlans: TreatmentPlan[] = [
+  const [treatmentPlans, setTreatmentPlans] = React.useState<TreatmentPlan[]>([
     {
       id: "1",
       title: "Reabilitação Lombar",
@@ -46,7 +51,9 @@ export default function PatientPlans() {
           completed: true,
           duration: "5 minutos",
           sets: 3,
-          reps: 10
+          reps: 10,
+          description: "Exercício para alongamento da musculatura lombar",
+          instructions: "Deite de costas, flexione os joelhos e puxe em direção ao peito"
         },
         { 
           id: "2", 
@@ -54,7 +61,9 @@ export default function PatientPlans() {
           completed: true,
           duration: "8 minutos",
           sets: 3,
-          reps: 15
+          reps: 15,
+          description: "Fortalecimento dos músculos glúteos e core",
+          instructions: "Deite de costas, flexione os joelhos e eleve o quadril"
         },
         { 
           id: "3", 
@@ -62,7 +71,9 @@ export default function PatientPlans() {
           completed: true,
           duration: "5 minutos",
           sets: 3,
-          reps: 5
+          reps: 5,
+          description: "Fortalecimento do core e estabilização",
+          instructions: "Mantenha a posição de prancha por 30 segundos"
         },
         { 
           id: "4", 
@@ -70,7 +81,9 @@ export default function PatientPlans() {
           completed: true,
           duration: "10 minutos",
           sets: 2,
-          reps: 12
+          reps: 12,
+          description: "Exercício de equilíbrio e propriocepção",
+          instructions: "Use a bola suíça para exercícios de estabilização"
         },
         { 
           id: "5", 
@@ -78,7 +91,9 @@ export default function PatientPlans() {
           completed: false,
           duration: "5 minutos",
           sets: 3,
-          reps: 8
+          reps: 8,
+          description: "Alongamento do músculo piriforme",
+          instructions: "Posição sentada, puxe o joelho em direção ao peito oposto"
         },
         { 
           id: "6", 
@@ -86,7 +101,9 @@ export default function PatientPlans() {
           completed: false,
           duration: "8 minutos",
           sets: 3,
-          reps: 10
+          reps: 10,
+          description: "Mobilização da coluna lombar",
+          instructions: "Movimento suave de rotação da coluna"
         },
         { 
           id: "7", 
@@ -94,7 +111,9 @@ export default function PatientPlans() {
           completed: false,
           duration: "12 minutos",
           sets: 4,
-          reps: 15
+          reps: 15,
+          description: "Fortalecimento da musculatura abdominal",
+          instructions: "Exercícios variados para toda a musculatura abdominal"
         },
         { 
           id: "8", 
@@ -102,7 +121,9 @@ export default function PatientPlans() {
           completed: false,
           duration: "5 minutos",
           sets: 1,
-          reps: 5
+          reps: 5,
+          description: "Relaxamento e alongamento geral",
+          instructions: "Alongamentos suaves para finalizar a sessão"
         }
       ]
     },
@@ -158,7 +179,35 @@ export default function PatientPlans() {
         }
       ]
     }
-  ];
+  ]);
+
+  const handleExerciseClick = (exercise: Exercise) => {
+    setSelectedExercise(exercise);
+    setShowExerciseDialog(true);
+  };
+
+  const handleMarkCompleted = (planId: string, exerciseId: string) => {
+    setTreatmentPlans(plans => 
+      plans.map(plan => {
+        if (plan.id === planId) {
+          const updatedExercises = plan.exercises.map(exercise =>
+            exercise.id === exerciseId ? { ...exercise, completed: true } : exercise
+          );
+          
+          const completedCount = updatedExercises.filter(ex => ex.completed).length;
+          const newProgress = Math.round((completedCount / updatedExercises.length) * 100);
+          
+          return {
+            ...plan,
+            exercises: updatedExercises,
+            progress: newProgress
+          };
+        }
+        return plan;
+      })
+    );
+    setShowExerciseDialog(false);
+  };
 
   const activePlans = treatmentPlans.filter(plan => plan.status === "active");
   const completedPlans = treatmentPlans.filter(plan => plan.status === "completed");
@@ -193,12 +242,7 @@ export default function PatientPlans() {
                 activePlans.map((plan) => (
                   <Card key={plan.id}>
                     <CardHeader>
-                      <div className="flex justify-between">
-                        <CardTitle>{plan.title}</CardTitle>
-                        <Button variant="outline" size="sm">
-                          <ListChecks className="h-4 w-4 mr-1" /> Ver detalhes
-                        </Button>
-                      </div>
+                      <CardTitle>{plan.title}</CardTitle>
                       <CardDescription>{plan.description}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -233,11 +277,12 @@ export default function PatientPlans() {
                           {plan.exercises.map((exercise) => (
                             <div 
                               key={exercise.id} 
-                              className={`p-3 border rounded-md flex items-center justify-between ${
+                              className={`p-3 border rounded-md flex items-center justify-between cursor-pointer hover:bg-gray-50 ${
                                 exercise.completed ? "bg-green-50 border-green-200" : "bg-gray-50"
                               }`}
+                              onClick={() => handleExerciseClick(exercise)}
                             >
-                              <div>
+                              <div className="flex-1">
                                 <div className="flex items-center">
                                   {exercise.completed ? (
                                     <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
@@ -252,6 +297,9 @@ export default function PatientPlans() {
                                   <span>{exercise.duration}</span>
                                 </div>
                               </div>
+                              <Button variant="ghost" size="sm">
+                                <Eye className="h-4 w-4" />
+                              </Button>
                             </div>
                           ))}
                         </div>
@@ -288,6 +336,20 @@ export default function PatientPlans() {
           </Tabs>
         </CardContent>
       </Card>
+
+      <ExerciseDetailsDialog
+        exercise={selectedExercise}
+        open={showExerciseDialog}
+        onOpenChange={setShowExerciseDialog}
+        onMarkCompleted={(exerciseId) => {
+          const planId = activePlans.find(plan => 
+            plan.exercises.some(ex => ex.id === exerciseId)
+          )?.id;
+          if (planId) {
+            handleMarkCompleted(planId, exerciseId);
+          }
+        }}
+      />
     </div>
   );
 }

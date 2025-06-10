@@ -96,15 +96,15 @@ export default function PatientDashboard() {
           </Card>
         </Link>
         
-        <Link to="/paciente/prontuario" className="block">
+        <Link to="/paciente/evolucao" className="block">
           <Card className="hover:border-movebetter-primary transition-colors">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Prontuário</CardTitle>
+              <CardTitle className="text-sm font-medium">Evolução</CardTitle>
               <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{latestRecords.length}</div>
-              <p className="text-xs text-muted-foreground">Registros médicos</p>
+              <p className="text-xs text-muted-foreground">Registros de evolução</p>
             </CardContent>
           </Card>
         </Link>
@@ -170,9 +170,9 @@ export default function PatientDashboard() {
       
       <Card>
         <CardHeader>
-          <CardTitle>Prontuário Recente</CardTitle>
+          <CardTitle>Evoluções Recentes</CardTitle>
           <CardDescription>
-            Últimas atualizações no seu prontuário médico
+            Últimas atualizações na sua evolução médica
           </CardDescription>
         </CardHeader>
         <CardContent>

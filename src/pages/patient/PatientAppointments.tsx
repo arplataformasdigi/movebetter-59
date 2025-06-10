@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +25,7 @@ interface Appointment {
   type: string;
   professional: string;
   status: "scheduled" | "completed" | "canceled";
+  canceledAt?: Date;
 }
 
 export default function PatientAppointments() {
@@ -93,7 +95,11 @@ export default function PatientAppointments() {
     if (!selectedAppointment) return;
     
     setAppointments(appointments.map(app => 
-      app.id === selectedAppointment.id ? { ...app, status: "canceled" } : app
+      app.id === selectedAppointment.id ? { 
+        ...app, 
+        status: "canceled",
+        canceledAt: new Date()
+      } : app
     ));
     
     toast({
@@ -222,12 +228,17 @@ export default function PatientAppointments() {
                       key={appointment.id} 
                       className="flex justify-between items-center border rounded-md p-4 bg-gray-50"
                     >
-                      <div className="flex items-start gap-4">
+                      <div className="flex items-start gap-4 flex-1">
                         <div className="bg-red-100 p-2 rounded-md">
                           <X className="h-5 w-5 text-red-500" />
                         </div>
-                        <div>
-                          <h4 className="font-medium line-through">{appointment.type}</h4>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-medium line-through">{appointment.type}</h4>
+                            <Badge variant="destructive" className="text-xs">
+                              Cancelado
+                            </Badge>
+                          </div>
                           <p className="text-sm text-muted-foreground">
                             Com {appointment.professional}
                           </p>
@@ -237,6 +248,11 @@ export default function PatientAppointments() {
                             <Clock className="h-3.5 w-3.5 ml-2" />
                             <span>{appointment.time}</span>
                           </div>
+                          {appointment.canceledAt && (
+                            <div className="text-xs text-red-600 mt-1">
+                              Cancelado em: {format(appointment.canceledAt, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -276,8 +292,22 @@ export default function PatientAppointments() {
                   <div key={appointment.id} className="border-b pb-2 last:border-0 last:pb-0">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium">{appointment.type}</p>
+                        <div className="flex items-center gap-2">
+                          <p className={`font-medium ${appointment.status === 'canceled' ? 'line-through' : ''}`}>
+                            {appointment.type}
+                          </p>
+                          {appointment.status === 'canceled' && (
+                            <Badge variant="destructive" className="text-xs">
+                              Cancelado
+                            </Badge>
+                          )}
+                        </div>
                         <p className="text-sm text-muted-foreground">{appointment.time}</p>
+                        {appointment.status === 'canceled' && appointment.canceledAt && (
+                          <p className="text-xs text-red-600">
+                            Cancelado: {format(appointment.canceledAt, "HH:mm", { locale: ptBR })}
+                          </p>
+                        )}
                       </div>
                       {appointment.status === "scheduled" && (
                         <Button 
