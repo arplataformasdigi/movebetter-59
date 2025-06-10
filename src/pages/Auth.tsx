@@ -10,7 +10,7 @@ export default function Auth() {
         <Card className="border-none shadow-lg">
           <CardHeader className="space-y-1 text-center">
             <CardTitle className="text-2xl font-bold">Smart Home Care</CardTitle>
-            <CardDescription>Sistema de gestão para atendimento domiciliar</CardDescription>
+            <CardDescription>Gestão inteligente para atendimento domiciliar</CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="login" value={activeTab} onValueChange={value => setActiveTab(value as "login" | "register")}>
