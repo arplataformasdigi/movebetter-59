@@ -1,12 +1,5 @@
 
 import React, { useState } from "react";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -16,7 +9,6 @@ interface RankingUser {
   id: string;
   name: string;
   avatar?: string;
-  type: "pilates" | "runner";
   progress: number;
   position: number;
 }
@@ -26,7 +18,6 @@ const rankingData: RankingUser[] = [
     id: "1",
     name: "Carla Souza",
     avatar: "",
-    type: "pilates",
     progress: 85,
     position: 1,
   },
@@ -34,7 +25,6 @@ const rankingData: RankingUser[] = [
     id: "2",
     name: "Pedro Santos",
     avatar: "",
-    type: "runner",
     progress: 90,
     position: 2,
   },
@@ -42,7 +32,6 @@ const rankingData: RankingUser[] = [
     id: "3",
     name: "Ricardo Alves",
     avatar: "",
-    type: "runner",
     progress: 78,
     position: 3,
   },
@@ -50,7 +39,6 @@ const rankingData: RankingUser[] = [
     id: "4",
     name: "Mariana Costa",
     avatar: "",
-    type: "pilates",
     progress: 45,
     position: 4,
   },
@@ -58,7 +46,6 @@ const rankingData: RankingUser[] = [
     id: "5",
     name: "Carlos Oliveira",
     avatar: "",
-    type: "runner",
     progress: 75,
     position: 5,
   },
@@ -66,7 +53,6 @@ const rankingData: RankingUser[] = [
     id: "6",
     name: "Luiza Mendes",
     avatar: "",
-    type: "pilates",
     progress: 68,
     position: 6,
   },
@@ -74,7 +60,6 @@ const rankingData: RankingUser[] = [
     id: "7",
     name: "Bruno Cardoso",
     avatar: "",
-    type: "runner",
     progress: 60,
     position: 7,
   },
@@ -82,7 +67,6 @@ const rankingData: RankingUser[] = [
     id: "8",
     name: "Juliana Lima",
     avatar: "",
-    type: "pilates",
     progress: 42,
     position: 8,
   },
@@ -102,12 +86,10 @@ const getPositionColor = (position: number): string => {
 };
 
 export default function Ranking() {
-  const [filterType, setFilterType] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   
   const filteredRanking = rankingData
     .filter(user => 
-      (filterType === "all" || user.type === filterType) &&
       user.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
@@ -120,7 +102,7 @@ export default function Ranking() {
         </p>
       </div>
       
-      <div className="flex flex-col sm:flex-row justify-between gap-4">
+      <div className="flex justify-start">
         <div className="relative w-full sm:max-w-xs">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
           <Input
@@ -130,25 +112,13 @@ export default function Ranking() {
             className="pl-8"
           />
         </div>
-        
-        <Select value={filterType} onValueChange={setFilterType}>
-          <SelectTrigger className="w-full sm:w-40">
-            <SelectValue placeholder="Todos os tipos" />
-          </SelectTrigger>
-          <SelectContent className="bg-white">
-            <SelectItem value="all">Todos os tipos</SelectItem>
-            <SelectItem value="runner">Corredores</SelectItem>
-            <SelectItem value="pilates">Pilates</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
       
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="grid grid-cols-12 gap-2 p-4 font-medium text-sm text-gray-500 border-b">
           <div className="col-span-1 text-center">Posição</div>
-          <div className="col-span-5 md:col-span-5">Paciente</div>
-          <div className="col-span-2 text-center hidden md:block">Tipo</div>
-          <div className="col-span-6 md:col-span-4 text-center">Progresso</div>
+          <div className="col-span-7">Paciente</div>
+          <div className="col-span-4 text-center">Progresso</div>
         </div>
         
         {filteredRanking.map((user) => (
@@ -164,7 +134,7 @@ export default function Ranking() {
               </div>
             </div>
             
-            <div className="col-span-5 md:col-span-5 flex items-center space-x-3">
+            <div className="col-span-7 flex items-center space-x-3">
               <Avatar className="h-10 w-10">
                 <AvatarImage src={user.avatar} alt={user.name} />
                 <AvatarFallback className={`${
@@ -182,17 +152,7 @@ export default function Ranking() {
               <span className="font-medium">{user.name}</span>
             </div>
             
-            <div className="col-span-2 text-center hidden md:block">
-              <Badge className={
-                user.type === "runner" 
-                  ? "bg-blue-100 text-blue-800 border-blue-200" 
-                  : "bg-green-100 text-green-800 border-green-200"
-              }>
-                {user.type === "runner" ? "corredor" : "pilates"}
-              </Badge>
-            </div>
-            
-            <div className="col-span-6 md:col-span-4">
+            <div className="col-span-4">
               <div className="flex items-center mb-1 justify-between px-2">
                 <span className="text-xs text-gray-600">{user.progress}%</span>
               </div>

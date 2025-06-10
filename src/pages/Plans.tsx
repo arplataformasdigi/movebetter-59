@@ -1,26 +1,20 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Pencil, Trash, Eye } from "lucide-react";
+import { Plus, Pencil, Trash, Eye, Play, Pause } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { CreatePlanTypeDialog } from "@/components/plans/CreatePlanTypeDialog";
 
 interface Plan {
   id: string;
   title: string;
   patientName: string;
-  type: string;
+  status: "active" | "paused";
   duration: string;
   exercisesCount: number;
   progress: number;
-}
-
-interface PlanType {
-  id: string;
-  name: string;
-  description?: string;
 }
 
 const mockPlans: Plan[] = [
@@ -28,7 +22,7 @@ const mockPlans: Plan[] = [
     id: "1",
     title: "Reabilitação pós-lesão",
     patientName: "Carlos Oliveira",
-    type: "Corrida",
+    status: "active",
     duration: "8 semanas",
     exercisesCount: 12,
     progress: 25,
@@ -37,7 +31,7 @@ const mockPlans: Plan[] = [
     id: "2",
     title: "Fortalecimento Core",
     patientName: "Mariana Costa",
-    type: "Pilates",
+    status: "active",
     duration: "6 semanas",
     exercisesCount: 8,
     progress: 50,
@@ -46,7 +40,7 @@ const mockPlans: Plan[] = [
     id: "3",
     title: "Preparação Maratona",
     patientName: "Pedro Santos",
-    type: "Corrida",
+    status: "paused",
     duration: "12 semanas",
     exercisesCount: 20,
     progress: 75,
@@ -55,22 +49,47 @@ const mockPlans: Plan[] = [
     id: "4",
     title: "Postura e Equilíbrio",
     patientName: "Carla Souza",
-    type: "Pilates",
+    status: "active",
     duration: "8 semanas",
     exercisesCount: 15,
     progress: 60,
   },
 ];
 
-const PlanCard: React.FC<{ plan: Plan }> = ({ plan }) => {
+const PlanCard: React.FC<{ plan: Plan; onToggleStatus: (id: string) => void; onDelete: (id: string) => void }> = ({ plan, onToggleStatus, onDelete }) => {
+  const handleDelete = () => {
+    if (plan.progress > 0) {
+      alert("Não é possível excluir um plano com progresso iniciado.");
+      return;
+    }
+    const confirmed = window.confirm(`Tem certeza que deseja excluir o plano "${plan.title}"?`);
+    if (confirmed) {
+      onDelete(plan.id);
+    }
+  };
+
   return (
     <Card>
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <CardTitle className="text-lg">{plan.title}</CardTitle>
-          <Badge className={plan.type === "Corrida" ? "bg-blue-100 text-blue-800" : "bg-green-100 text-green-800"}>
-            {plan.type}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge className={plan.status === "active" ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"}>
+              {plan.status === "active" ? "Ativo" : "Pausado"}
+            </Badge>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onToggleStatus(plan.id)}
+              className="h-8 w-8 p-0"
+            >
+              {plan.status === "active" ? (
+                <Pause className="h-4 w-4 text-amber-600" />
+              ) : (
+                <Play className="h-4 w-4 text-green-600" />
+              )}
+            </Button>
+          </div>
         </div>
         <div className="text-sm text-gray-500">Paciente: {plan.patientName}</div>
       </CardHeader>
@@ -107,7 +126,12 @@ const PlanCard: React.FC<{ plan: Plan }> = ({ plan }) => {
             <Eye className="h-4 w-4 mr-1" /> Visualizar
           </Button>
         </div>
-        <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="text-red-600 border-red-200 hover:bg-red-50"
+          onClick={handleDelete}
+        >
           <Trash className="h-4 w-4 mr-1" /> Excluir
         </Button>
       </CardFooter>
@@ -117,14 +141,23 @@ const PlanCard: React.FC<{ plan: Plan }> = ({ plan }) => {
 
 export default function Plans() {
   const [searchTerm, setSearchTerm] = React.useState("");
-  const [planTypes, setPlanTypes] = React.useState<PlanType[]>([
-    { id: "1", name: "Pilates", description: "Exercícios de pilates" },
-    { id: "2", name: "Corrida", description: "Exercícios para corredores" },
-  ]);
+  const [plans, setPlans] = React.useState<Plan[]>(mockPlans);
 
-  const handleCreateType = (type: { id: string; name: string; description?: string }) => {
-    setPlanTypes([...planTypes, type]);
+  const handleToggleStatus = (planId: string) => {
+    setPlans(plans.map(plan => 
+      plan.id === planId 
+        ? { ...plan, status: plan.status === "active" ? "paused" : "active" as Plan["status"] }
+        : plan
+    ));
   };
+
+  const handleDeletePlan = (planId: string) => {
+    setPlans(plans.filter(plan => plan.id !== planId));
+  };
+
+  const filteredPlans = plans.filter(plan => 
+    plan.patientName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="space-y-6">
@@ -139,17 +172,21 @@ export default function Plans() {
       
       <div className="flex items-center justify-between space-x-2 mb-6">
         <Input
-          placeholder="Buscar planos..."
+          placeholder="Buscar por nome do paciente..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-sm"
         />
-        <CreatePlanTypeDialog onCreateType={handleCreateType} />
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {mockPlans.map((plan) => (
-          <PlanCard key={plan.id} plan={plan} />
+        {filteredPlans.map((plan) => (
+          <PlanCard 
+            key={plan.id} 
+            plan={plan} 
+            onToggleStatus={handleToggleStatus}
+            onDelete={handleDeletePlan}
+          />
         ))}
       </div>
     </div>

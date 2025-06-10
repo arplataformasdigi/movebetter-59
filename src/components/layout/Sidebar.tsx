@@ -10,7 +10,9 @@ import {
   User,
   Shield,
   CreditCard,
-  Smartphone
+  Smartphone,
+  Package,
+  DollarSign
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -36,6 +38,12 @@ const sidebarItems: SidebarItem[] = [
     roles: ["admin", "manager", "professional"],
   },
   {
+    title: "Pacotes",
+    icon: Package,
+    href: "/pacotes",
+    roles: ["admin", "manager", "professional"],
+  },
+  {
     title: "Aplicativo",
     icon: Smartphone,
     href: "/aplicativo",
@@ -51,6 +59,12 @@ const sidebarItems: SidebarItem[] = [
     title: "Calendário",
     icon: Calendar,
     href: "/calendario",
+    roles: ["admin", "manager", "professional"],
+  },
+  {
+    title: "Financeiro",
+    icon: DollarSign,
+    href: "/financeiro",
     roles: ["admin", "manager", "professional"],
   },
   {

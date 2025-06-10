@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -24,6 +23,8 @@ import AccountAccess from "./pages/AccountAccess";
 import PersonalData from "./pages/PersonalData";
 import Subscription from "./pages/Subscription";
 import AppPage from "./pages/App";
+import Packages from "./pages/Packages";
+import Financial from "./pages/Financial";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +52,12 @@ const App = () => (
               </ProtectedRoute>
             } />
 
+            <Route path="/pacotes" element={
+              <ProtectedRoute allowedRoles={["admin", "manager", "professional"]}>
+                <AppLayout><Packages /></AppLayout>
+              </ProtectedRoute>
+            } />
+
             <Route path="/aplicativo" element={
               <ProtectedRoute allowedRoles={["admin", "manager", "professional"]}>
                 <AppLayout><AppPage /></AppLayout>
@@ -72,6 +79,12 @@ const App = () => (
             <Route path="/calendario" element={
               <ProtectedRoute allowedRoles={["admin", "manager", "professional"]}>
                 <AppLayout><Calendar /></AppLayout>
+              </ProtectedRoute>
+            } />
+
+            <Route path="/financeiro" element={
+              <ProtectedRoute allowedRoles={["admin", "manager", "professional"]}>
+                <AppLayout><Financial /></AppLayout>
               </ProtectedRoute>
             } />
 
