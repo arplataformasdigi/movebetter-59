@@ -3,7 +3,10 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Pencil, Trash } from "lucide-react";
+import { Plus, Pencil, Trash, Eye } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { CreatePlanTypeDialog } from "@/components/plans/CreatePlanTypeDialog";
 
 interface Plan {
   id: string;
@@ -20,7 +23,7 @@ const mockPlans: Plan[] = [
     id: "1",
     title: "Reabilitação pós-lesão",
     patientName: "Carlos Oliveira",
-    type: "runner",
+    type: "Corrida",
     duration: "8 semanas",
     exercisesCount: 12,
     progress: 25,
@@ -29,7 +32,7 @@ const mockPlans: Plan[] = [
     id: "2",
     title: "Fortalecimento Core",
     patientName: "Mariana Costa",
-    type: "pilates",
+    type: "Pilates",
     duration: "6 semanas",
     exercisesCount: 8,
     progress: 50,
@@ -38,7 +41,7 @@ const mockPlans: Plan[] = [
     id: "3",
     title: "Preparação Maratona",
     patientName: "Pedro Santos",
-    type: "runner",
+    type: "Corrida",
     duration: "12 semanas",
     exercisesCount: 20,
     progress: 75,
@@ -47,7 +50,7 @@ const mockPlans: Plan[] = [
     id: "4",
     title: "Postura e Equilíbrio",
     patientName: "Carla Souza",
-    type: "pilates",
+    type: "Pilates",
     duration: "8 semanas",
     exercisesCount: 15,
     progress: 60,
@@ -60,8 +63,8 @@ const PlanCard: React.FC<{ plan: Plan }> = ({ plan }) => {
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <CardTitle className="text-lg">{plan.title}</CardTitle>
-          <Badge className={plan.type === "runner" ? "bg-blue-100 text-blue-800" : "bg-green-100 text-green-800"}>
-            {plan.type === "runner" ? "Corredor" : "Pilates"}
+          <Badge className={plan.type === "Corrida" ? "bg-blue-100 text-blue-800" : "bg-green-100 text-green-800"}>
+            {plan.type}
           </Badge>
         </div>
         <div className="text-sm text-gray-500">Paciente: {plan.patientName}</div>
@@ -91,9 +94,14 @@ const PlanCard: React.FC<{ plan: Plan }> = ({ plan }) => {
         </div>
       </CardContent>
       <CardFooter className="flex justify-between">
-        <Button variant="outline" size="sm">
-          <Pencil className="h-4 w-4 mr-1" /> Editar
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm">
+            <Pencil className="h-4 w-4 mr-1" /> Editar
+          </Button>
+          <Button variant="outline" size="sm">
+            <Eye className="h-4 w-4 mr-1" /> Visualizar
+          </Button>
+        </div>
         <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50">
           <Trash className="h-4 w-4 mr-1" /> Excluir
         </Button>
@@ -102,11 +110,16 @@ const PlanCard: React.FC<{ plan: Plan }> = ({ plan }) => {
   );
 };
 
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-
 export default function Plans() {
   const [searchTerm, setSearchTerm] = React.useState("");
+  const [planTypes, setPlanTypes] = React.useState([
+    { id: "1", name: "Pilates", description: "Exercícios de pilates" },
+    { id: "2", name: "Corrida", description: "Exercícios para corredores" },
+  ]);
+
+  const handleCreateType = (type: { id: string; name: string; description?: string }) => {
+    setPlanTypes([...planTypes, type]);
+  };
 
   return (
     <div className="space-y-6">
@@ -119,13 +132,14 @@ export default function Plans() {
         </Link>
       </div>
       
-      <div className="flex items-center space-x-2 mb-6">
+      <div className="flex items-center justify-between space-x-2 mb-6">
         <Input
           placeholder="Buscar planos..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-sm"
         />
+        <CreatePlanTypeDialog onCreateType={handleCreateType} />
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

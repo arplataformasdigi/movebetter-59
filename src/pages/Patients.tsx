@@ -19,9 +19,10 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Users, Power, PowerOff, Trash2 } from "lucide-react";
+import { Users, Power, PowerOff } from "lucide-react";
 import { AddPatientDialog } from "@/components/patients/AddPatientDialog";
 import { PatientDetails } from "@/components/patients/PatientDetails";
+import { DeletePatientDialog } from "@/components/patients/DeletePatientDialog";
 
 interface MedicalRecord {
   id: string;
@@ -57,9 +58,7 @@ interface Patient {
   avatar?: string;
   email: string;
   phone: string;
-  progress: number;
-  points: number;
-  status: "active" | "inactive" | "onhold";
+  status: "active" | "inactive";
   medicalRecords?: MedicalRecord[];
   evolutions?: Evolution[];
 }
@@ -71,8 +70,6 @@ const initialPatients: Patient[] = [
     avatar: "",
     email: "marina.o@email.com",
     phone: "(11) 98765-4321",
-    progress: 78,
-    points: 1280,
     status: "active",
     medicalRecords: [],
     evolutions: [],
@@ -83,8 +80,6 @@ const initialPatients: Patient[] = [
     avatar: "",
     email: "felipe.m@email.com",
     phone: "(11) 97654-3210",
-    progress: 45,
-    points: 870,
     status: "active",
     medicalRecords: [],
     evolutions: [],
@@ -95,8 +90,6 @@ const initialPatients: Patient[] = [
     avatar: "",
     email: "carla.s@email.com",
     phone: "(11) 96543-2109",
-    progress: 92,
-    points: 2140,
     status: "active",
     medicalRecords: [],
     evolutions: [],
@@ -107,8 +100,6 @@ const initialPatients: Patient[] = [
     avatar: "",
     email: "ricardo.a@email.com",
     phone: "(11) 95432-1098",
-    progress: 35,
-    points: 560,
     status: "inactive",
     medicalRecords: [],
     evolutions: [],
@@ -119,9 +110,7 @@ const initialPatients: Patient[] = [
     avatar: "",
     email: "patricia.m@email.com",
     phone: "(11) 94321-0987",
-    progress: 65,
-    points: 1430,
-    status: "onhold",
+    status: "active",
     medicalRecords: [],
     evolutions: [],
   },
@@ -131,8 +120,6 @@ const initialPatients: Patient[] = [
     avatar: "",
     email: "gustavo.t@email.com",
     phone: "(11) 93210-9876",
-    progress: 28,
-    points: 310,
     status: "active",
     medicalRecords: [],
     evolutions: [],
@@ -150,11 +137,6 @@ const getStatusDetails = (status: Patient["status"]) => {
       return { 
         label: "Inativo", 
         color: "bg-red-100 text-red-800 border-red-200" 
-      };
-    case "onhold":
-      return { 
-        label: "Em espera", 
-        color: "bg-amber-100 text-amber-800 border-amber-200" 
       };
     default:
       return { 
@@ -233,8 +215,6 @@ export function Patients() {
               <TableRow>
                 <TableHead>Nome</TableHead>
                 <TableHead>Contato</TableHead>
-                <TableHead>Progresso</TableHead>
-                <TableHead>Pontos</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -263,20 +243,6 @@ export function Patients() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <div className="h-2 w-16 bg-gray-200 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-movebetter-primary rounded-full" 
-                            style={{ width: `${patient.progress}%` }}
-                          ></div>
-                        </div>
-                        <span className="text-xs font-medium">{patient.progress}%</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium">{patient.points}</div>
-                    </TableCell>
-                    <TableCell>
                       <Badge variant="outline" className={status.color}>
                         {status.label}
                       </Badge>
@@ -295,14 +261,10 @@ export function Patients() {
                             <Power className="h-4 w-4 text-green-600" />
                           )}
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeletePatient(patient.id)}
-                          className="h-8 w-8 p-0"
-                        >
-                          <Trash2 className="h-4 w-4 text-red-600" />
-                        </Button>
+                        <DeletePatientDialog 
+                          patientName={patient.name}
+                          onConfirm={() => handleDeletePatient(patient.id)}
+                        />
                         <PatientDetails 
                           patient={patient}
                           onUpdatePatient={handleUpdatePatient}

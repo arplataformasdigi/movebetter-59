@@ -17,7 +17,6 @@ interface RankingUser {
   name: string;
   avatar?: string;
   type: "pilates" | "runner";
-  points: number;
   progress: number;
   position: number;
 }
@@ -28,7 +27,6 @@ const rankingData: RankingUser[] = [
     name: "Carla Souza",
     avatar: "",
     type: "pilates",
-    points: 845,
     progress: 85,
     position: 1,
   },
@@ -37,7 +35,6 @@ const rankingData: RankingUser[] = [
     name: "Pedro Santos",
     avatar: "",
     type: "runner",
-    points: 820,
     progress: 90,
     position: 2,
   },
@@ -46,7 +43,6 @@ const rankingData: RankingUser[] = [
     name: "Ricardo Alves",
     avatar: "",
     type: "runner",
-    points: 736,
     progress: 78,
     position: 3,
   },
@@ -55,7 +51,6 @@ const rankingData: RankingUser[] = [
     name: "Mariana Costa",
     avatar: "",
     type: "pilates",
-    points: 692,
     progress: 45,
     position: 4,
   },
@@ -64,7 +59,6 @@ const rankingData: RankingUser[] = [
     name: "Carlos Oliveira",
     avatar: "",
     type: "runner",
-    points: 654,
     progress: 75,
     position: 5,
   },
@@ -73,7 +67,6 @@ const rankingData: RankingUser[] = [
     name: "Luiza Mendes",
     avatar: "",
     type: "pilates",
-    points: 610,
     progress: 68,
     position: 6,
   },
@@ -82,7 +75,6 @@ const rankingData: RankingUser[] = [
     name: "Bruno Cardoso",
     avatar: "",
     type: "runner",
-    points: 585,
     progress: 60,
     position: 7,
   },
@@ -91,7 +83,6 @@ const rankingData: RankingUser[] = [
     name: "Juliana Lima",
     avatar: "",
     type: "pilates",
-    points: 532,
     progress: 42,
     position: 8,
   },
@@ -125,7 +116,7 @@ export default function Ranking() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Ranking de Pacientes</h1>
         <p className="text-gray-500 mt-1">
-          Veja os pacientes mais engajados e seus pontos de gamificação
+          Veja os pacientes mais engajados e seu progresso nos planos
         </p>
       </div>
       
@@ -155,10 +146,9 @@ export default function Ranking() {
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="grid grid-cols-12 gap-2 p-4 font-medium text-sm text-gray-500 border-b">
           <div className="col-span-1 text-center">Posição</div>
-          <div className="col-span-5 md:col-span-4">Paciente</div>
+          <div className="col-span-5 md:col-span-5">Paciente</div>
           <div className="col-span-2 text-center hidden md:block">Tipo</div>
-          <div className="col-span-2 text-center">Pontos</div>
-          <div className="col-span-4 md:col-span-3 text-center">Progresso</div>
+          <div className="col-span-6 md:col-span-4 text-center">Progresso</div>
         </div>
         
         {filteredRanking.map((user) => (
@@ -174,7 +164,7 @@ export default function Ranking() {
               </div>
             </div>
             
-            <div className="col-span-5 md:col-span-4 flex items-center space-x-3">
+            <div className="col-span-5 md:col-span-5 flex items-center space-x-3">
               <Avatar className="h-10 w-10">
                 <AvatarImage src={user.avatar} alt={user.name} />
                 <AvatarFallback className={`${
@@ -202,11 +192,7 @@ export default function Ranking() {
               </Badge>
             </div>
             
-            <div className="col-span-2 font-bold text-center text-movebetter-secondary">
-              {user.points}
-            </div>
-            
-            <div className="col-span-4 md:col-span-3">
+            <div className="col-span-6 md:col-span-4">
               <div className="flex items-center mb-1 justify-between px-2">
                 <span className="text-xs text-gray-600">{user.progress}%</span>
               </div>

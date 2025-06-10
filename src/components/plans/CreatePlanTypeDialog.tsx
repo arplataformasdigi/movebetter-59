@@ -22,45 +22,40 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
 const formSchema = z.object({
-  name: z.string().min(3, { message: "Nome deve ter pelo menos 3 caracteres" }),
-  email: z.string().email({ message: "E-mail inválido" }),
-  phone: z.string().min(10, { message: "Telefone deve ter pelo menos 10 dígitos" }),
+  name: z.string().min(2, { message: "Nome deve ter pelo menos 2 caracteres" }),
+  description: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
-interface AddPatientDialogProps {
-  onAddPatient: (patient: any) => void;
+interface CreatePlanTypeDialogProps {
+  onCreateType: (type: { id: string; name: string; description?: string }) => void;
 }
 
-export function AddPatientDialog({ onAddPatient }: AddPatientDialogProps) {
+export function CreatePlanTypeDialog({ onCreateType }: CreatePlanTypeDialogProps) {
   const [open, setOpen] = React.useState(false);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      email: "",
-      phone: "",
+      description: "",
     },
   });
 
   function onSubmit(values: FormValues) {
-    const newPatient = {
-      id: `p-${Date.now()}`,
+    const newType = {
+      id: `type-${Date.now()}`,
       name: values.name,
-      email: values.email,
-      phone: values.phone,
-      avatar: "",
-      status: "active",
-      medicalRecords: [],
+      description: values.description,
     };
     
-    onAddPatient(newPatient);
-    toast.success("Paciente adicionado com sucesso");
+    onCreateType(newType);
+    toast.success("Tipo criado com sucesso");
     form.reset();
     setOpen(false);
   }
@@ -68,15 +63,16 @@ export function AddPatientDialog({ onAddPatient }: AddPatientDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-movebetter-primary hover:bg-movebetter-primary/90">
-          Adicionar Paciente
+        <Button variant="outline" size="sm">
+          <Plus className="h-4 w-4 mr-1" />
+          Novo Tipo
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[525px]">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Adicionar Novo Paciente</DialogTitle>
+          <DialogTitle>Criar Novo Tipo</DialogTitle>
           <DialogDescription>
-            Preencha as informações do paciente abaixo.
+            Adicione um novo tipo de atividade para os planos.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -86,9 +82,9 @@ export function AddPatientDialog({ onAddPatient }: AddPatientDialogProps) {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome Completo</FormLabel>
+                  <FormLabel>Nome do Tipo</FormLabel>
                   <FormControl>
-                    <Input placeholder="Nome do paciente" {...field} />
+                    <Input placeholder="Ex: Pilates, Corrida, Yoga..." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -96,32 +92,19 @@ export function AddPatientDialog({ onAddPatient }: AddPatientDialogProps) {
             />
             <FormField
               control={form.control}
-              name="email"
+              name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>E-mail</FormLabel>
+                  <FormLabel>Descrição (opcional)</FormLabel>
                   <FormControl>
-                    <Input placeholder="email@exemplo.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Telefone</FormLabel>
-                  <FormControl>
-                    <Input placeholder="(00) 00000-0000" {...field} />
+                    <Input placeholder="Descrição do tipo de atividade" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
             <DialogFooter>
-              <Button type="submit">Adicionar</Button>
+              <Button type="submit">Criar</Button>
             </DialogFooter>
           </form>
         </Form>

@@ -34,7 +34,7 @@ const formSchema = z.object({
   email: z.string().email({ message: "E-mail inválido" }),
   crefito: z.string().optional(),
   cpf: z.string().min(11, { message: "CPF inválido" }).optional(),
-  phone: z.string().min(10, { message: "Telefone inválido" }).optional(),
+  conselho: z.string().optional(),
   whatsapp: z.string().min(10, { message: "WhatsApp inválido" }).optional(),
   cep: z.string().min(8, { message: "CEP inválido" }).max(9),
   street: z.string(),
@@ -48,6 +48,7 @@ export default function PersonalData() {
   const { toast } = useToast();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [cpfSaved, setCpfSaved] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -56,7 +57,7 @@ export default function PersonalData() {
       email: user?.email || "",
       crefito: user?.crefito || "",
       cpf: "",
-      phone: "",
+      conselho: "",
       whatsapp: "",
       cep: "",
       street: "",
@@ -66,6 +67,13 @@ export default function PersonalData() {
       state: "",
     },
   });
+
+  // Simular CPF já salvo
+  useEffect(() => {
+    if (form.getValues("cpf")) {
+      setCpfSaved(true);
+    }
+  }, []);
 
   const fetchAddressByCep = async (cep: string) => {
     if (cep.length >= 8) {
@@ -105,6 +113,14 @@ export default function PersonalData() {
     form.setValue("cep", cep);
     if (cep.length >= 8) {
       await fetchAddressByCep(cep);
+    }
+  };
+
+  const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const cpf = e.target.value;
+    form.setValue("cpf", cpf);
+    if (cpf && !cpfSaved) {
+      setCpfSaved(true);
     }
   };
 
@@ -172,6 +188,44 @@ export default function PersonalData() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="cpf"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>CPF</FormLabel>
+                      <FormControl>
+                        <Input 
+                          {...field} 
+                          placeholder="000.000.000-00" 
+                          disabled={cpfSaved}
+                          onChange={handleCpfChange}
+                        />
+                      </FormControl>
+                      {cpfSaved && (
+                        <FormDescription>O CPF não pode ser alterado após ser salvo</FormDescription>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {user?.role === "professional" && (
+                  <FormField
+                    control={form.control}
+                    name="conselho"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Número do Conselho</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Ex: CREFITO-3 123456-F" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
                 {user?.role === "professional" && (
                   <FormField
                     control={form.control}
@@ -187,37 +241,9 @@ export default function PersonalData() {
                     )}
                   />
                 )}
-
-                <FormField
-                  control={form.control}
-                  name="cpf"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>CPF</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="000.000.000-00" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Telefone</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="(00) 0000-0000" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
+              <div className="grid grid-cols-1 gap-4">
                 <FormField
                   control={form.control}
                   name="whatsapp"

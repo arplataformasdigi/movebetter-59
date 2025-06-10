@@ -56,9 +56,7 @@ interface Patient {
   avatar?: string;
   email: string;
   phone: string;
-  progress: number;
-  points: number;
-  status: "active" | "inactive" | "onhold";
+  status: "active" | "inactive";
   medicalRecords?: MedicalRecord[];
   preEvaluations?: PreEvaluation[];
   evolutions?: Evolution[];
@@ -84,11 +82,6 @@ export function PatientDetails({ patient, onUpdatePatient }: PatientDetailsProps
           label: "Inativo", 
           color: "bg-red-100 text-red-800 border-red-200" 
         };
-      case "onhold":
-        return { 
-          label: "Em espera", 
-          color: "bg-amber-100 text-amber-800 border-amber-200" 
-        };
       default:
         return { 
           label: "Desconhecido", 
@@ -101,8 +94,6 @@ export function PatientDetails({ patient, onUpdatePatient }: PatientDetailsProps
     const updatedPatient = {
       ...patient,
       medicalRecords: [...(patient.medicalRecords || []), record],
-      progress: Math.min(patient.progress + 5, 100),
-      points: patient.points + 50,
     };
     onUpdatePatient(updatedPatient);
   };
@@ -111,8 +102,6 @@ export function PatientDetails({ patient, onUpdatePatient }: PatientDetailsProps
     const updatedPatient = {
       ...patient,
       preEvaluations: [...(patient.preEvaluations || []), evaluation],
-      progress: Math.min(patient.progress + 10, 100),
-      points: patient.points + 100,
     };
     onUpdatePatient(updatedPatient);
   };
@@ -121,8 +110,6 @@ export function PatientDetails({ patient, onUpdatePatient }: PatientDetailsProps
     const updatedPatient = {
       ...patient,
       evolutions: [...(patient.evolutions || []), evolution],
-      progress: Math.min(patient.progress + 5, 100),
-      points: patient.points + 50,
     };
     onUpdatePatient(updatedPatient);
   };
@@ -173,8 +160,8 @@ export function PatientDetails({ patient, onUpdatePatient }: PatientDetailsProps
             <div>
               <h2 className="text-2xl font-bold">{patient.name}</h2>
               <div className="flex items-center space-x-2 mt-1">
-                <Badge variant="outline" className={getStatusDetails(patient.status).color}>
-                  {getStatusDetails(patient.status).label}
+                <Badge variant="outline" className={status.color}>
+                  {status.label}
                 </Badge>
               </div>
             </div>
@@ -188,22 +175,6 @@ export function PatientDetails({ patient, onUpdatePatient }: PatientDetailsProps
             <div>
               <h4 className="text-sm font-medium text-gray-500">Telefone</h4>
               <p>{patient.phone}</p>
-            </div>
-            <div>
-              <h4 className="text-sm font-medium text-gray-500">Progresso</h4>
-              <div className="flex items-center space-x-2">
-                <div className="h-2 w-24 bg-gray-200 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-movebetter-primary rounded-full" 
-                    style={{ width: `${patient.progress}%` }}
-                  ></div>
-                </div>
-                <span className="text-xs font-medium">{patient.progress}%</span>
-              </div>
-            </div>
-            <div>
-              <h4 className="text-sm font-medium text-gray-500">Pontos</h4>
-              <p>{patient.points}</p>
             </div>
           </div>
 
