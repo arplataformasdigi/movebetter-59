@@ -37,8 +37,6 @@ export function UserNav() {
             </p>
             <p className="text-xs leading-none text-muted-foreground mt-1">
               {user?.role === "admin" && "Administrador"}
-              {user?.role === "manager" && "Gestor"}
-              {user?.role === "professional" && "Profissional"}
               {user?.role === "patient" && "Paciente"}
             </p>
           </div>
@@ -47,7 +45,7 @@ export function UserNav() {
         <DropdownMenuItem asChild>
           <Link to="/perfil">Perfil</Link>
         </DropdownMenuItem>
-        {(user?.role === "admin" || user?.role === "manager") && (
+        {user?.role === "admin" && (
           <DropdownMenuItem asChild>
             <Link to="/usuarios">Gerenciar Usuários</Link>
           </DropdownMenuItem>

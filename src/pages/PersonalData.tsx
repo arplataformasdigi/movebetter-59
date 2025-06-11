@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -210,7 +209,7 @@ export default function PersonalData() {
                   )}
                 />
 
-                {user?.role === "professional" && (
+                {user?.role === "admin" && (
                   <FormField
                     control={form.control}
                     name="conselho"
@@ -226,7 +225,7 @@ export default function PersonalData() {
                   />
                 )}
 
-                {user?.role === "professional" && (
+                {user?.role === "admin" && (
                   <FormField
                     control={form.control}
                     name="crefito"
