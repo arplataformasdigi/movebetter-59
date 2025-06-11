@@ -110,6 +110,17 @@ export default function Packages() {
   const [deletePackage, setDeletePackage] = useState<{ id: string; name: string } | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
 
+  const getPackageStats = (packageId: string) => {
+    const packageSales = soldPackages.filter(sp => sp.packageId === packageId);
+    const soldCount = packageSales.length;
+    const revenue = packageSales.reduce((sum, sp) => sum + sp.finalPrice, 0);
+    
+    return {
+      soldCount,
+      revenue
+    };
+  };
+
   const handleCreatePackage = (newPackage: Package) => {
     setPackages([...packages, newPackage]);
     toast.success("Pacote criado com sucesso!");
