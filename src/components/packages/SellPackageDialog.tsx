@@ -49,15 +49,20 @@ interface SoldPackage {
   finalPrice: number;
   purchaseDate: string;
   expiryDate: string;
-  usedCredits: number;
-  totalCredits: number;
   status: "active" | "expired";
+}
+
+interface CreditCardRate {
+  id: string;
+  name: string;
+  rate: number;
 }
 
 interface SellPackageDialogProps {
   packages: Package[];
   onSellPackage: (soldPackage: SoldPackage | any) => void;
   isProposal?: boolean;
+  creditCardRates?: CreditCardRate[];
 }
 
 // Mock data for patients
@@ -69,7 +74,7 @@ const mockPatients: Patient[] = [
   { id: "5", name: "Carla Souza" },
 ];
 
-export function SellPackageDialog({ packages, onSellPackage, isProposal = false }: SellPackageDialogProps) {
+export function SellPackageDialog({ packages, onSellPackage, isProposal = false, creditCardRates = [] }: SellPackageDialogProps) {
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     packageId: "",
@@ -82,7 +87,28 @@ export function SellPackageDialog({ packages, onSellPackage, isProposal = false 
   });
 
   const selectedPackage = packages.find(pkg => pkg.id === formData.packageId);
-  const finalPrice = selectedPackage ? selectedPackage.price + formData.transportCost + formData.otherCosts : 0;
+  
+  // Calcular taxa de cartão de crédito
+  const getCreditCardRate = (installments: number) => {
+    const rate = creditCardRates.find(r => r.name === `${installments}x`);
+    return rate ? rate.rate : 0;
+  };
+
+  const calculateFinalPrice = () => {
+    if (!selectedPackage) return 0;
+    
+    const basePrice = selectedPackage.price + formData.transportCost + formData.otherCosts;
+    
+    if (formData.paymentMethod === "credit" && formData.installments > 1) {
+      const rate = getCreditCardRate(formData.installments);
+      const taxAmount = (basePrice * rate) / 100;
+      return basePrice + taxAmount;
+    }
+    
+    return basePrice;
+  };
+
+  const finalPrice = calculateFinalPrice();
   const showInstallments = formData.paymentMethod === "credit";
   const showOtherCostsNote = formData.otherCosts > 0;
 
@@ -108,8 +134,6 @@ export function SellPackageDialog({ packages, onSellPackage, isProposal = false 
       finalPrice,
       purchaseDate: new Date().toLocaleDateString("pt-BR"),
       expiryDate: new Date(Date.now() + (selectedPackage?.validity || 1) * 30 * 24 * 60 * 60 * 1000).toLocaleDateString("pt-BR"),
-      usedCredits: 0,
-      totalCredits: selectedPackage?.services.length || 0,
       status: "active",
     };
 
@@ -263,11 +287,17 @@ export function SellPackageDialog({ packages, onSellPackage, isProposal = false 
                   <span>R$ {formData.otherCosts.toFixed(2)}</span>
                 </div>
               )}
+              {formData.paymentMethod === "credit" && formData.installments > 1 && (
+                <div className="flex justify-between text-sm">
+                  <span>Taxa do cartão ({getCreditCardRate(formData.installments)}%):</span>
+                  <span>R$ {(((selectedPackage.price + formData.transportCost + formData.otherCosts) * getCreditCardRate(formData.installments)) / 100).toFixed(2)}</span>
+                </div>
+              )}
               <div className="flex justify-between font-medium">
                 <span>Valor final:</span>
                 <span>R$ {finalPrice.toFixed(2)}</span>
               </div>
-              {showInstallments && (
+              {showInstallments && formData.installments > 1 && (
                 <div className="flex justify-between text-sm">
                   <span>Valor por parcela:</span>
                   <span>R$ {(finalPrice / formData.installments).toFixed(2)}</span>

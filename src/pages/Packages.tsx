@@ -6,7 +6,6 @@ import { Plus, Pencil, Trash, Package, Edit, UserX, Settings } from "lucide-reac
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { CreatePackageDialog } from "@/components/packages/CreatePackageDialog";
 import { EditPackageDialog } from "@/components/packages/EditPackageDialog";
@@ -38,8 +37,6 @@ interface SoldPackage {
   finalPrice: number;
   purchaseDate: string;
   expiryDate: string;
-  usedCredits: number;
-  totalCredits: number;
   status: "active" | "expired" | "inactive";
 }
 
@@ -57,7 +54,12 @@ interface Proposal {
   finalPrice: number;
   createdDate: string;
   expiryDate: string;
-  totalCredits: number;
+}
+
+interface CreditCardRate {
+  id: string;
+  name: string;
+  rate: number; // porcentagem
 }
 
 const mockPackages: Package[] = [
@@ -96,8 +98,6 @@ const mockSoldPackages: SoldPackage[] = [
     finalPrice: 730.00,
     purchaseDate: "14/05/2024",
     expiryDate: "14/08/2024",
-    usedCredits: 3,
-    totalCredits: 10,
     status: "active",
   },
   {
@@ -114,8 +114,6 @@ const mockSoldPackages: SoldPackage[] = [
     finalPrice: 505.00,
     purchaseDate: "19/05/2024",
     expiryDate: "19/06/2024",
-    usedCredits: 0,
-    totalCredits: 7,
     status: "expired",
   },
 ];
@@ -124,12 +122,13 @@ export default function Packages() {
   const [packages, setPackages] = useState<Package[]>(mockPackages);
   const [soldPackages, setSoldPackages] = useState<SoldPackage[]>(mockSoldPackages);
   const [proposals, setProposals] = useState<Proposal[]>([]);
+  const [creditCardRates, setCreditCardRates] = useState<CreditCardRate[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [editingPackage, setEditingPackage] = useState<Package | null>(null);
   const [deletePackage, setDeletePackage] = useState<{ id: string; name: string } | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [allowPatientMarkAsCompleted, setAllowPatientMarkAsCompleted] = useState(true);
+  const [newRate, setNewRate] = useState({ name: "", rate: 0 });
 
   const getPackageStats = (packageId: string) => {
     const packageSales = soldPackages.filter(sp => sp.packageId === packageId);
@@ -156,10 +155,6 @@ export default function Packages() {
     setPackages(packages.filter(pkg => pkg.id !== packageId));
     setDeletePackage(null);
     toast.success("Pacote excluído com sucesso!");
-  };
-
-  const handleSellPackage = (soldPackage: SoldPackage) => {
-    setSoldPackages([...soldPackages, soldPackage]);
   };
 
   const handleCreateProposal = (proposalData: any) => {
@@ -189,8 +184,6 @@ export default function Packages() {
         finalPrice: proposal.finalPrice,
         purchaseDate: new Date().toLocaleDateString("pt-BR"),
         expiryDate: proposal.expiryDate,
-        usedCredits: 0,
-        totalCredits: proposal.totalCredits,
         status: "active",
       };
       
@@ -219,9 +212,26 @@ export default function Packages() {
     toast.success("Status do pacote atualizado!");
   };
 
-  const handleAuthorizationSettings = (checked: boolean) => {
-    setAllowPatientMarkAsCompleted(checked);
-    toast.success("Configurações de autorização atualizadas!");
+  const handleAddCreditCardRate = () => {
+    if (!newRate.name || newRate.rate <= 0) {
+      toast.error("Preencha todos os campos corretamente");
+      return;
+    }
+
+    const rate: CreditCardRate = {
+      id: Date.now().toString(),
+      name: newRate.name,
+      rate: newRate.rate,
+    };
+
+    setCreditCardRates([...creditCardRates, rate]);
+    setNewRate({ name: "", rate: 0 });
+    toast.success("Taxa adicionada com sucesso!");
+  };
+
+  const handleDeleteCreditCardRate = (rateId: string) => {
+    setCreditCardRates(creditCardRates.filter(rate => rate.id !== rateId));
+    toast.success("Taxa excluída com sucesso!");
   };
 
   const filteredPackages = packages.filter(pkg => 
@@ -257,34 +267,10 @@ export default function Packages() {
         </div>
       </div>
 
-      {/* Configurações de Autorização */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Settings className="mr-2 h-5 w-5" />
-            Configurações de Autorização
-          </CardTitle>
-          <CardDescription>
-            Configure as permissões dos pacientes para interagir com os planos
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="allow-mark-completed"
-              checked={allowPatientMarkAsCompleted}
-              onCheckedChange={handleAuthorizationSettings}
-            />
-            <Label htmlFor="allow-mark-completed">
-              Permitir que pacientes marquem exercícios como concluídos
-            </Label>
-          </div>
-        </CardContent>
-      </Card>
-
       <Tabs defaultValue="configuration" className="w-full">
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="configuration">Configuração de Pacotes</TabsTrigger>
+          <TabsTrigger value="rates">Configuração de Taxas</TabsTrigger>
           <TabsTrigger value="proposals">Gerador de Proposta</TabsTrigger>
           <TabsTrigger value="sold">Pacotes Vendidos</TabsTrigger>
           <TabsTrigger value="reports">Relatórios</TabsTrigger>
@@ -376,6 +362,66 @@ export default function Packages() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="rates" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Configuração de Taxas de Cartão</CardTitle>
+              <CardDescription>Configure as taxas de cartão de crédito por quantidade de parcelas</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="rateName">Nome da Taxa</Label>
+                    <Input
+                      id="rateName"
+                      value={newRate.name}
+                      onChange={(e) => setNewRate(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="Ex: 1x, 2x, 3x..."
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="ratePercentage">Taxa (%)</Label>
+                    <Input
+                      id="ratePercentage"
+                      type="number"
+                      step="0.01"
+                      value={newRate.rate}
+                      onChange={(e) => setNewRate(prev => ({ ...prev, rate: parseFloat(e.target.value) || 0 }))}
+                      placeholder="Ex: 2.99"
+                    />
+                  </div>
+                </div>
+                <Button onClick={handleAddCreditCardRate}>
+                  <Plus className="mr-2 h-4 w-4" /> Adicionar Taxa
+                </Button>
+              </div>
+
+              <div className="mt-6">
+                <h3 className="text-lg font-medium mb-4">Taxas Cadastradas</h3>
+                <div className="space-y-2">
+                  {creditCardRates.map((rate) => (
+                    <div key={rate.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <span className="font-medium">{rate.name}</span>
+                        <span className="ml-2 text-muted-foreground">{rate.rate}%</span>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700"
+                        onClick={() => handleDeleteCreditCardRate(rate.id)}
+                      >
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="proposals" className="space-y-6">
           <Card>
             <CardHeader>
@@ -388,6 +434,7 @@ export default function Packages() {
                   packages={packages} 
                   onSellPackage={handleCreateProposal}
                   isProposal={true}
+                  creditCardRates={creditCardRates}
                 />
               </div>
             </CardHeader>
@@ -396,7 +443,7 @@ export default function Packages() {
                 {proposals.map((proposal) => (
                   <Card key={proposal.id}>
                     <CardContent className="pt-6">
-                      <div className="grid grid-cols-1 md:grid-cols-7 gap-4 items-center">
+                      <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-center">
                         <div>
                           <p className="font-medium">{proposal.patientName}</p>
                         </div>
@@ -420,9 +467,6 @@ export default function Packages() {
                         <div>
                           <p className="text-sm">Criada: {proposal.createdDate}</p>
                           <p className="text-sm">Vencimento: {proposal.expiryDate}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm">Créditos: {proposal.totalCredits}</p>
                         </div>
                         <div className="flex gap-1">
                           <Button
@@ -459,7 +503,6 @@ export default function Packages() {
                   <CardTitle>Pacotes Vendidos</CardTitle>
                   <CardDescription>Gerencie pacotes vendidos aos pacientes</CardDescription>
                 </div>
-                <SellPackageDialog packages={packages} onSellPackage={handleSellPackage} />
               </div>
             </CardHeader>
             <CardContent>
@@ -472,7 +515,7 @@ export default function Packages() {
                 {soldPackages.map((soldPkg) => (
                   <Card key={soldPkg.id}>
                     <CardContent className="pt-6">
-                      <div className="grid grid-cols-1 md:grid-cols-8 gap-4 items-center">
+                      <div className="grid grid-cols-1 md:grid-cols-7 gap-4 items-center">
                         <div>
                           <p className="font-medium">{soldPkg.patientName}</p>
                         </div>
@@ -496,17 +539,6 @@ export default function Packages() {
                         <div>
                           <p className="text-sm">Compra: {soldPkg.purchaseDate}</p>
                           <p className="text-sm">Vencimento: {soldPkg.expiryDate}</p>
-                        </div>
-                        <div>
-                          <div className="flex items-center space-x-2">
-                            <div className="text-sm">{soldPkg.usedCredits}/{soldPkg.totalCredits}</div>
-                            <div className="w-16 h-2 bg-gray-200 rounded-full">
-                              <div 
-                                className="h-full bg-blue-500 rounded-full" 
-                                style={{ width: `${(soldPkg.usedCredits / soldPkg.totalCredits) * 100}%` }}
-                              />
-                            </div>
-                          </div>
                         </div>
                         <div>
                           <Badge className={
