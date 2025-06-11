@@ -21,7 +21,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Users, MoreHorizontal, UserPlus, Search } from "lucide-react";
+import { Users as UsersIcon, MoreHorizontal, UserPlus, Search } from "lucide-react";
 import { UserRole } from "@/contexts/AuthContext";
 
 interface User {
@@ -159,7 +159,7 @@ export default function Users() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center">
-            <Users className="mr-2 h-8 w-8" /> Usuários
+            <UsersIcon className="mr-2 h-8 w-8" /> Usuários
           </h1>
           <p className="text-muted-foreground">
             Gerencie usuários, perfis e permissões do sistema.
