@@ -328,18 +328,3 @@ export function Patients() {
 }
 
 export default Patients;
-
-export function AssignPackageDialog({ patientId, patientName, packages, onAssignPackage }: any) {
-  return (
-    <div className="flex items-center gap-2 justify-end">
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => onAssignPackage({ patientId, patientName, packageId: packages[0].id })}
-        className="h-8 w-8 p-0"
-      >
-        <Power className="h-4 w-4 text-green-600" />
-      </Button>
-    </div>
-  );
-}
