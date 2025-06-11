@@ -56,7 +56,8 @@ interface SoldPackage {
 
 interface SellPackageDialogProps {
   packages: Package[];
-  onSellPackage: (soldPackage: SoldPackage) => void;
+  onSellPackage: (soldPackage: SoldPackage | any) => void;
+  isProposal?: boolean;
 }
 
 // Mock data for patients
@@ -68,7 +69,7 @@ const mockPatients: Patient[] = [
   { id: "5", name: "Carla Souza" },
 ];
 
-export function SellPackageDialog({ packages, onSellPackage }: SellPackageDialogProps) {
+export function SellPackageDialog({ packages, onSellPackage, isProposal = false }: SellPackageDialogProps) {
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     packageId: "",
@@ -93,7 +94,7 @@ export function SellPackageDialog({ packages, onSellPackage }: SellPackageDialog
       return;
     }
 
-    const soldPackage: SoldPackage = {
+    const packageData = {
       id: Date.now().toString(),
       packageId: formData.packageId,
       packageName: selectedPackage?.name || "",
@@ -112,8 +113,8 @@ export function SellPackageDialog({ packages, onSellPackage }: SellPackageDialog
       status: "active",
     };
 
-    onSellPackage(soldPackage);
-    toast.success("Pacote vendido com sucesso!");
+    onSellPackage(packageData);
+    toast.success(isProposal ? "Proposta criada com sucesso!" : "Pacote vendido com sucesso!");
     setOpen(false);
     setFormData({
       packageId: "",
@@ -130,14 +131,15 @@ export function SellPackageDialog({ packages, onSellPackage }: SellPackageDialog
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>
-          <Plus className="mr-2 h-4 w-4" /> Vender Pacote Manualmente
+          <Plus className="mr-2 h-4 w-4" /> 
+          {isProposal ? "Gerar Proposta" : "Vender Pacote Manualmente"}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Vender Pacote</DialogTitle>
+          <DialogTitle>{isProposal ? "Gerar Proposta" : "Vender Pacote"}</DialogTitle>
           <DialogDescription>
-            Registre a venda manual de um pacote
+            {isProposal ? "Crie uma proposta de pacote para o paciente" : "Registre a venda manual de um pacote"}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -278,7 +280,9 @@ export function SellPackageDialog({ packages, onSellPackage }: SellPackageDialog
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancelar
             </Button>
-            <Button type="submit">Vender Pacote</Button>
+            <Button type="submit">
+              {isProposal ? "Gerar Proposta" : "Vender Pacote"}
+            </Button>
           </div>
         </form>
       </DialogContent>

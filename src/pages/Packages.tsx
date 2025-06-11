@@ -1,15 +1,17 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Pencil, Trash, Package, Edit, UserX } from "lucide-react";
+import { Plus, Pencil, Trash, Package, Edit, UserX, Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { CreatePackageDialog } from "@/components/packages/CreatePackageDialog";
 import { EditPackageDialog } from "@/components/packages/EditPackageDialog";
 import { SellPackageDialog } from "@/components/packages/SellPackageDialog";
 import { DeletePackageDialog } from "@/components/packages/DeletePackageDialog";
-import { PlanAuthorizationSettings } from "@/components/plans/PlanAuthorizationSettings";
 import { toast } from "sonner";
 
 interface Package {
@@ -39,6 +41,23 @@ interface SoldPackage {
   usedCredits: number;
   totalCredits: number;
   status: "active" | "expired" | "inactive";
+}
+
+interface Proposal {
+  id: string;
+  packageId: string;
+  packageName: string;
+  patientName: string;
+  packagePrice: number;
+  transportCost: number;
+  otherCosts: number;
+  otherCostsNote: string;
+  paymentMethod: string;
+  installments: number;
+  finalPrice: number;
+  createdDate: string;
+  expiryDate: string;
+  totalCredits: number;
 }
 
 const mockPackages: Package[] = [
@@ -104,11 +123,13 @@ const mockSoldPackages: SoldPackage[] = [
 export default function Packages() {
   const [packages, setPackages] = useState<Package[]>(mockPackages);
   const [soldPackages, setSoldPackages] = useState<SoldPackage[]>(mockSoldPackages);
+  const [proposals, setProposals] = useState<Proposal[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [editingPackage, setEditingPackage] = useState<Package | null>(null);
   const [deletePackage, setDeletePackage] = useState<{ id: string; name: string } | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [allowPatientMarkAsCompleted, setAllowPatientMarkAsCompleted] = useState(true);
 
   const getPackageStats = (packageId: string) => {
     const packageSales = soldPackages.filter(sp => sp.packageId === packageId);
@@ -141,6 +162,49 @@ export default function Packages() {
     setSoldPackages([...soldPackages, soldPackage]);
   };
 
+  const handleCreateProposal = (proposalData: any) => {
+    const newProposal: Proposal = {
+      ...proposalData,
+      id: Date.now().toString(),
+      createdDate: new Date().toLocaleDateString("pt-BR"),
+    };
+    setProposals([...proposals, newProposal]);
+    toast.success("Proposta criada com sucesso!");
+  };
+
+  const handleApproveProposal = (proposalId: string) => {
+    const proposal = proposals.find(p => p.id === proposalId);
+    if (proposal) {
+      const soldPackage: SoldPackage = {
+        id: Date.now().toString(),
+        packageId: proposal.packageId,
+        packageName: proposal.packageName,
+        patientName: proposal.patientName,
+        packagePrice: proposal.packagePrice,
+        transportCost: proposal.transportCost,
+        otherCosts: proposal.otherCosts,
+        otherCostsNote: proposal.otherCostsNote,
+        paymentMethod: proposal.paymentMethod,
+        installments: proposal.installments,
+        finalPrice: proposal.finalPrice,
+        purchaseDate: new Date().toLocaleDateString("pt-BR"),
+        expiryDate: proposal.expiryDate,
+        usedCredits: 0,
+        totalCredits: proposal.totalCredits,
+        status: "active",
+      };
+      
+      setSoldPackages([...soldPackages, soldPackage]);
+      setProposals(proposals.filter(p => p.id !== proposalId));
+      toast.success("Proposta aprovada e movida para pacotes vendidos!");
+    }
+  };
+
+  const handleDeleteProposal = (proposalId: string) => {
+    setProposals(proposals.filter(p => p.id !== proposalId));
+    toast.success("Proposta excluída com sucesso!");
+  };
+
   const handleDeleteSoldPackage = (soldPackageId: string) => {
     setSoldPackages(soldPackages.filter(sp => sp.id !== soldPackageId));
     toast.success("Pacote vendido excluído com sucesso!");
@@ -155,8 +219,8 @@ export default function Packages() {
     toast.success("Status do pacote atualizado!");
   };
 
-  const handleAuthorizationSettings = (settings: { allowPatientMarkAsCompleted: boolean }) => {
-    console.log("Authorization settings updated:", settings);
+  const handleAuthorizationSettings = (checked: boolean) => {
+    setAllowPatientMarkAsCompleted(checked);
     toast.success("Configurações de autorização atualizadas!");
   };
 
@@ -193,12 +257,37 @@ export default function Packages() {
         </div>
       </div>
 
+      {/* Configurações de Autorização */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Settings className="mr-2 h-5 w-5" />
+            Configurações de Autorização
+          </CardTitle>
+          <CardDescription>
+            Configure as permissões dos pacientes para interagir com os planos
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="allow-mark-completed"
+              checked={allowPatientMarkAsCompleted}
+              onCheckedChange={handleAuthorizationSettings}
+            />
+            <Label htmlFor="allow-mark-completed">
+              Permitir que pacientes marquem exercícios como concluídos
+            </Label>
+          </div>
+        </CardContent>
+      </Card>
+
       <Tabs defaultValue="configuration" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="configuration">Configuração de Pacotes</TabsTrigger>
+          <TabsTrigger value="proposals">Gerador de Proposta</TabsTrigger>
           <TabsTrigger value="sold">Pacotes Vendidos</TabsTrigger>
           <TabsTrigger value="reports">Relatórios</TabsTrigger>
-          <TabsTrigger value="settings">Configurações</TabsTrigger>
         </TabsList>
         
         <TabsContent value="configuration" className="space-y-6">
@@ -287,6 +376,81 @@ export default function Packages() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="proposals" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Gerador de Proposta</CardTitle>
+                  <CardDescription>Crie propostas para pacientes</CardDescription>
+                </div>
+                <SellPackageDialog 
+                  packages={packages} 
+                  onSellPackage={handleCreateProposal}
+                  isProposal={true}
+                />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {proposals.map((proposal) => (
+                  <Card key={proposal.id}>
+                    <CardContent className="pt-6">
+                      <div className="grid grid-cols-1 md:grid-cols-7 gap-4 items-center">
+                        <div>
+                          <p className="font-medium">{proposal.patientName}</p>
+                        </div>
+                        <div>
+                          <p className="font-medium">{proposal.packageName}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm">Pacote: R$ {proposal.packagePrice.toFixed(2)}</p>
+                          <p className="text-sm">Transporte: R$ {proposal.transportCost.toFixed(2)}</p>
+                          {proposal.otherCosts > 0 && (
+                            <p className="text-sm">Outros: R$ {proposal.otherCosts.toFixed(2)}</p>
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-medium">Total: R$ {proposal.finalPrice.toFixed(2)}</p>
+                          <p className="text-sm">{getPaymentMethodLabel(proposal.paymentMethod)}</p>
+                          {proposal.installments > 1 && (
+                            <p className="text-sm">{proposal.installments}x de R$ {(proposal.finalPrice / proposal.installments).toFixed(2)}</p>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-sm">Criada: {proposal.createdDate}</p>
+                          <p className="text-sm">Vencimento: {proposal.expiryDate}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm">Créditos: {proposal.totalCredits}</p>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-green-600 hover:text-green-700"
+                            onClick={() => handleApproveProposal(proposal.id)}
+                          >
+                            Aprovar
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-red-600 hover:text-red-700"
+                            onClick={() => handleDeleteProposal(proposal.id)}
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="sold" className="space-y-6">
           <Card>
             <CardHeader>
@@ -358,6 +522,12 @@ export default function Packages() {
                           <Button
                             variant="outline"
                             size="sm"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => handleToggleSoldPackageStatus(soldPkg.id)}
                             disabled={soldPkg.status === "expired"}
                           >
@@ -421,10 +591,6 @@ export default function Packages() {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="settings" className="space-y-6">
-          <PlanAuthorizationSettings onSettingsChange={handleAuthorizationSettings} />
         </TabsContent>
       </Tabs>
 
