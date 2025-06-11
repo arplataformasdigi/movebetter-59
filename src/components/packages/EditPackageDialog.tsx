@@ -1,18 +1,17 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Package {
   id: string;
@@ -24,40 +23,51 @@ interface Package {
   status: "active" | "inactive";
 }
 
-interface CreatePackageDialogProps {
-  onCreatePackage: (pkg: Package) => void;
+interface EditPackageDialogProps {
+  package: Package | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onEditPackage: (pkg: Package) => void;
 }
 
-export function CreatePackageDialog({ onCreatePackage }: CreatePackageDialogProps) {
-  const [open, setOpen] = useState(false);
+export function EditPackageDialog({ package: pkg, open, onOpenChange, onEditPackage }: EditPackageDialogProps) {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     services: [""],
     price: 0,
     validity: 1,
+    status: "active" as "active" | "inactive",
   });
+
+  useEffect(() => {
+    if (pkg) {
+      setFormData({
+        name: pkg.name,
+        description: pkg.description,
+        services: pkg.services.length > 0 ? pkg.services : [""],
+        price: pkg.price,
+        validity: pkg.validity,
+        status: pkg.status,
+      });
+    }
+  }, [pkg]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const newPackage: Package = {
-      id: Date.now().toString(),
+    if (!pkg) return;
+
+    const updatedPackage: Package = {
+      ...pkg,
       name: formData.name,
       description: formData.description,
       services: formData.services.filter(s => s.trim() !== ""),
       price: formData.price,
       validity: formData.validity,
-      status: "active",
+      status: formData.status,
     };
-    onCreatePackage(newPackage);
-    setOpen(false);
-    setFormData({
-      name: "",
-      description: "",
-      services: [""],
-      price: 0,
-      validity: 1,
-    });
+    onEditPackage(updatedPackage);
+    onOpenChange(false);
   };
 
   const addService = () => {
@@ -82,17 +92,12 @@ export function CreatePackageDialog({ onCreatePackage }: CreatePackageDialogProp
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" /> Criar Novo Pacote
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Criar Novo Pacote</DialogTitle>
+          <DialogTitle>Editar Pacote</DialogTitle>
           <DialogDescription>
-            Preencha as informações para criar um novo pacote de fisioterapia.
+            Edite as informações do pacote de fisioterapia.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -102,7 +107,6 @@ export function CreatePackageDialog({ onCreatePackage }: CreatePackageDialogProp
               id="name"
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              placeholder="Ex: Pacote Fisioterapia Domiciliar"
               required
             />
           </div>
@@ -113,7 +117,6 @@ export function CreatePackageDialog({ onCreatePackage }: CreatePackageDialogProp
               id="description"
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              placeholder="Pacote completo de fisioterapia domiciliar com sessões personalizadas"
               required
             />
           </div>
@@ -167,11 +170,24 @@ export function CreatePackageDialog({ onCreatePackage }: CreatePackageDialogProp
             </div>
           </div>
 
+          <div>
+            <Label htmlFor="status">Status</Label>
+            <Select value={formData.status} onValueChange={(value: "active" | "inactive") => setFormData(prev => ({ ...prev, status: value }))}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Ativo</SelectItem>
+                <SelectItem value="inactive">Inativo</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="flex justify-end space-x-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            <Button type="submit">Criar Pacote</Button>
+            <Button type="submit">Salvar Alterações</Button>
           </div>
         </form>
       </DialogContent>

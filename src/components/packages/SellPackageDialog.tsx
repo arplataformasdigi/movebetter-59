@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -29,14 +30,22 @@ interface Package {
   validity: number;
 }
 
+interface Patient {
+  id: string;
+  name: string;
+}
+
 interface SoldPackage {
   id: string;
   packageId: string;
   packageName: string;
-  clientName: string;
   patientName: string;
   packagePrice: number;
   transportCost: number;
+  otherCosts: number;
+  otherCostsNote: string;
+  paymentMethod: string;
+  installments: number;
   finalPrice: number;
   purchaseDate: string;
   expiryDate: string;
@@ -50,22 +59,36 @@ interface SellPackageDialogProps {
   onSellPackage: (soldPackage: SoldPackage) => void;
 }
 
+// Mock data for patients
+const mockPatients: Patient[] = [
+  { id: "1", name: "Maria Silva" },
+  { id: "2", name: "João Santos" },
+  { id: "3", name: "Ana Costa" },
+  { id: "4", name: "Pedro Oliveira" },
+  { id: "5", name: "Carla Souza" },
+];
+
 export function SellPackageDialog({ packages, onSellPackage }: SellPackageDialogProps) {
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     packageId: "",
-    clientName: "",
     patientName: "",
     transportCost: 0,
+    otherCosts: 0,
+    otherCostsNote: "",
+    paymentMethod: "",
+    installments: 1,
   });
 
   const selectedPackage = packages.find(pkg => pkg.id === formData.packageId);
-  const finalPrice = selectedPackage ? selectedPackage.price + formData.transportCost : 0;
+  const finalPrice = selectedPackage ? selectedPackage.price + formData.transportCost + formData.otherCosts : 0;
+  const showInstallments = formData.paymentMethod === "credit";
+  const showOtherCostsNote = formData.otherCosts > 0;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.packageId || !formData.clientName || !formData.patientName) {
+    if (!formData.packageId || !formData.patientName || !formData.paymentMethod) {
       toast.error("Preencha todos os campos obrigatórios");
       return;
     }
@@ -74,10 +97,13 @@ export function SellPackageDialog({ packages, onSellPackage }: SellPackageDialog
       id: Date.now().toString(),
       packageId: formData.packageId,
       packageName: selectedPackage?.name || "",
-      clientName: formData.clientName,
       patientName: formData.patientName,
       packagePrice: selectedPackage?.price || 0,
       transportCost: formData.transportCost,
+      otherCosts: formData.otherCosts,
+      otherCostsNote: formData.otherCostsNote,
+      paymentMethod: formData.paymentMethod,
+      installments: formData.installments,
       finalPrice,
       purchaseDate: new Date().toLocaleDateString("pt-BR"),
       expiryDate: new Date(Date.now() + (selectedPackage?.validity || 1) * 30 * 24 * 60 * 60 * 1000).toLocaleDateString("pt-BR"),
@@ -91,9 +117,12 @@ export function SellPackageDialog({ packages, onSellPackage }: SellPackageDialog
     setOpen(false);
     setFormData({
       packageId: "",
-      clientName: "",
       patientName: "",
       transportCost: 0,
+      otherCosts: 0,
+      otherCostsNote: "",
+      paymentMethod: "",
+      installments: 1,
     });
   };
 
@@ -127,27 +156,21 @@ export function SellPackageDialog({ packages, onSellPackage }: SellPackageDialog
               </SelectContent>
             </Select>
           </div>
-          
-          <div>
-            <Label htmlFor="clientName">Nome do Cliente *</Label>
-            <Input
-              id="clientName"
-              value={formData.clientName}
-              onChange={(e) => setFormData(prev => ({ ...prev, clientName: e.target.value }))}
-              placeholder="Nome do responsável"
-              required
-            />
-          </div>
 
           <div>
             <Label htmlFor="patientName">Nome do Paciente *</Label>
-            <Input
-              id="patientName"
-              value={formData.patientName}
-              onChange={(e) => setFormData(prev => ({ ...prev, patientName: e.target.value }))}
-              placeholder="Nome do paciente"
-              required
-            />
+            <Select value={formData.patientName} onValueChange={(value) => setFormData(prev => ({ ...prev, patientName: value }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o paciente" />
+              </SelectTrigger>
+              <SelectContent>
+                {mockPatients.map((patient) => (
+                  <SelectItem key={patient.id} value={patient.name}>
+                    {patient.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
@@ -162,6 +185,66 @@ export function SellPackageDialog({ packages, onSellPackage }: SellPackageDialog
             />
           </div>
 
+          <div>
+            <Label htmlFor="otherCosts">Outros Custos (R$)</Label>
+            <Input
+              id="otherCosts"
+              type="number"
+              step="0.01"
+              value={formData.otherCosts}
+              onChange={(e) => setFormData(prev => ({ ...prev, otherCosts: parseFloat(e.target.value) || 0 }))}
+              placeholder="0.00"
+            />
+          </div>
+
+          {showOtherCostsNote && (
+            <div>
+              <Label htmlFor="otherCostsNote">Observação dos Outros Custos</Label>
+              <Textarea
+                id="otherCostsNote"
+                value={formData.otherCostsNote}
+                onChange={(e) => setFormData(prev => ({ ...prev, otherCostsNote: e.target.value }))}
+                placeholder="Descreva os outros custos..."
+              />
+            </div>
+          )}
+
+          <div>
+            <Label htmlFor="paymentMethod">Forma de Pagamento *</Label>
+            <Select value={formData.paymentMethod} onValueChange={(value) => setFormData(prev => ({ ...prev, paymentMethod: value }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione a forma de pagamento" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pix">PIX</SelectItem>
+                <SelectItem value="cash">Dinheiro</SelectItem>
+                <SelectItem value="credit">Cartão de Crédito</SelectItem>
+                <SelectItem value="debit">Cartão de Débito</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {showInstallments && (
+            <div>
+              <Label htmlFor="installments">Quantidade de Parcelas</Label>
+              <Select 
+                value={formData.installments.toString()} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, installments: parseInt(value) }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((num) => (
+                    <SelectItem key={num} value={num.toString()}>
+                      {num}x
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           {selectedPackage && (
             <div className="space-y-2 p-3 bg-gray-50 rounded-lg">
               <div className="flex justify-between text-sm">
@@ -172,10 +255,22 @@ export function SellPackageDialog({ packages, onSellPackage }: SellPackageDialog
                 <span>Custo de deslocamento:</span>
                 <span>R$ {formData.transportCost.toFixed(2)}</span>
               </div>
+              {formData.otherCosts > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span>Outros custos:</span>
+                  <span>R$ {formData.otherCosts.toFixed(2)}</span>
+                </div>
+              )}
               <div className="flex justify-between font-medium">
                 <span>Valor final:</span>
                 <span>R$ {finalPrice.toFixed(2)}</span>
               </div>
+              {showInstallments && (
+                <div className="flex justify-between text-sm">
+                  <span>Valor por parcela:</span>
+                  <span>R$ {(finalPrice / formData.installments).toFixed(2)}</span>
+                </div>
+              )}
             </div>
           )}
 
