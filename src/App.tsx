@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -39,57 +40,57 @@ const App = () => (
             {/* Rota de autenticação */}
             <Route path="/auth" element={<Auth />} />
             
-            {/* Rotas para administradores, gestores e profissionais */}
+            {/* Rotas para administradores */}
             <Route path="/" element={
-              <ProtectedRoute allowedRoles={["admin", "manager", "professional"]}>
+              <ProtectedRoute allowedRoles={["admin"]}>
                 <AppLayout><Dashboard /></AppLayout>
               </ProtectedRoute>
             } />
 
             <Route path="/pacientes" element={
-              <ProtectedRoute allowedRoles={["admin", "manager", "professional"]}>
+              <ProtectedRoute allowedRoles={["admin"]}>
                 <AppLayout><Patients /></AppLayout>
               </ProtectedRoute>
             } />
 
             <Route path="/pacotes" element={
-              <ProtectedRoute allowedRoles={["admin", "manager", "professional"]}>
+              <ProtectedRoute allowedRoles={["admin"]}>
                 <AppLayout><Packages /></AppLayout>
               </ProtectedRoute>
             } />
 
             <Route path="/aplicativo" element={
-              <ProtectedRoute allowedRoles={["admin", "manager", "professional"]}>
+              <ProtectedRoute allowedRoles={["admin"]}>
                 <AppLayout><AppPage /></AppLayout>
               </ProtectedRoute>
             } />
 
             <Route path="/planos" element={
-              <ProtectedRoute allowedRoles={["admin", "manager", "professional"]}>
+              <ProtectedRoute allowedRoles={["admin"]}>
                 <AppLayout><Plans /></AppLayout>
               </ProtectedRoute>
             } />
 
             <Route path="/planos/criar" element={
-              <ProtectedRoute allowedRoles={["admin", "manager", "professional"]}>
+              <ProtectedRoute allowedRoles={["admin"]}>
                 <AppLayout><CreatePlan /></AppLayout>
               </ProtectedRoute>
             } />
 
             <Route path="/calendario" element={
-              <ProtectedRoute allowedRoles={["admin", "manager", "professional"]}>
+              <ProtectedRoute allowedRoles={["admin"]}>
                 <AppLayout><Calendar /></AppLayout>
               </ProtectedRoute>
             } />
 
             <Route path="/financeiro" element={
-              <ProtectedRoute allowedRoles={["admin", "manager", "professional"]}>
+              <ProtectedRoute allowedRoles={["admin"]}>
                 <AppLayout><Financial /></AppLayout>
               </ProtectedRoute>
             } />
 
             <Route path="/ranking" element={
-              <ProtectedRoute allowedRoles={["admin", "manager", "professional"]}>
+              <ProtectedRoute allowedRoles={["admin"]}>
                 <AppLayout><Ranking /></AppLayout>
               </ProtectedRoute>
             } />
@@ -108,7 +109,7 @@ const App = () => (
             } />
 
             <Route path="/assinatura" element={
-              <ProtectedRoute allowedRoles={["admin", "manager", "professional"]}>
+              <ProtectedRoute allowedRoles={["admin"]}>
                 <AppLayout><Subscription /></AppLayout>
               </ProtectedRoute>
             } />

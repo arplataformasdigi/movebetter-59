@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CreatePackageDialog } from "@/components/packages/CreatePackageDialog";
+import { SellPackageDialog } from "@/components/packages/SellPackageDialog";
 
 interface Package {
   id: string;
@@ -20,9 +21,13 @@ interface Package {
 
 interface SoldPackage {
   id: string;
+  packageId: string;
   packageName: string;
   clientName: string;
-  petName: string;
+  patientName: string;
+  packagePrice: number;
+  transportCost: number;
+  finalPrice: number;
   purchaseDate: string;
   expiryDate: string;
   usedCredits: number;
@@ -40,25 +45,42 @@ const mockPackages: Package[] = [
     validity: 1,
     status: "active",
   },
+  {
+    id: "2",
+    name: "Pacote Fisioterapia",
+    description: "Sessões de fisioterapia domiciliar",
+    services: ["4x Sessão de Fisioterapia", "1x Avaliação"],
+    price: 450.00,
+    validity: 2,
+    status: "active",
+  },
 ];
 
 const mockSoldPackages: SoldPackage[] = [
   {
     id: "1",
-    packageName: "Pacote Fidelidade",
+    packageId: "2",
+    packageName: "Pacote Fisioterapia",
     clientName: "Maria Silva",
-    petName: "Thor",
+    patientName: "João Silva",
+    packagePrice: 450.00,
+    transportCost: 50.00,
+    finalPrice: 500.00,
     purchaseDate: "14/05/2024",
-    expiryDate: "14/08/2024",
+    expiryDate: "14/07/2024",
     usedCredits: 3,
     totalCredits: 5,
     status: "active",
   },
   {
     id: "2",
+    packageId: "1",
     packageName: "Combo Banho & Tosa Mensal",
     clientName: "João Santos",
-    petName: "Luna",
+    patientName: "Pedro Santos",
+    packagePrice: 280.00,
+    transportCost: 30.00,
+    finalPrice: 310.00,
     purchaseDate: "19/05/2024",
     expiryDate: "19/06/2024",
     usedCredits: 0,
@@ -81,10 +103,22 @@ export default function Packages() {
     setPackages(packages.filter(pkg => pkg.id !== packageId));
   };
 
+  const handleSellPackage = (soldPackage: SoldPackage) => {
+    setSoldPackages([...soldPackages, soldPackage]);
+  };
+
   const filteredPackages = packages.filter(pkg => 
     pkg.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
     (statusFilter === "all" || pkg.status === statusFilter)
   );
+
+  const getPackageStats = (packageId: string) => {
+    const soldCount = soldPackages.filter(sold => sold.packageId === packageId).length;
+    const revenue = soldPackages
+      .filter(sold => sold.packageId === packageId)
+      .reduce((total, sold) => total + sold.finalPrice, 0);
+    return { soldCount, revenue };
+  };
 
   return (
     <div className="space-y-6">
@@ -200,14 +234,12 @@ export default function Packages() {
                   <CardTitle>Pacotes Vendidos</CardTitle>
                   <CardDescription>Gerencie pacotes vendidos aos clientes</CardDescription>
                 </div>
-                <Button>
-                  <Plus className="mr-2 h-4 w-4" /> Vender Pacote Manualmente
-                </Button>
+                <SellPackageDialog packages={packages} onSellPackage={handleSellPackage} />
               </div>
             </CardHeader>
             <CardContent>
               <Input 
-                placeholder="Buscar por cliente, pacote ou pet..." 
+                placeholder="Buscar por cliente, pacote ou paciente..." 
                 className="w-64 mb-6"
               />
               
@@ -215,18 +247,23 @@ export default function Packages() {
                 {soldPackages.map((soldPkg) => (
                   <Card key={soldPkg.id}>
                     <CardContent className="pt-6">
-                      <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-center">
+                      <div className="grid grid-cols-1 md:grid-cols-7 gap-4 items-center">
                         <div>
                           <h4 className="font-medium">{soldPkg.clientName}</h4>
-                          <p className="text-sm text-gray-500">Pet: {soldPkg.petName}</p>
+                          <p className="text-sm text-gray-500">Paciente: {soldPkg.patientName}</p>
                         </div>
                         <div>
                           <p className="font-medium">{soldPkg.packageName}</p>
                         </div>
                         <div>
-                          <p className="text-sm">Compra: {soldPkg.purchaseDate}</p>
+                          <p className="text-sm">Pacote: R$ {soldPkg.packagePrice.toFixed(2)}</p>
+                          <p className="text-sm">Transporte: R$ {soldPkg.transportCost.toFixed(2)}</p>
                         </div>
                         <div>
+                          <p className="font-medium">Total: R$ {soldPkg.finalPrice.toFixed(2)}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm">Compra: {soldPkg.purchaseDate}</p>
                           <p className="text-sm">Vencimento: {soldPkg.expiryDate}</p>
                         </div>
                         <div>
@@ -257,14 +294,13 @@ export default function Packages() {
         <TabsContent value="reports" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Relatórios</CardTitle>
+              <CardTitle>Relatórios de Vendas</CardTitle>
               <CardDescription>Visualize estatísticas de vendas dos pacotes</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {packages.map((pkg) => {
-                  const soldCount = soldPackages.filter(sold => sold.packageName === pkg.name).length;
-                  const revenue = soldCount * pkg.price;
+                  const stats = getPackageStats(pkg.id);
                   
                   return (
                     <Card key={pkg.id}>
@@ -274,12 +310,18 @@ export default function Packages() {
                       <CardContent>
                         <div className="space-y-2">
                           <div className="flex justify-between">
-                            <span>Vendidos:</span>
-                            <span className="font-medium">{soldCount}</span>
+                            <span>Pacotes vendidos:</span>
+                            <span className="font-medium">{stats.soldCount}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span>Receita:</span>
-                            <span className="font-medium">R$ {revenue.toFixed(2)}</span>
+                            <span>Receita total:</span>
+                            <span className="font-medium">R$ {stats.revenue.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Receita média:</span>
+                            <span className="font-medium">
+                              R$ {stats.soldCount > 0 ? (stats.revenue / stats.soldCount).toFixed(2) : "0.00"}
+                            </span>
                           </div>
                         </div>
                       </CardContent>

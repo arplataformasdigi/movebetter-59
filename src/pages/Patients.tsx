@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -23,6 +22,7 @@ import { Users, Power, PowerOff } from "lucide-react";
 import { AddPatientDialog } from "@/components/patients/AddPatientDialog";
 import { PatientDetails } from "@/components/patients/PatientDetails";
 import { DeletePatientDialog } from "@/components/patients/DeletePatientDialog";
+import { AssignPackageDialog } from "@/components/patients/AssignPackageDialog";
 
 interface MedicalRecord {
   id: string;
@@ -146,9 +146,27 @@ const getStatusDetails = (status: Patient["status"]) => {
   }
 };
 
+const mockPackages = [
+  {
+    id: "1",
+    name: "Combo Banho & Tosa Mensal",
+    price: 280.00,
+    services: ["2x Banho M", "1x Tosa M"],
+    validity: 1,
+  },
+  {
+    id: "2",
+    name: "Pacote Fisioterapia",
+    price: 450.00,
+    services: ["4x Sessão de Fisioterapia", "1x Avaliação"],
+    validity: 2,
+  },
+];
+
 export function Patients() {
   const [patients, setPatients] = useState<Patient[]>(initialPatients);
   const [searchQuery, setSearchQuery] = useState("");
+  const [packageAssignments, setPackageAssignments] = useState<any[]>([]);
 
   const handleAddPatient = (newPatient: Patient) => {
     setPatients([...patients, newPatient]);
@@ -172,11 +190,19 @@ export function Patients() {
     setPatients(patients.filter(patient => patient.id !== patientId));
   };
 
+  const handleAssignPackage = (assignment: any) => {
+    setPackageAssignments([...packageAssignments, assignment]);
+  };
+
   const filteredPatients = patients.filter(patient => 
     patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     patient.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
     patient.phone.includes(searchQuery)
   );
+
+  const getPatientPackage = (patientId: string) => {
+    return packageAssignments.find(assignment => assignment.patientId === patientId);
+  };
 
   return (
     <div className="space-y-6">
@@ -216,12 +242,14 @@ export function Patients() {
                 <TableHead>Nome</TableHead>
                 <TableHead>Contato</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Pacote</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredPatients.map((patient) => {
                 const status = getStatusDetails(patient.status);
+                const assignedPackage = getPatientPackage(patient.id);
                 
                 return (
                   <TableRow key={patient.id}>
@@ -246,6 +274,23 @@ export function Patients() {
                       <Badge variant="outline" className={status.color}>
                         {status.label}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {assignedPackage ? (
+                        <div className="text-sm">
+                          <div className="font-medium">{assignedPackage.packageName}</div>
+                          <div className="text-muted-foreground">
+                            R$ {assignedPackage.finalPrice.toFixed(2)}
+                          </div>
+                        </div>
+                      ) : (
+                        <AssignPackageDialog
+                          patientId={patient.id}
+                          patientName={patient.name}
+                          packages={mockPackages}
+                          onAssignPackage={handleAssignPackage}
+                        />
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center gap-2 justify-end">
@@ -283,3 +328,18 @@ export function Patients() {
 }
 
 export default Patients;
+
+export function AssignPackageDialog({ patientId, patientName, packages, onAssignPackage }: any) {
+  return (
+    <div className="flex items-center gap-2 justify-end">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => onAssignPackage({ patientId, patientName, packageId: packages[0].id })}
+        className="h-8 w-8 p-0"
+      >
+        <Power className="h-4 w-4 text-green-600" />
+      </Button>
+    </div>
+  );
+}
