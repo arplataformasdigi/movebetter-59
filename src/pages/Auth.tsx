@@ -9,7 +9,7 @@ export default function Auth() {
       <div className="w-full max-w-md">
         <Card className="border-none shadow-lg">
           <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-2xl font-bold">Smart Home Care</CardTitle>
+            <CardTitle className="text-2xl font-bold">Fisio Smart Care</CardTitle>
             <CardDescription>Gestão inteligente para atendimento domiciliar</CardDescription>
           </CardHeader>
           <CardContent>
