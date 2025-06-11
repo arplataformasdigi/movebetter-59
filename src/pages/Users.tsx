@@ -1,187 +1,157 @@
 
 import React, { useState } from "react";
-import { User, UserRole } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
-import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { 
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { 
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Users as UsersIcon, UserPlus, Eye, UserCheck, UserX } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Users, MoreHorizontal, UserPlus, Search } from "lucide-react";
+import { UserRole } from "@/contexts/AuthContext";
 
-// Mock inicial de usuários
-const initialUsers: User[] = [
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  avatar?: string;
+  status: "active" | "inactive";
+  createdAt: Date;
+  lastLogin?: Date;
+}
+
+const mockUsers: User[] = [
   {
     id: "1",
-    name: "Administrador Principal",
-    email: "admin@movebetter.com",
-    role: "admin"
+    name: "Dr. Ana Silva",
+    email: "ana.silva@movebetter.com",
+    role: "admin",
+    status: "active",
+    createdAt: new Date("2024-01-15"),
+    lastLogin: new Date("2024-01-20"),
   },
   {
     id: "2",
-    name: "Carlos Gestor",
-    email: "gestor@movebetter.com",
-    role: "manager"
+    name: "Carlos Oliveira",
+    email: "carlos.oliveira@movebetter.com",
+    role: "admin",
+    status: "active",
+    createdAt: new Date("2024-01-10"),
+    lastLogin: new Date("2024-01-19"),
   },
   {
     id: "3",
-    name: "Maria Fisioterapeuta",
-    email: "profissional@movebetter.com",
-    role: "professional",
-    crefito: "12345-F"
+    name: "Maria Santos",
+    email: "maria.santos@email.com",
+    role: "patient",
+    status: "active",
+    createdAt: new Date("2024-01-12"),
+    lastLogin: new Date("2024-01-18"),
   },
   {
     id: "4",
-    name: "João Fisioterapeuta",
-    email: "joao@movebetter.com",
-    role: "professional",
-    crefito: "54321-F"
+    name: "João Costa",
+    email: "joao.costa@email.com",
+    role: "patient",
+    status: "inactive",
+    createdAt: new Date("2024-01-08"),
+    lastLogin: new Date("2024-01-15"),
   },
-  {
-    id: "5",
-    name: "Paula Gestora",
-    email: "paula@movebetter.com",
-    role: "manager"
-  }
 ];
 
-// Schema para o formulário de adicionar usuário
-const userSchema = z.object({
-  name: z.string().min(1, "Nome é obrigatório"),
-  email: z.string().email("Email inválido").min(1, "Email é obrigatório"),
-  role: z.enum(["admin", "manager", "professional"]),
-  crefito: z.string().optional(),
-  password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
-  confirmPassword: z.string().min(1, "Confirmação de senha é obrigatória"),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Senhas não conferem",
-  path: ["confirmPassword"],
-}).refine(
-  (data) => !(data.role === "professional" && (!data.crefito || data.crefito.trim() === "")),
-  {
-    message: "Número CREFITO é obrigatório para profissionais",
-    path: ["crefito"],
+const getRoleDetails = (role: UserRole) => {
+  switch (role) {
+    case "admin":
+      return { 
+        label: "Administrador", 
+        color: "bg-purple-100 text-purple-800 border-purple-200" 
+      };
+    case "patient":
+      return { 
+        label: "Paciente", 
+        color: "bg-blue-100 text-blue-800 border-blue-200" 
+      };
+    default:
+      return { 
+        label: "Desconhecido", 
+        color: "bg-gray-100 text-gray-800 border-gray-200" 
+      };
   }
-);
+};
 
-type UserFormValues = z.infer<typeof userSchema>;
+const getStatusDetails = (status: User["status"]) => {
+  switch (status) {
+    case "active":
+      return { 
+        label: "Ativo", 
+        color: "bg-green-100 text-green-800 border-green-200" 
+      };
+    case "inactive":
+      return { 
+        label: "Inativo", 
+        color: "bg-red-100 text-red-800 border-red-200" 
+      };
+    default:
+      return { 
+        label: "Desconhecido", 
+        color: "bg-gray-100 text-gray-800 border-gray-200" 
+      };
+  }
+};
 
 export default function Users() {
-  const [users, setUsers] = useState<User[]>(initialUsers);
+  const [users, setUsers] = useState<User[]>(mockUsers);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const { toast } = useToast();
+  const [selectedRole, setSelectedRole] = useState<UserRole | "all">("all");
 
-  // Filtro de usuários
-  const filteredUsers = users.filter(user => 
-    user.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    user.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleToggleStatus = (userId: string) => {
+    setUsers(users.map(user => 
+      user.id === userId 
+        ? { ...user, status: user.status === "active" ? "inactive" : "active" as User["status"] }
+        : user
+    ));
+  };
 
-  const form = useForm<UserFormValues>({
-    resolver: zodResolver(userSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      role: "professional",
-      crefito: "",
-      password: "",
-      confirmPassword: "",
-    },
+  const handleDeleteUser = (userId: string) => {
+    setUsers(users.filter(user => user.id !== userId));
+  };
+
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         user.email.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesRole = selectedRole === "all" || user.role === selectedRole;
+    return matchesSearch && matchesRole;
   });
 
-  const watchRole = form.watch("role");
-
-  // Função para adicionar usuário
-  const handleAddUser = (data: UserFormValues) => {
-    const newUser: User = {
-      id: `${users.length + 1}`,
-      name: data.name,
-      email: data.email,
-      role: data.role,
-      ...(data.crefito && { crefito: data.crefito }),
-    };
-
-    setUsers([...users, newUser]);
-    toast({
-      title: "Usuário adicionado",
-      description: `${data.name} foi adicionado com sucesso.`,
-    });
-
-    setIsAddDialogOpen(false);
-    form.reset();
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString("pt-BR");
   };
 
-  // Função para alternar o status do usuário (ativo/inativo)
-  const toggleUserStatus = (userId: string) => {
-    // Em um sistema real, isso chamaria uma API
-    toast({
-      title: "Status alterado",
-      description: "O status do usuário foi alterado com sucesso.",
-    });
-  };
-
-  // Função para acessar a conta do usuário
-  const accessUserAccount = (user: User) => {
-    setSelectedUser(user);
-    toast({
-      title: "Acessando conta",
-      description: `Acessando a conta de ${user.name}`,
-    });
-    // Em um sistema real, isso redirecionaria para a visualização da conta do usuário
-  };
-
-  // Função para pegar o badge do tipo de usuário
-  const getRoleBadge = (role: UserRole) => {
-    switch (role) {
-      case "admin":
-        return <Badge className="bg-purple-100 text-purple-800 border-purple-200">Administrador</Badge>;
-      case "manager":
-        return <Badge className="bg-blue-100 text-blue-800 border-blue-200">Gestor</Badge>;
-      case "professional":
-        return <Badge className="bg-green-100 text-green-800 border-green-200">Profissional</Badge>;
-      case "patient":
-        return <Badge className="bg-amber-100 text-amber-800 border-amber-200">Paciente</Badge>;
-      default:
-        return <Badge>Desconhecido</Badge>;
-    }
+  const formatLastLogin = (date?: Date) => {
+    if (!date) return "Nunca";
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) return "Hoje";
+    if (diffDays === 2) return "Ontem";
+    if (diffDays <= 7) return `${diffDays} dias atrás`;
+    return formatDate(date);
   };
 
   return (
@@ -189,135 +159,16 @@ export default function Users() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center">
-            <UsersIcon className="mr-2 h-8 w-8" /> Usuários
+            <Users className="mr-2 h-8 w-8" /> Usuários
           </h1>
           <p className="text-muted-foreground">
-            Gerencie usuários do sistema e suas permissões.
+            Gerencie usuários, perfis e permissões do sistema.
           </p>
         </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <UserPlus className="mr-2 h-4 w-4" /> Adicionar Usuário
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[550px]">
-            <DialogHeader>
-              <DialogTitle>Adicionar Novo Usuário</DialogTitle>
-              <DialogDescription>
-                Preencha os dados para adicionar um novo usuário ao sistema.
-              </DialogDescription>
-            </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(handleAddUser)} className="space-y-4 py-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome completo</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Nome do usuário" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input placeholder="email@exemplo.com" type="email" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="role"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tipo de usuário</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o tipo de usuário" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectGroup>
-                            <SelectLabel>Tipo</SelectLabel>
-                            <SelectItem value="admin">Administrador</SelectItem>
-                            <SelectItem value="manager">Gestor</SelectItem>
-                            <SelectItem value="professional">Profissional</SelectItem>
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {watchRole === "professional" && (
-                  <FormField
-                    control={form.control}
-                    name="crefito"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Número CREFITO</FormLabel>
-                        <FormControl>
-                          <Input placeholder="12345-F" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Senha</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="******" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Confirmar senha</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="******" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <DialogFooter>
-                  <Button type="submit">Adicionar usuário</Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
+        <Button className="bg-movebetter-primary hover:bg-movebetter-primary/90">
+          <UserPlus className="mr-2 h-4 w-4" />
+          Adicionar Usuário
+        </Button>
       </div>
 
       <Card>
@@ -325,15 +176,20 @@ export default function Users() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>Lista de Usuários</CardTitle>
-              <CardDescription>Gerencie todos os usuários do sistema</CardDescription>
+              <CardDescription>
+                Gerencie todos os usuários do sistema
+              </CardDescription>
             </div>
             <div className="flex items-center space-x-2">
-              <Input 
-                placeholder="Buscar usuários..." 
-                className="w-64"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}  
-              />
+              <div className="relative">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  placeholder="Buscar usuários..." 
+                  className="pl-8 w-64"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}  
+                />
+              </div>
             </div>
           </div>
         </CardHeader>
@@ -341,47 +197,83 @@ export default function Users() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Função</TableHead>
-                <TableHead>CREFITO</TableHead>
+                <TableHead>Usuário</TableHead>
+                <TableHead>Perfil</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Último Acesso</TableHead>
+                <TableHead>Criado em</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>
-                    <div className="font-medium">{user.name}</div>
-                  </TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>{getRoleBadge(user.role)}</TableCell>
-                  <TableCell>{user.crefito || "-"}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button variant="outline" size="sm" onClick={() => accessUserAccount(user)}>
-                        <Eye className="h-4 w-4 mr-1" /> Acessar
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="text-green-600 border-green-200 hover:bg-green-50"
-                        onClick={() => toggleUserStatus(user.id)}
-                      >
-                        <UserCheck className="h-4 w-4 mr-1" /> Ativar
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="text-red-600 border-red-200 hover:bg-red-50"
-                        onClick={() => toggleUserStatus(user.id)}
-                      >
-                        <UserX className="h-4 w-4 mr-1" /> Desativar
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {filteredUsers.map((user) => {
+                const role = getRoleDetails(user.role);
+                const status = getStatusDetails(user.status);
+                
+                return (
+                  <TableRow key={user.id}>
+                    <TableCell>
+                      <div className="flex items-center space-x-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={user.avatar} alt={user.name} />
+                          <AvatarFallback className="bg-movebetter-primary text-white">
+                            {user.name.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium">{user.name}</div>
+                          <div className="text-sm text-muted-foreground">{user.email}</div>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={role.color}>
+                        {role.label}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={status.color}>
+                        {status.label}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {formatLastLogin(user.lastLogin)}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {formatDate(user.createdAt)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Abrir menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                          <DropdownMenuItem>
+                            Editar usuário
+                          </DropdownMenuItem>
+                          <DropdownMenuItem>
+                            Redefinir senha
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => handleToggleStatus(user.id)}>
+                            {user.status === "active" ? "Desativar" : "Ativar"} usuário
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => handleDeleteUser(user.id)}
+                          >
+                            Excluir usuário
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>
