@@ -4,7 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CalendarIcon, Clock, User, Plus } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { CalendarIcon, Clock, User, X } from "lucide-react";
+import { ScheduleAppointmentForm } from "@/components/calendar/ScheduleAppointmentForm";
+import { toast } from "sonner";
 
 interface Appointment {
   id: string;
@@ -44,10 +54,30 @@ const mockAppointments: Appointment[] = [
 export default function CalendarPage() {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [appointments, setAppointments] = useState<Appointment[]>(mockAppointments);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
 
-  const handleScheduleSession = () => {
-    // Esta função será implementada para abrir o formulário de agendamento diretamente
-    console.log("Abrindo formulário de agendamento de sessão");
+  const handleScheduleAppointment = (newAppointment: Appointment) => {
+    setAppointments([...appointments, newAppointment]);
+  };
+
+  const handleCancelAppointment = (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    setCancelDialogOpen(true);
+  };
+
+  const confirmCancelAppointment = () => {
+    if (!selectedAppointment) return;
+    
+    setAppointments(appointments.map(app => 
+      app.id === selectedAppointment.id 
+        ? { ...app, status: "cancelled" as const }
+        : app
+    ));
+    
+    toast.success("Agendamento cancelado com sucesso!");
+    setCancelDialogOpen(false);
+    setSelectedAppointment(null);
   };
 
   const todayAppointments = appointments.filter(
@@ -92,10 +122,7 @@ export default function CalendarPage() {
             Gerencie seus agendamentos e sessões.
           </p>
         </div>
-        <Button onClick={handleScheduleSession}>
-          <Plus className="mr-2 h-4 w-4" />
-          Agendar Nova Sessão
-        </Button>
+        <ScheduleAppointmentForm onScheduleAppointment={handleScheduleAppointment} />
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -143,7 +170,9 @@ export default function CalendarPage() {
                         <Clock className="h-5 w-5 text-movebetter-primary" />
                       </div>
                       <div>
-                        <p className="font-medium">{appointment.title}</p>
+                        <p className={`font-medium ${appointment.status === 'cancelled' ? 'line-through' : ''}`}>
+                          {appointment.title}
+                        </p>
                         <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                           <User className="h-4 w-4" />
                           <span>{appointment.patientName}</span>
@@ -158,9 +187,27 @@ export default function CalendarPage() {
                       <Badge className={getStatusColor(appointment.status)}>
                         {getStatusText(appointment.status)}
                       </Badge>
-                      <Button variant="outline" size="sm" onClick={handleScheduleSession}>
-                        Agendar Sessão
-                      </Button>
+                      {appointment.status === "scheduled" ? (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleCancelAppointment(appointment)}
+                          className="text-red-600 border-red-200 hover:bg-red-50"
+                        >
+                          <X className="mr-1 h-4 w-4" />
+                          Cancelar
+                        </Button>
+                      ) : (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          disabled
+                          className="opacity-50"
+                        >
+                          <X className="mr-1 h-4 w-4" />
+                          Cancelar
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))
@@ -169,6 +216,55 @@ export default function CalendarPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cancelar Agendamento</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja cancelar este agendamento? Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedAppointment && (
+            <div className="py-4 border-y">
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="font-medium">Paciente:</span>
+                  <span>{selectedAppointment.patientName}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium">Tipo:</span>
+                  <span>{selectedAppointment.title}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium">Data:</span>
+                  <span>{selectedAppointment.date.toLocaleDateString("pt-BR")}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium">Horário:</span>
+                  <span>{selectedAppointment.time}</span>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setCancelDialogOpen(false)}
+            >
+              Manter Agendamento
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmCancelAppointment}
+            >
+              Cancelar Agendamento
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
