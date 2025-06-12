@@ -4,8 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CalendarIcon, Clock, User } from "lucide-react";
-import { ScheduleAppointmentForm } from "@/components/calendar/ScheduleAppointmentForm";
+import { CalendarIcon, Clock, User, Plus } from "lucide-react";
 
 interface Appointment {
   id: string;
@@ -46,8 +45,9 @@ export default function CalendarPage() {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [appointments, setAppointments] = useState<Appointment[]>(mockAppointments);
 
-  const handleScheduleAppointment = (newAppointment: Appointment) => {
-    setAppointments([...appointments, newAppointment]);
+  const handleScheduleSession = () => {
+    // Esta função será implementada para abrir o formulário de agendamento diretamente
+    console.log("Abrindo formulário de agendamento de sessão");
   };
 
   const todayAppointments = appointments.filter(
@@ -92,7 +92,10 @@ export default function CalendarPage() {
             Gerencie seus agendamentos e sessões.
           </p>
         </div>
-        <ScheduleAppointmentForm onScheduleAppointment={handleScheduleAppointment} />
+        <Button onClick={handleScheduleSession}>
+          <Plus className="mr-2 h-4 w-4" />
+          Agendar Nova Sessão
+        </Button>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -155,7 +158,7 @@ export default function CalendarPage() {
                       <Badge className={getStatusColor(appointment.status)}>
                         {getStatusText(appointment.status)}
                       </Badge>
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" onClick={handleScheduleSession}>
                         Agendar Sessão
                       </Button>
                     </div>
