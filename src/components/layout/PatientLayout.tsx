@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link, NavLink } from "react-router-dom";
 import { Calendar, FileText, Home, ListChecks } from "lucide-react";
@@ -8,45 +7,39 @@ import { Logo } from "./Logo";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-
 interface SidebarItem {
   title: string;
   icon: React.ElementType;
   href: string;
 }
-
-const sidebarItems: SidebarItem[] = [
-  {
-    title: "Início",
-    icon: Home,
-    href: "/paciente",
-  },
-  {
-    title: "Trilhas",
-    icon: ListChecks,
-    href: "/paciente/trilhas",
-  },
-  {
-    title: "Agenda",
-    icon: Calendar,
-    href: "/paciente/agenda",
-  },
-  {
-    title: "Evolução",
-    icon: FileText,
-    href: "/paciente/evolucao",
-  }
-];
-
+const sidebarItems: SidebarItem[] = [{
+  title: "Início",
+  icon: Home,
+  href: "/paciente"
+}, {
+  title: "Trilhas",
+  icon: ListChecks,
+  href: "/paciente/trilhas"
+}, {
+  title: "Agenda",
+  icon: Calendar,
+  href: "/paciente/agenda"
+}, {
+  title: "Evolução",
+  icon: FileText,
+  href: "/paciente/evolucao"
+}];
 interface PatientLayoutProps {
   children: React.ReactNode;
 }
-
-export function PatientLayout({ children }: PatientLayoutProps) {
-  const { user, logout } = useAuth();
-
-  return (
-    <div className="min-h-screen bg-gray-50">
+export function PatientLayout({
+  children
+}: PatientLayoutProps) {
+  const {
+    user,
+    logout
+  } = useAuth();
+  return <div className="min-h-screen bg-gray-50">
       <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white">
         <div className="flex h-16 items-center px-4 md:px-6">
           <Logo />
@@ -72,23 +65,12 @@ export function PatientLayout({ children }: PatientLayoutProps) {
           <div className="p-4">
             <h2 className="text-lg font-semibold mb-4 text-gray-700">Menu do Paciente</h2>
             <nav className="space-y-1">
-              {sidebarItems.map((item) => (
-                <NavLink
-                  key={item.href}
-                  to={item.href}
-                  className={({ isActive }) =>
-                    cn(
-                      "flex items-center py-2 px-4 rounded-md text-sm transition-colors",
-                      isActive
-                        ? "bg-movebetter-light text-movebetter-primary font-medium"
-                        : "text-gray-700 hover:bg-gray-100"
-                    )
-                  }
-                >
+              {sidebarItems.map(item => <NavLink key={item.href} to={item.href} className={({
+              isActive
+            }) => cn("flex items-center py-2 px-4 rounded-md text-sm transition-colors", isActive ? "bg-movebetter-light text-movebetter-primary font-medium" : "text-gray-700 hover:bg-gray-100")}>
                   <item.icon className="h-5 w-5 mr-3" />
                   {item.title}
-                </NavLink>
-              ))}
+                </NavLink>)}
             </nav>
           </div>
           
@@ -96,16 +78,17 @@ export function PatientLayout({ children }: PatientLayoutProps) {
             <div className="bg-movebetter-light rounded-lg p-4">
               <h4 className="font-medium text-sm text-movebetter-primary">Seu progresso</h4>
               <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div className="h-full bg-movebetter-primary rounded-full" style={{ width: "45%" }}></div>
+                <div className="h-full bg-movebetter-primary rounded-full" style={{
+                width: "45%"
+              }}></div>
               </div>
               <p className="text-xs text-gray-600 mt-2">45% do seu plano de tratamento completo</p>
             </div>
           </div>
         </div>
-        <main className="flex-1 p-6 md:p-8 lg:p-10 max-w-full overflow-x-hidden">
+        <main className="flex-1 p-6 md:p-8 lg:p-10 max-w-full overflow-x-hidden bg-indigo-50">
           {children}
         </main>
       </div>
-    </div>
-  );
+    </div>;
 }
