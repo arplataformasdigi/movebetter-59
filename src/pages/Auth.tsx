@@ -5,7 +5,7 @@ import { LoginForm } from "@/components/auth/LoginForm";
 import { RegisterForm } from "@/components/auth/RegisterForm";
 export default function Auth() {
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
-  return <div className="min-h-screen flex items-center justify-center bg-gray-50">
+  return <div className="min-h-screen flex items-center justify-center bg-indigo-50">
       <div className="w-full max-w-md">
         <Card className="border-none shadow-lg">
           <CardHeader className="space-y-1 text-center">
