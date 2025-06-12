@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -14,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { CalendarIcon, Clock, User, X } from "lucide-react";
 import { ScheduleAppointmentForm } from "@/components/calendar/ScheduleAppointmentForm";
+import { AppointmentFilter } from "@/components/calendar/AppointmentFilter";
 import { toast } from "sonner";
 
 interface Appointment {
@@ -49,6 +49,15 @@ const mockAppointments: Appointment[] = [
     duration: 45,
     status: "scheduled",
   },
+];
+
+const mockPatients = [
+  { id: "1", name: "Marina Oliveira" },
+  { id: "2", name: "Felipe Martins" },
+  { id: "3", name: "Carla Sousa" },
+  { id: "4", name: "Ricardo Almeida" },
+  { id: "5", name: "Patricia Mendes" },
+  { id: "6", name: "Gustavo Torres" },
 ];
 
 export default function CalendarPage() {
@@ -122,8 +131,13 @@ export default function CalendarPage() {
             Gerencie seus agendamentos e sessões.
           </p>
         </div>
-        <ScheduleAppointmentForm onScheduleAppointment={handleScheduleAppointment} />
+        <ScheduleAppointmentForm 
+          onScheduleAppointment={handleScheduleAppointment} 
+          patients={mockPatients}
+        />
       </div>
+
+      <AppointmentFilter patients={mockPatients} appointments={appointments} />
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card className="md:col-span-1">

@@ -23,13 +23,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
-interface ScheduleAppointmentFormProps {
-  onScheduleAppointment: (appointment: any) => void;
+interface Patient {
+  id: string;
+  name: string;
 }
 
-export function ScheduleAppointmentForm({ onScheduleAppointment }: ScheduleAppointmentFormProps) {
+interface ScheduleAppointmentFormProps {
+  onScheduleAppointment: (appointment: any) => void;
+  patients: Patient[];
+}
+
+export function ScheduleAppointmentForm({ onScheduleAppointment, patients }: ScheduleAppointmentFormProps) {
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
+    patientId: "",
     patientName: "",
     title: "",
     date: "",
@@ -41,15 +48,17 @@ export function ScheduleAppointmentForm({ onScheduleAppointment }: ScheduleAppoi
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.patientName || !formData.title || !formData.date || !formData.time) {
+    if (!formData.patientId || !formData.title || !formData.date || !formData.time) {
       toast.error("Preencha todos os campos obrigatórios");
       return;
     }
 
+    const selectedPatient = patients.find(p => p.id === formData.patientId);
+    
     const newAppointment = {
       id: Date.now().toString(),
-      patientId: Date.now().toString(),
-      patientName: formData.patientName,
+      patientId: formData.patientId,
+      patientName: selectedPatient?.name || "",
       title: formData.title,
       date: new Date(formData.date),
       time: formData.time,
@@ -62,12 +71,22 @@ export function ScheduleAppointmentForm({ onScheduleAppointment }: ScheduleAppoi
     toast.success("Agendamento criado com sucesso!");
     setOpen(false);
     setFormData({
+      patientId: "",
       patientName: "",
       title: "",
       date: "",
       time: "",
       duration: 60,
       observations: "",
+    });
+  };
+
+  const handlePatientChange = (patientId: string) => {
+    const selectedPatient = patients.find(p => p.id === patientId);
+    setFormData({ 
+      ...formData, 
+      patientId, 
+      patientName: selectedPatient?.name || "" 
     });
   };
 
@@ -88,28 +107,29 @@ export function ScheduleAppointmentForm({ onScheduleAppointment }: ScheduleAppoi
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="patientName">Nome do Paciente *</Label>
-            <Input
-              id="patientName"
-              value={formData.patientName}
-              onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
-              placeholder="Digite o nome do paciente"
-            />
+            <Label htmlFor="patientId">Nome do Paciente *</Label>
+            <Select value={formData.patientId} onValueChange={handlePatientChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o paciente" />
+              </SelectTrigger>
+              <SelectContent>
+                {patients.map((patient) => (
+                  <SelectItem key={patient.id} value={patient.id}>
+                    {patient.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           
           <div>
             <Label htmlFor="title">Tipo de Sessão *</Label>
-            <Select value={formData.title} onValueChange={(value) => setFormData({ ...formData, title: value })}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o tipo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Avaliação Inicial">Avaliação Inicial</SelectItem>
-                <SelectItem value="Sessão de Fisioterapia">Sessão de Fisioterapia</SelectItem>
-                <SelectItem value="Sessão de Reabilitação">Sessão de Reabilitação</SelectItem>
-                <SelectItem value="Reavaliação">Reavaliação</SelectItem>
-              </SelectContent>
-            </Select>
+            <Input
+              id="title"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              placeholder="Ex: Sessão de fisioterapia"
+            />
           </div>
           
           <div>
