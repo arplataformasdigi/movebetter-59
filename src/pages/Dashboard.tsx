@@ -1,13 +1,13 @@
+
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ActivityCard } from "@/components/dashboard/ActivityCard";
-import { PatientProgress } from "@/components/dashboard/PatientProgress";
-import { LeaderBoard } from "@/components/dashboard/LeaderBoard";
 import { UpcomingSessions } from "@/components/dashboard/UpcomingSessions";
+
 export function Dashboard() {
-  return <div className="space-y-6">
+  return (
+    <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground">
@@ -86,39 +86,8 @@ export function Dashboard() {
           </CardContent>
         </Card>
       </div>
-      
-      <Tabs defaultValue="progresso">
-        <TabsList className="grid w-full grid-cols-2 mb-4">
-          <TabsTrigger value="progresso">Progresso de Pacientes</TabsTrigger>
-          <TabsTrigger value="leaderboard">Ranking</TabsTrigger>
-        </TabsList>
-        <TabsContent value="progresso">
-          <Card>
-            <CardHeader>
-              <CardTitle>Progresso dos Pacientes</CardTitle>
-              <CardDescription>
-                Acompanhamento do progresso dos pacientes ativos
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-0">
-              <PatientProgress />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="leaderboard">
-          <Card>
-            <CardHeader>
-              <CardTitle>Leaderboard de Pacientes</CardTitle>
-              <CardDescription>
-                Ranking de pacientes por pontos de gamificação
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-0">
-              <LeaderBoard />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>;
+    </div>
+  );
 }
+
 export default Dashboard;

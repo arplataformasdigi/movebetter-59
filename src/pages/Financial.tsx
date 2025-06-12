@@ -9,7 +9,7 @@ import { TransactionForm } from "@/components/financial/TransactionForm";
 import { TransactionList } from "@/components/financial/TransactionList";
 import { FinancialSummary } from "@/components/financial/FinancialSummary";
 import { FinancialReports } from "@/components/financial/FinancialReports";
-import { CategoryAnalysis } from "@/components/financial/CategoryAnalysis";
+import { CategoryManager } from "@/components/financial/CategoryManager";
 
 interface Transaction {
   id: string;
@@ -18,6 +18,12 @@ interface Transaction {
   amount: number;
   date: string;
   category: string;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  type: "income" | "expense";
 }
 
 const mockTransactions: Transaction[] = [
@@ -47,8 +53,16 @@ const mockTransactions: Transaction[] = [
   },
 ];
 
+const initialCategories: Category[] = [
+  { id: "1", name: "Atendimento", type: "income" },
+  { id: "2", name: "Pacotes", type: "income" },
+  { id: "3", name: "Equipamentos", type: "expense" },
+  { id: "4", name: "Marketing", type: "expense" },
+];
+
 export default function Financial() {
   const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
+  const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [startDate, setStartDate] = useState("2025-06-01");
   const [endDate, setEndDate] = useState("2025-06-30");
 
@@ -66,6 +80,15 @@ export default function Financial() {
   const handleDeleteTransaction = (id: string) => {
     setTransactions(transactions.filter(t => t.id !== id));
     toast.success("Transação removida com sucesso!");
+  };
+
+  const handleAddCategory = (category: Category) => {
+    setCategories([...categories, category]);
+  };
+
+  const handleDeleteCategory = (categoryId: string) => {
+    setCategories(categories.filter(cat => cat.id !== categoryId));
+    toast.success("Categoria removida com sucesso!");
   };
 
   return (
@@ -105,12 +128,11 @@ export default function Financial() {
       <FinancialSummary transactions={filteredTransactions} />
 
       <Tabs defaultValue="transactions" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="transactions">Transações</TabsTrigger>
           <TabsTrigger value="add">Adicionar</TabsTrigger>
-          <TabsTrigger value="analysis">Análise</TabsTrigger>
-          <TabsTrigger value="reports">Relatórios</TabsTrigger>
           <TabsTrigger value="categories">Categorias</TabsTrigger>
+          <TabsTrigger value="reports">Relatórios</TabsTrigger>
         </TabsList>
 
         <TabsContent value="transactions" className="space-y-6">
@@ -121,11 +143,18 @@ export default function Financial() {
         </TabsContent>
 
         <TabsContent value="add" className="space-y-6">
-          <TransactionForm onAddTransaction={handleAddTransaction} />
+          <TransactionForm 
+            onAddTransaction={handleAddTransaction}
+            categories={categories}
+          />
         </TabsContent>
 
-        <TabsContent value="analysis" className="space-y-6">
-          <CategoryAnalysis transactions={filteredTransactions} />
+        <TabsContent value="categories" className="space-y-6">
+          <CategoryManager
+            categories={categories}
+            onAddCategory={handleAddCategory}
+            onDeleteCategory={handleDeleteCategory}
+          />
         </TabsContent>
 
         <TabsContent value="reports" className="space-y-6">
@@ -134,10 +163,6 @@ export default function Financial() {
             startDate={startDate}
             endDate={endDate}
           />
-        </TabsContent>
-
-        <TabsContent value="categories" className="space-y-6">
-          <CategoryAnalysis transactions={filteredTransactions} />
         </TabsContent>
       </Tabs>
     </div>

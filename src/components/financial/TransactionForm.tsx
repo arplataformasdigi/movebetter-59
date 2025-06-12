@@ -3,8 +3,15 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 
 interface Transaction {
@@ -16,23 +23,33 @@ interface Transaction {
   category: string;
 }
 
-interface TransactionFormProps {
-  onAddTransaction: (transaction: Transaction) => void;
+interface Category {
+  id: string;
+  name: string;
+  type: "income" | "expense";
 }
 
-export function TransactionForm({ onAddTransaction }: TransactionFormProps) {
+interface TransactionFormProps {
+  onAddTransaction: (transaction: Transaction) => void;
+  categories: Category[];
+}
+
+export function TransactionForm({ onAddTransaction, categories }: TransactionFormProps) {
   const [formData, setFormData] = useState({
     type: "income" as "income" | "expense",
     description: "",
-    amount: 0,
+    amount: "",
+    date: new Date().toISOString().split('T')[0],
     category: "",
   });
+
+  const availableCategories = categories.filter(cat => cat.type === formData.type);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.description || !formData.category || formData.amount <= 0) {
-      toast.error("Preencha todos os campos obrigatórios");
+    if (!formData.description || !formData.amount || !formData.category) {
+      toast.error("Preencha todos os campos");
       return;
     }
 
@@ -40,17 +57,19 @@ export function TransactionForm({ onAddTransaction }: TransactionFormProps) {
       id: Date.now().toString(),
       type: formData.type,
       description: formData.description,
-      amount: formData.amount,
-      date: new Date().toISOString().split('T')[0],
+      amount: parseFloat(formData.amount),
+      date: formData.date,
       category: formData.category,
     };
-    
+
     onAddTransaction(transaction);
     toast.success("Transação adicionada com sucesso!");
+    
     setFormData({
       type: "income",
       description: "",
-      amount: 0,
+      amount: "",
+      date: new Date().toISOString().split('T')[0],
       category: "",
     });
   };
@@ -59,77 +78,79 @@ export function TransactionForm({ onAddTransaction }: TransactionFormProps) {
     <Card>
       <CardHeader>
         <CardTitle>Adicionar Transação</CardTitle>
-        <CardDescription>Registre uma nova receita ou despesa</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="type">Tipo</Label>
-            <select
-              id="type"
-              className="w-full border rounded px-3 py-2"
-              value={formData.type}
-              onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value as "income" | "expense" }))}
-            >
-              <option value="income">Receita</option>
-              <option value="expense">Despesa</option>
-            </select>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="type">Tipo</Label>
+              <Select 
+                value={formData.type} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, type: value as "income" | "expense", category: "" }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="income">Receita</SelectItem>
+                  <SelectItem value="expense">Despesa</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="category">Categoria</Label>
+              <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableCategories.map((category) => (
+                    <SelectItem key={category.id} value={category.name}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div>
             <Label htmlFor="description">Descrição</Label>
-            <Input
+            <Textarea
               id="description"
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              placeholder="Descrição da transação"
-              required
+              placeholder="Descreva a transação..."
             />
           </div>
 
-          <div>
-            <Label htmlFor="amount">Valor (R$)</Label>
-            <Input
-              id="amount"
-              type="number"
-              step="0.01"
-              value={formData.amount}
-              onChange={(e) => setFormData(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))}
-              required
-            />
-          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="amount">Valor (R$)</Label>
+              <Input
+                id="amount"
+                type="number"
+                step="0.01"
+                value={formData.amount}
+                onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
+                placeholder="0.00"
+              />
+            </div>
 
-          <div>
-            <Label htmlFor="category">Categoria</Label>
-            <select
-              id="category"
-              className="w-full border rounded px-3 py-2"
-              value={formData.category}
-              onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-              required
-            >
-              <option value="">Selecione uma categoria</option>
-              {formData.type === "income" ? (
-                <>
-                  <option value="Atendimento">Atendimento</option>
-                  <option value="Pacotes">Pacotes</option>
-                  <option value="Consultas">Consultas</option>
-                  <option value="Outros">Outros</option>
-                </>
-              ) : (
-                <>
-                  <option value="Equipamentos">Equipamentos</option>
-                  <option value="Materiais">Materiais</option>
-                  <option value="Transporte">Transporte</option>
-                  <option value="Marketing">Marketing</option>
-                  <option value="Outros">Outros</option>
-                </>
-              )}
-            </select>
+            <div>
+              <Label htmlFor="date">Data</Label>
+              <Input
+                id="date"
+                type="date"
+                value={formData.date}
+                onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+              />
+            </div>
           </div>
 
           <Button type="submit" className="w-full">
-            <Plus className="mr-2 h-4 w-4" /> Adicionar Transação
+            Adicionar Transação
           </Button>
         </form>
       </CardContent>

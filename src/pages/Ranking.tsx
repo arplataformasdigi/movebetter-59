@@ -3,7 +3,9 @@ import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { Search } from "lucide-react";
+import { toast } from "sonner";
 
 interface RankingUser {
   id: string;
@@ -11,6 +13,7 @@ interface RankingUser {
   avatar?: string;
   progress: number;
   position: number;
+  trilhasAtivas: boolean;
 }
 
 const rankingData: RankingUser[] = [
@@ -20,6 +23,7 @@ const rankingData: RankingUser[] = [
     avatar: "",
     progress: 85,
     position: 1,
+    trilhasAtivas: true,
   },
   {
     id: "2",
@@ -27,6 +31,7 @@ const rankingData: RankingUser[] = [
     avatar: "",
     progress: 90,
     position: 2,
+    trilhasAtivas: false,
   },
   {
     id: "3",
@@ -34,6 +39,7 @@ const rankingData: RankingUser[] = [
     avatar: "",
     progress: 78,
     position: 3,
+    trilhasAtivas: true,
   },
   {
     id: "4",
@@ -41,6 +47,7 @@ const rankingData: RankingUser[] = [
     avatar: "",
     progress: 45,
     position: 4,
+    trilhasAtivas: false,
   },
   {
     id: "5",
@@ -48,6 +55,7 @@ const rankingData: RankingUser[] = [
     avatar: "",
     progress: 75,
     position: 5,
+    trilhasAtivas: true,
   },
   {
     id: "6",
@@ -55,6 +63,7 @@ const rankingData: RankingUser[] = [
     avatar: "",
     progress: 68,
     position: 6,
+    trilhasAtivas: false,
   },
   {
     id: "7",
@@ -62,6 +71,7 @@ const rankingData: RankingUser[] = [
     avatar: "",
     progress: 60,
     position: 7,
+    trilhasAtivas: true,
   },
   {
     id: "8",
@@ -69,6 +79,7 @@ const rankingData: RankingUser[] = [
     avatar: "",
     progress: 42,
     position: 8,
+    trilhasAtivas: false,
   },
 ];
 
@@ -87,11 +98,20 @@ const getPositionColor = (position: number): string => {
 
 export default function Ranking() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [users, setUsers] = useState<RankingUser[]>(rankingData);
   
-  const filteredRanking = rankingData
-    .filter(user => 
-      user.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+  const filteredRanking = users.filter(user => 
+    user.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleToggleTrilhasAtivas = (userId: string) => {
+    setUsers(users.map(user => 
+      user.id === userId 
+        ? { ...user, trilhasAtivas: !user.trilhasAtivas }
+        : user
+    ));
+    toast.success("Status das trilhas atualizado!");
+  };
 
   return (
     <div className="space-y-6">
@@ -117,8 +137,9 @@ export default function Ranking() {
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="grid grid-cols-12 gap-2 p-4 font-medium text-sm text-gray-500 border-b">
           <div className="col-span-1 text-center">Posição</div>
-          <div className="col-span-7">Paciente</div>
-          <div className="col-span-4 text-center">Progresso</div>
+          <div className="col-span-5">Paciente</div>
+          <div className="col-span-3 text-center">Progresso</div>
+          <div className="col-span-3 text-center">Trilhas Ativas</div>
         </div>
         
         {filteredRanking.map((user) => (
@@ -134,7 +155,7 @@ export default function Ranking() {
               </div>
             </div>
             
-            <div className="col-span-7 flex items-center space-x-3">
+            <div className="col-span-5 flex items-center space-x-3">
               <Avatar className="h-10 w-10">
                 <AvatarImage src={user.avatar} alt={user.name} />
                 <AvatarFallback className={`${
@@ -152,7 +173,7 @@ export default function Ranking() {
               <span className="font-medium">{user.name}</span>
             </div>
             
-            <div className="col-span-4">
+            <div className="col-span-3">
               <div className="flex items-center mb-1 justify-between px-2">
                 <span className="text-xs text-gray-600">{user.progress}%</span>
               </div>
@@ -169,6 +190,21 @@ export default function Ranking() {
                   }`}
                   style={{ width: `${user.progress}%` }}
                 ></div>
+              </div>
+            </div>
+
+            <div className="col-span-3 flex justify-center">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  checked={user.trilhasAtivas}
+                  onCheckedChange={() => handleToggleTrilhasAtivas(user.id)}
+                />
+                <Badge 
+                  variant={user.trilhasAtivas ? "default" : "secondary"}
+                  className={user.trilhasAtivas ? "bg-green-500" : "bg-gray-500"}
+                >
+                  {user.trilhasAtivas ? "Ativo" : "Inativo"}
+                </Badge>
               </div>
             </div>
           </div>
