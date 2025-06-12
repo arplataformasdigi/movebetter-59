@@ -1,11 +1,8 @@
-
 import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import { Search } from "lucide-react";
-import { toast } from "sonner";
 
 interface RankingUser {
   id: string;
@@ -98,20 +95,11 @@ const getPositionColor = (position: number): string => {
 
 export default function Ranking() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [users, setUsers] = useState<RankingUser[]>(rankingData);
+  const [users] = useState<RankingUser[]>(rankingData);
   
   const filteredRanking = users.filter(user => 
     user.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const handleToggleTrilhasAtivas = (userId: string) => {
-    setUsers(users.map(user => 
-      user.id === userId 
-        ? { ...user, trilhasAtivas: !user.trilhasAtivas }
-        : user
-    ));
-    toast.success("Status das trilhas atualizado!");
-  };
 
   return (
     <div className="space-y-6">
@@ -194,18 +182,12 @@ export default function Ranking() {
             </div>
 
             <div className="col-span-3 flex justify-center">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  checked={user.trilhasAtivas}
-                  onCheckedChange={() => handleToggleTrilhasAtivas(user.id)}
-                />
-                <Badge 
-                  variant={user.trilhasAtivas ? "default" : "secondary"}
-                  className={user.trilhasAtivas ? "bg-green-500" : "bg-gray-500"}
-                >
-                  {user.trilhasAtivas ? "Ativo" : "Inativo"}
-                </Badge>
-              </div>
+              <Badge 
+                variant={user.trilhasAtivas ? "default" : "secondary"}
+                className={user.trilhasAtivas ? "bg-green-500" : "bg-gray-500"}
+              >
+                {user.trilhasAtivas ? "Ativo" : "Inativo"}
+              </Badge>
             </div>
           </div>
         ))}
