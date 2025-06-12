@@ -59,10 +59,10 @@ const mockPlans: Plan[] = [
 const PlanCard: React.FC<{ plan: Plan; onToggleStatus: (id: string) => void; onDelete: (id: string) => void }> = ({ plan, onToggleStatus, onDelete }) => {
   const handleDelete = () => {
     if (plan.progress > 0) {
-      alert("Não é possível excluir um plano com progresso iniciado.");
+      alert("Não é possível excluir uma trilha com progresso iniciado.");
       return;
     }
-    const confirmed = window.confirm(`Tem certeza que deseja excluir o plano "${plan.title}"?`);
+    const confirmed = window.confirm(`Tem certeza que deseja excluir a trilha "${plan.title}"?`);
     if (confirmed) {
       onDelete(plan.id);
     }
@@ -139,7 +139,7 @@ const PlanCard: React.FC<{ plan: Plan; onToggleStatus: (id: string) => void; onD
   );
 };
 
-export default function Plans() {
+export default function Trilhas() {
   const [searchTerm, setSearchTerm] = React.useState("");
   const [plans, setPlans] = React.useState<Plan[]>(mockPlans);
 
@@ -162,10 +162,10 @@ export default function Plans() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold tracking-tight">Planos de Acompanhamento</h1>
-        <Link to="/planos/criar">
+        <h1 className="text-2xl font-bold tracking-tight">Trilhas de Acompanhamento</h1>
+        <Link to="/trilhas/criar">
           <Button>
-            <Plus className="mr-2 h-4 w-4" /> Criar Novo Plano
+            <Plus className="mr-2 h-4 w-4" /> Criar Nova Trilha
           </Button>
         </Link>
       </div>

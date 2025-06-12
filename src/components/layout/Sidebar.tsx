@@ -8,7 +8,6 @@ import {
   Book,
   Trophy,
   User,
-  Shield,
   CreditCard,
   Smartphone,
   Package,
@@ -38,6 +37,18 @@ const sidebarItems: SidebarItem[] = [
     roles: ["admin"],
   },
   {
+    title: "Trilhas",
+    icon: Book,
+    href: "/trilhas",
+    roles: ["admin"],
+  },
+  {
+    title: "Calendário",
+    icon: Calendar,
+    href: "/calendario",
+    roles: ["admin"],
+  },
+  {
     title: "Pacotes",
     icon: Package,
     href: "/pacotes",
@@ -47,18 +58,6 @@ const sidebarItems: SidebarItem[] = [
     title: "Aplicativo",
     icon: Smartphone,
     href: "/aplicativo",
-    roles: ["admin"],
-  },
-  {
-    title: "Planos",
-    icon: Book,
-    href: "/planos",
-    roles: ["admin"],
-  },
-  {
-    title: "Calendário",
-    icon: Calendar,
-    href: "/calendario",
     roles: ["admin"],
   },
   {
@@ -73,17 +72,10 @@ const sidebarItems: SidebarItem[] = [
     href: "/ranking",
     roles: ["admin"],
   },
-  // Novas opções de menu para perfil
   {
     title: "Meus Dados",
     icon: User,
     href: "/dados-pessoais",
-    roles: ["admin", "patient"],
-  },
-  {
-    title: "Acesso",
-    icon: Shield,
-    href: "/acesso",
     roles: ["admin", "patient"],
   },
   {

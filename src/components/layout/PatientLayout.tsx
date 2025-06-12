@@ -22,9 +22,9 @@ const sidebarItems: SidebarItem[] = [
     href: "/paciente",
   },
   {
-    title: "Planos",
+    title: "Trilhas",
     icon: ListChecks,
-    href: "/paciente/planos",
+    href: "/paciente/trilhas",
   },
   {
     title: "Agenda",

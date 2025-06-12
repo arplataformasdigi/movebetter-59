@@ -13,10 +13,19 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { User } from "lucide-react";
+import { User, Shield } from "lucide-react";
 
 interface ViaCEPResponse {
   cep: string;
@@ -31,8 +40,7 @@ interface ViaCEPResponse {
 const formSchema = z.object({
   name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres" }),
   email: z.string().email({ message: "E-mail inválido" }),
-  crefito: z.string().optional(),
-  cpf: z.string().min(11, { message: "CPF inválido" }).optional(),
+  cpfCnpj: z.string().min(11, { message: "CPF/CNPJ inválido" }).optional(),
   conselho: z.string().optional(),
   whatsapp: z.string().min(10, { message: "WhatsApp inválido" }).optional(),
   cep: z.string().min(8, { message: "CEP inválido" }).max(9),
@@ -45,17 +53,20 @@ const formSchema = z.object({
 
 export default function PersonalData() {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [cpfSaved, setCpfSaved] = useState(false);
+  const [cpfCnpjSaved, setCpfCnpjSaved] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [isPasswordLoading, setIsPasswordLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: user?.name || "",
       email: user?.email || "",
-      crefito: user?.crefito || "",
-      cpf: "",
+      cpfCnpj: "",
       conselho: "",
       whatsapp: "",
       cep: "",
@@ -67,12 +78,23 @@ export default function PersonalData() {
     },
   });
 
-  // Simular CPF já salvo
   useEffect(() => {
-    if (form.getValues("cpf")) {
-      setCpfSaved(true);
+    if (form.getValues("cpfCnpj")) {
+      setCpfCnpjSaved(true);
     }
   }, []);
+
+  const formatCpfCnpj = (value: string) => {
+    const numbers = value.replace(/\D/g, "");
+    
+    if (numbers.length <= 11) {
+      // CPF
+      return numbers.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+    } else {
+      // CNPJ
+      return numbers.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
+    }
+  };
 
   const fetchAddressByCep = async (cep: string) => {
     if (cep.length >= 8) {
@@ -115,18 +137,18 @@ export default function PersonalData() {
     }
   };
 
-  const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const cpf = e.target.value;
-    form.setValue("cpf", cpf);
-    if (cpf && !cpfSaved) {
-      setCpfSaved(true);
+  const handleCpfCnpjChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const formatted = formatCpfCnpj(value);
+    form.setValue("cpfCnpj", formatted);
+    if (formatted && !cpfCnpjSaved) {
+      setCpfCnpjSaved(true);
     }
   };
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     
-    // Simulando o envio de dados para o servidor
     setTimeout(() => {
       toast({
         title: "Dados atualizados",
@@ -138,8 +160,44 @@ export default function PersonalData() {
     console.log(values);
   };
 
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsPasswordLoading(true);
+
+    if (newPassword !== confirmNewPassword) {
+      toast({
+        title: "Erro",
+        description: "As senhas não coincidem",
+        variant: "destructive",
+      });
+      setIsPasswordLoading(false);
+      return;
+    }
+
+    setTimeout(() => {
+      toast({
+        title: "Sucesso",
+        description: "Sua senha foi alterada com sucesso",
+      });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmNewPassword("");
+      setIsPasswordLoading(false);
+    }, 1500);
+  };
+
+  const handleDeleteAccount = () => {
+    setTimeout(() => {
+      toast({
+        title: "Conta excluída",
+        description: "Sua conta foi excluída com sucesso",
+      });
+      logout();
+    }, 1500);
+  };
+
   return (
-    <div className="container mx-auto py-10">
+    <div className="container mx-auto py-10 space-y-6">
       <h1 className="text-3xl font-bold mb-6">Meus Dados</h1>
 
       <Card>
@@ -189,20 +247,21 @@ export default function PersonalData() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="cpf"
+                  name="cpfCnpj"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>CPF</FormLabel>
+                      <FormLabel>CPF/CNPJ</FormLabel>
                       <FormControl>
                         <Input 
                           {...field} 
-                          placeholder="000.000.000-00" 
-                          disabled={cpfSaved}
-                          onChange={handleCpfChange}
+                          placeholder="000.000.000-00 ou 00.000.000/0000-00" 
+                          disabled={cpfCnpjSaved}
+                          onChange={handleCpfCnpjChange}
+                          maxLength={18}
                         />
                       </FormControl>
-                      {cpfSaved && (
-                        <FormDescription>O CPF não pode ser alterado após ser salvo</FormDescription>
+                      {cpfCnpjSaved && (
+                        <FormDescription>O CPF/CNPJ não pode ser alterado após ser salvo</FormDescription>
                       )}
                       <FormMessage />
                     </FormItem>
@@ -218,22 +277,6 @@ export default function PersonalData() {
                         <FormLabel>Número do Conselho</FormLabel>
                         <FormControl>
                           <Input {...field} placeholder="Ex: CREFITO-3 123456-F" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-
-                {user?.role === "admin" && (
-                  <FormField
-                    control={form.control}
-                    name="crefito"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>CREFITO</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -368,6 +411,104 @@ export default function PersonalData() {
             </form>
           </Form>
         </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5 text-movebetter-primary" />
+            Alterar Senha
+          </CardTitle>
+          <CardDescription>
+            Atualize sua senha para manter sua conta segura
+          </CardDescription>
+        </CardHeader>
+        <form onSubmit={handleChangePassword}>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium" htmlFor="current-password">
+                Senha Atual
+              </label>
+              <Input
+                id="current-password"
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium" htmlFor="new-password">
+                Nova Senha
+              </label>
+              <Input
+                id="new-password"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium" htmlFor="confirm-password">
+                Confirme a Nova Senha
+              </label>
+              <Input
+                id="confirm-password"
+                type="password"
+                value={confirmNewPassword}
+                onChange={(e) => setConfirmNewPassword(e.target.value)}
+                required
+              />
+            </div>
+          </CardContent>
+          
+          <CardFooter>
+            <Button
+              type="submit"
+              className="bg-movebetter-primary hover:bg-movebetter-primary/90"
+              disabled={isPasswordLoading}
+            >
+              {isPasswordLoading ? "Alterando..." : "Alterar Senha"}
+            </Button>
+          </CardFooter>
+        </form>
+      </Card>
+
+      <Card className="border-destructive/20">
+        <CardHeader>
+          <CardTitle className="text-destructive">Excluir Conta</CardTitle>
+          <CardDescription>
+            Ao excluir sua conta, todos os seus dados serão removidos permanentemente.
+            Esta ação não pode ser desfeita.
+          </CardDescription>
+        </CardHeader>
+        <CardFooter>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="destructive">Excluir Conta</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Você tem certeza?</DialogTitle>
+                <DialogDescription>
+                  Esta ação não pode ser desfeita. Isso excluirá permanentemente sua conta
+                  e removerá todos os seus dados dos nossos servidores.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => {}}>
+                  Cancelar
+                </Button>
+                <Button variant="destructive" onClick={handleDeleteAccount}>
+                  Sim, excluir minha conta
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </CardFooter>
       </Card>
     </div>
   );

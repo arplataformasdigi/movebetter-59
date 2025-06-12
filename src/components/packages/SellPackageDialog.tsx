@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus } from "lucide-react";
+import { Plus, Download } from "lucide-react";
 import { toast } from "sonner";
 
 interface Package {
@@ -151,6 +151,51 @@ export function SellPackageDialog({ packages, onSellPackage, isProposal = false,
     });
   };
 
+  const handleDownloadPDF = () => {
+    // Mock admin data - em produção viria do contexto/API
+    const adminData = {
+      name: "Dr. João Silva",
+      email: "joao.silva@fisioclinica.com.br",
+      council: "CREFITO-3 123456-F",
+      phone: "(11) 99999-9999",
+      address: "Rua das Flores, 123 - São Paulo, SP"
+    };
+
+    const content = `
+PROPOSTA DE PACOTE - FISIO SMART CARE
+
+Dados do Profissional:
+Nome: ${adminData.name}
+Email: ${adminData.email}
+Conselho: ${adminData.council}
+Telefone: ${adminData.phone}
+Endereço: ${adminData.address}
+
+Dados da Proposta:
+Paciente: ${formData.patientName}
+Pacote: ${selectedPackage?.name || ""}
+Valor do Pacote: R$ ${selectedPackage?.price.toFixed(2) || "0,00"}
+Outros Custos: R$ ${formData.otherCosts.toFixed(2)}
+Forma de Pagamento: ${formData.paymentMethod === "pix" ? "PIX" : formData.paymentMethod === "cash" ? "Dinheiro" : "Cartão de Crédito"}
+${showInstallments ? `Parcelas: ${formData.installments}x` : ""}
+Valor Final: R$ ${finalPrice.toFixed(2)}
+
+Data: ${new Date().toLocaleDateString("pt-BR")}
+    `.trim();
+
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `proposta-${formData.patientName.replace(/\s+/g, '-').toLowerCase()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast.success("PDF da proposta baixado com sucesso!");
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -200,18 +245,6 @@ export function SellPackageDialog({ packages, onSellPackage, isProposal = false,
           </div>
 
           <div>
-            <Label htmlFor="transportCost">Custo de Deslocamento (R$)</Label>
-            <Input
-              id="transportCost"
-              type="number"
-              step="0.01"
-              value={formData.transportCost}
-              onChange={(e) => setFormData(prev => ({ ...prev, transportCost: parseFloat(e.target.value) || 0 }))}
-              placeholder="0.00"
-            />
-          </div>
-
-          <div>
             <Label htmlFor="otherCosts">Outros Custos (R$)</Label>
             <Input
               id="otherCosts"
@@ -245,7 +278,6 @@ export function SellPackageDialog({ packages, onSellPackage, isProposal = false,
                 <SelectItem value="pix">PIX</SelectItem>
                 <SelectItem value="cash">Dinheiro</SelectItem>
                 <SelectItem value="credit">Cartão de Crédito</SelectItem>
-                <SelectItem value="debit">Cartão de Débito</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -277,10 +309,6 @@ export function SellPackageDialog({ packages, onSellPackage, isProposal = false,
                 <span>Valor do pacote:</span>
                 <span>R$ {selectedPackage.price.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span>Custo de deslocamento:</span>
-                <span>R$ {formData.transportCost.toFixed(2)}</span>
-              </div>
               {formData.otherCosts > 0 && (
                 <div className="flex justify-between text-sm">
                   <span>Outros custos:</span>
@@ -290,7 +318,7 @@ export function SellPackageDialog({ packages, onSellPackage, isProposal = false,
               {formData.paymentMethod === "credit" && formData.installments > 1 && (
                 <div className="flex justify-between text-sm">
                   <span>Taxa do cartão ({getCreditCardRate(formData.installments)}%):</span>
-                  <span>R$ {(((selectedPackage.price + formData.transportCost + formData.otherCosts) * getCreditCardRate(formData.installments)) / 100).toFixed(2)}</span>
+                  <span>R$ {(((selectedPackage.price + formData.otherCosts) * getCreditCardRate(formData.installments)) / 100).toFixed(2)}</span>
                 </div>
               )}
               <div className="flex justify-between font-medium">
@@ -310,6 +338,12 @@ export function SellPackageDialog({ packages, onSellPackage, isProposal = false,
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancelar
             </Button>
+            {isProposal && selectedPackage && (
+              <Button type="button" variant="outline" onClick={handleDownloadPDF}>
+                <Download className="mr-2 h-4 w-4" />
+                Baixar PDF
+              </Button>
+            )}
             <Button type="submit">
               {isProposal ? "Gerar Proposta" : "Vender Pacote"}
             </Button>

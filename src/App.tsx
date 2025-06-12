@@ -11,7 +11,7 @@ import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import Patients from "./pages/Patients";
 import NotFound from "./pages/NotFound";
-import Plans from "./pages/Plans";
+import Trilhas from "./pages/Trilhas";
 import CreatePlan from "./pages/CreatePlan";
 import Calendar from "./pages/Calendar";
 import Ranking from "./pages/Ranking";
@@ -20,7 +20,6 @@ import PatientDashboard from "./pages/patient/PatientDashboard";
 import PatientAppointments from "./pages/patient/PatientAppointments";
 import PatientPlans from "./pages/patient/PatientPlans";
 import PatientMedicalRecords from "./pages/patient/PatientMedicalRecords";
-import AccountAccess from "./pages/AccountAccess";
 import PersonalData from "./pages/PersonalData";
 import Subscription from "./pages/Subscription";
 import AppPage from "./pages/App";
@@ -53,6 +52,24 @@ const App = () => (
               </ProtectedRoute>
             } />
 
+            <Route path="/trilhas" element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <AppLayout><Trilhas /></AppLayout>
+              </ProtectedRoute>
+            } />
+
+            <Route path="/trilhas/criar" element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <AppLayout><CreatePlan /></AppLayout>
+              </ProtectedRoute>
+            } />
+
+            <Route path="/calendario" element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <AppLayout><Calendar /></AppLayout>
+              </ProtectedRoute>
+            } />
+
             <Route path="/pacotes" element={
               <ProtectedRoute allowedRoles={["admin"]}>
                 <AppLayout><Packages /></AppLayout>
@@ -62,24 +79,6 @@ const App = () => (
             <Route path="/aplicativo" element={
               <ProtectedRoute allowedRoles={["admin"]}>
                 <AppLayout><AppPage /></AppLayout>
-              </ProtectedRoute>
-            } />
-
-            <Route path="/planos" element={
-              <ProtectedRoute allowedRoles={["admin"]}>
-                <AppLayout><Plans /></AppLayout>
-              </ProtectedRoute>
-            } />
-
-            <Route path="/planos/criar" element={
-              <ProtectedRoute allowedRoles={["admin"]}>
-                <AppLayout><CreatePlan /></AppLayout>
-              </ProtectedRoute>
-            } />
-
-            <Route path="/calendario" element={
-              <ProtectedRoute allowedRoles={["admin"]}>
-                <AppLayout><Calendar /></AppLayout>
               </ProtectedRoute>
             } />
 
@@ -95,16 +94,9 @@ const App = () => (
               </ProtectedRoute>
             } />
 
-            {/* Novas rotas de perfil */}
             <Route path="/dados-pessoais" element={
               <ProtectedRoute>
                 <AppLayout><PersonalData /></AppLayout>
-              </ProtectedRoute>
-            } />
-
-            <Route path="/acesso" element={
-              <ProtectedRoute>
-                <AppLayout><AccountAccess /></AppLayout>
               </ProtectedRoute>
             } />
 
@@ -121,15 +113,15 @@ const App = () => (
               </ProtectedRoute>
             } />
 
-            <Route path="/paciente/agenda" element={
+            <Route path="/paciente/trilhas" element={
               <ProtectedRoute allowedRoles={["patient"]}>
-                <PatientLayout><PatientAppointments /></PatientLayout>
+                <PatientLayout><PatientPlans /></PatientLayout>
               </ProtectedRoute>
             } />
 
-            <Route path="/paciente/planos" element={
+            <Route path="/paciente/agenda" element={
               <ProtectedRoute allowedRoles={["patient"]}>
-                <PatientLayout><PatientPlans /></PatientLayout>
+                <PatientLayout><PatientAppointments /></PatientLayout>
               </ProtectedRoute>
             } />
 
@@ -139,16 +131,9 @@ const App = () => (
               </ProtectedRoute>
             } />
 
-            {/* Rotas de perfil para pacientes */}
             <Route path="/paciente/dados-pessoais" element={
               <ProtectedRoute allowedRoles={["patient"]}>
                 <PatientLayout><PersonalData /></PatientLayout>
-              </ProtectedRoute>
-            } />
-
-            <Route path="/paciente/acesso" element={
-              <ProtectedRoute allowedRoles={["patient"]}>
-                <PatientLayout><AccountAccess /></PatientLayout>
               </ProtectedRoute>
             } />
 

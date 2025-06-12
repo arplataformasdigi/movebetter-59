@@ -36,9 +36,10 @@ interface AppUser {
   email: string;
   password: string;
   permissions: {
-    planos: boolean;
+    trilhas: boolean;
     agenda: boolean;
     evolucao: boolean;
+    allowMarkAsCompleted: boolean;
   };
 }
 
@@ -59,9 +60,10 @@ export function App() {
     email: "",
     password: "",
     permissions: {
-      planos: false,
+      trilhas: false,
       agenda: false,
       evolucao: false,
+      allowMarkAsCompleted: true,
     }
   });
 
@@ -85,7 +87,7 @@ export function App() {
       patientId: "",
       email: "",
       password: "",
-      permissions: { planos: false, agenda: false, evolucao: false }
+      permissions: { trilhas: false, agenda: false, evolucao: false, allowMarkAsCompleted: true }
     });
     setIsDialogOpen(false);
   };
@@ -164,14 +166,14 @@ export function App() {
                 <Label>Permissões de Acesso</Label>
                 <div className="flex items-center space-x-2">
                   <Switch
-                    id="planos"
-                    checked={formData.permissions.planos}
+                    id="trilhas"
+                    checked={formData.permissions.trilhas}
                     onCheckedChange={(checked) => setFormData({
                       ...formData, 
-                      permissions: {...formData.permissions, planos: checked}
+                      permissions: {...formData.permissions, trilhas: checked}
                     })}
                   />
-                  <Label htmlFor="planos">Planos</Label>
+                  <Label htmlFor="trilhas">Trilhas</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Switch
@@ -195,6 +197,17 @@ export function App() {
                   />
                   <Label htmlFor="evolucao">Evolução</Label>
                 </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="allowMarkAsCompleted"
+                    checked={formData.permissions.allowMarkAsCompleted}
+                    onCheckedChange={(checked) => setFormData({
+                      ...formData, 
+                      permissions: {...formData.permissions, allowMarkAsCompleted: checked}
+                    })}
+                  />
+                  <Label htmlFor="allowMarkAsCompleted">Permitir marcar como concluído</Label>
+                </div>
               </div>
               <Button type="submit" className="w-full">
                 Criar Conta
@@ -215,9 +228,10 @@ export function App() {
               <TableRow>
                 <TableHead>Paciente</TableHead>
                 <TableHead>E-mail</TableHead>
-                <TableHead>Planos</TableHead>
+                <TableHead>Trilhas</TableHead>
                 <TableHead>Agenda</TableHead>
                 <TableHead>Evolução</TableHead>
+                <TableHead>Marcar Concluído</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -228,8 +242,8 @@ export function App() {
                   <TableCell>{user.email}</TableCell>
                   <TableCell>
                     <Switch
-                      checked={user.permissions.planos}
-                      onCheckedChange={(checked) => handlePermissionChange(user.id, 'planos', checked)}
+                      checked={user.permissions.trilhas}
+                      onCheckedChange={(checked) => handlePermissionChange(user.id, 'trilhas', checked)}
                     />
                   </TableCell>
                   <TableCell>
@@ -242,6 +256,12 @@ export function App() {
                     <Switch
                       checked={user.permissions.evolucao}
                       onCheckedChange={(checked) => handlePermissionChange(user.id, 'evolucao', checked)}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Switch
+                      checked={user.permissions.allowMarkAsCompleted}
+                      onCheckedChange={(checked) => handlePermissionChange(user.id, 'allowMarkAsCompleted', checked)}
                     />
                   </TableCell>
                   <TableCell className="text-right">
@@ -257,7 +277,7 @@ export function App() {
               ))}
               {appUsers.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center text-muted-foreground">
                     Nenhum paciente cadastrado no aplicativo
                   </TableCell>
                 </TableRow>
