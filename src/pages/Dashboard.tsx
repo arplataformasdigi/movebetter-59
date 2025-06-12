@@ -1,13 +1,10 @@
-
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { ActivityCard } from "@/components/dashboard/ActivityCard";
 import { UpcomingSessions } from "@/components/dashboard/UpcomingSessions";
-
 export function Dashboard() {
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground">
@@ -17,10 +14,10 @@ export function Dashboard() {
       
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-2 bg-green-100">
             <CardTitle className="text-sm font-medium">Pacientes Ativos</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="bg-green-100">
             <div className="text-2xl font-bold">28</div>
             <p className="text-xs text-muted-foreground">+2.5% desde o mês passado</p>
             <Progress className="mt-2" value={65} />
@@ -86,8 +83,6 @@ export function Dashboard() {
           </CardContent>
         </Card>
       </div>
-    </div>
-  );
+    </div>;
 }
-
 export default Dashboard;
