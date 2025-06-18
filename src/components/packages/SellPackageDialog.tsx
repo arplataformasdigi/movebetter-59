@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -19,8 +19,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Download } from "lucide-react";
+import { Plus } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Package {
   id: string;
@@ -65,17 +66,10 @@ interface SellPackageDialogProps {
   creditCardRates?: CreditCardRate[];
 }
 
-// Mock data for patients
-const mockPatients: Patient[] = [
-  { id: "1", name: "Maria Silva" },
-  { id: "2", name: "João Santos" },
-  { id: "3", name: "Ana Costa" },
-  { id: "4", name: "Pedro Oliveira" },
-  { id: "5", name: "Carla Souza" },
-];
-
 export function SellPackageDialog({ packages, onSellPackage, isProposal = false, creditCardRates = [] }: SellPackageDialogProps) {
   const [open, setOpen] = useState(false);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [isLoadingPatients, setIsLoadingPatients] = useState(false);
   const [formData, setFormData] = useState({
     packageId: "",
     patientName: "",
@@ -86,9 +80,40 @@ export function SellPackageDialog({ packages, onSellPackage, isProposal = false,
     installments: 1,
   });
 
+  // Buscar pacientes do Supabase
+  useEffect(() => {
+    const fetchPatients = async () => {
+      setIsLoadingPatients(true);
+      try {
+        const { data, error } = await supabase
+          .from('patients')
+          .select('id, name')
+          .eq('status', 'active')
+          .order('name');
+
+        if (error) {
+          console.error('Error fetching patients:', error);
+          toast.error("Erro ao carregar pacientes");
+          return;
+        }
+
+        setPatients(data || []);
+      } catch (error) {
+        console.error('Error in fetchPatients:', error);
+        toast.error("Erro inesperado ao carregar pacientes");
+      } finally {
+        setIsLoadingPatients(false);
+      }
+    };
+
+    if (open) {
+      fetchPatients();
+    }
+  }, [open]);
+
   const selectedPackage = packages.find(pkg => pkg.id === formData.packageId);
   
-  // Calcular taxa de cartão de crédito
+  // Calcular taxa de cartão de crédito - agora inclui 1x também
   const getCreditCardRate = (installments: number) => {
     const rate = creditCardRates.find(r => r.name === `${installments}x`);
     return rate ? rate.rate : 0;
@@ -99,7 +124,8 @@ export function SellPackageDialog({ packages, onSellPackage, isProposal = false,
     
     const basePrice = selectedPackage.price + formData.transportCost + formData.otherCosts;
     
-    if (formData.paymentMethod === "credit" && formData.installments > 1) {
+    // Aplicar taxa de cartão de crédito para qualquer quantidade de parcelas
+    if (formData.paymentMethod === "credit") {
       const rate = getCreditCardRate(formData.installments);
       const taxAmount = (basePrice * rate) / 100;
       return basePrice + taxAmount;
@@ -151,51 +177,6 @@ export function SellPackageDialog({ packages, onSellPackage, isProposal = false,
     });
   };
 
-  const handleDownloadPDF = () => {
-    // Mock admin data - em produção viria do contexto/API
-    const adminData = {
-      name: "Dr. João Silva",
-      email: "joao.silva@fisioclinica.com.br",
-      council: "CREFITO-3 123456-F",
-      phone: "(11) 99999-9999",
-      address: "Rua das Flores, 123 - São Paulo, SP"
-    };
-
-    const content = `
-PROPOSTA DE PACOTE - FISIO SMART CARE
-
-Dados do Profissional:
-Nome: ${adminData.name}
-Email: ${adminData.email}
-Conselho: ${adminData.council}
-Telefone: ${adminData.phone}
-Endereço: ${adminData.address}
-
-Dados da Proposta:
-Paciente: ${formData.patientName}
-Pacote: ${selectedPackage?.name || ""}
-Valor do Pacote: R$ ${selectedPackage?.price.toFixed(2) || "0,00"}
-Outros Custos: R$ ${formData.otherCosts.toFixed(2)}
-Forma de Pagamento: ${formData.paymentMethod === "pix" ? "PIX" : formData.paymentMethod === "cash" ? "Dinheiro" : "Cartão de Crédito"}
-${showInstallments ? `Parcelas: ${formData.installments}x` : ""}
-Valor Final: R$ ${finalPrice.toFixed(2)}
-
-Data: ${new Date().toLocaleDateString("pt-BR")}
-    `.trim();
-
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `proposta-${formData.patientName.replace(/\s+/g, '-').toLowerCase()}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    toast.success("PDF da proposta baixado com sucesso!");
-  };
-
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -230,12 +211,16 @@ Data: ${new Date().toLocaleDateString("pt-BR")}
 
           <div>
             <Label htmlFor="patientName">Nome do Paciente *</Label>
-            <Select value={formData.patientName} onValueChange={(value) => setFormData(prev => ({ ...prev, patientName: value }))}>
+            <Select 
+              value={formData.patientName} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, patientName: value }))}
+              disabled={isLoadingPatients}
+            >
               <SelectTrigger>
-                <SelectValue placeholder="Selecione o paciente" />
+                <SelectValue placeholder={isLoadingPatients ? "Carregando pacientes..." : "Selecione o paciente"} />
               </SelectTrigger>
               <SelectContent>
-                {mockPatients.map((patient) => (
+                {patients.map((patient) => (
                   <SelectItem key={patient.id} value={patient.name}>
                     {patient.name}
                   </SelectItem>
@@ -315,7 +300,7 @@ Data: ${new Date().toLocaleDateString("pt-BR")}
                   <span>R$ {formData.otherCosts.toFixed(2)}</span>
                 </div>
               )}
-              {formData.paymentMethod === "credit" && formData.installments > 1 && (
+              {formData.paymentMethod === "credit" && (
                 <div className="flex justify-between text-sm">
                   <span>Taxa do cartão ({getCreditCardRate(formData.installments)}%):</span>
                   <span>R$ {(((selectedPackage.price + formData.otherCosts) * getCreditCardRate(formData.installments)) / 100).toFixed(2)}</span>
@@ -338,12 +323,6 @@ Data: ${new Date().toLocaleDateString("pt-BR")}
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancelar
             </Button>
-            {isProposal && selectedPackage && (
-              <Button type="button" variant="outline" onClick={handleDownloadPDF}>
-                <Download className="mr-2 h-4 w-4" />
-                Baixar PDF
-              </Button>
-            )}
             <Button type="submit">
               {isProposal ? "Gerar Proposta" : "Vender Pacote"}
             </Button>

@@ -38,7 +38,56 @@ export default function Packages() {
   };
 
   const handleCreateProposal = async (proposalData: any) => {
-    await addProposal(proposalData);
+    const result = await addProposal(proposalData);
+    if (result?.success) {
+      // Após criar a proposta com sucesso, oferecer o download do PDF
+      handleDownloadPDF(proposalData);
+    }
+  };
+
+  const handleDownloadPDF = (proposalData: any) => {
+    // Mock admin data - em produção viria do contexto/API
+    const adminData = {
+      name: "Dr. João Silva",
+      email: "joao.silva@fisioclinica.com.br",
+      council: "CREFITO-3 123456-F",
+      phone: "(11) 99999-9999",
+      address: "Rua das Flores, 123 - São Paulo, SP"
+    };
+
+    const selectedPackage = packages.find(pkg => pkg.id === proposalData.packageId);
+    
+    const content = `
+PROPOSTA DE PACOTE - FISIO SMART CARE
+
+Dados do Profissional:
+Nome: ${adminData.name}
+Email: ${adminData.email}
+Conselho: ${adminData.council}
+Telefone: ${adminData.phone}
+Endereço: ${adminData.address}
+
+Dados da Proposta:
+Paciente: ${proposalData.patientName}
+Pacote: ${selectedPackage?.name || ""}
+Valor do Pacote: R$ ${proposalData.packagePrice.toFixed(2)}
+Outros Custos: R$ ${proposalData.otherCosts.toFixed(2)}
+Forma de Pagamento: ${proposalData.paymentMethod === "pix" ? "PIX" : proposalData.paymentMethod === "cash" ? "Dinheiro" : "Cartão de Crédito"}
+${proposalData.installments > 1 ? `Parcelas: ${proposalData.installments}x` : ""}
+Valor Final: R$ ${proposalData.finalPrice.toFixed(2)}
+
+Data: ${new Date().toLocaleDateString("pt-BR")}
+    `.trim();
+
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `proposta-${proposalData.patientName.replace(/\s+/g, '-').toLowerCase()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const handleApproveProposal = async (proposalId: string) => {
