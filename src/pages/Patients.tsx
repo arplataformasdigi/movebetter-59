@@ -24,7 +24,7 @@ import { AddPatientDialog } from "@/components/patients/AddPatientDialog";
 import { PatientDetails } from "@/components/patients/PatientDetails";
 import { DeletePatientDialog } from "@/components/patients/DeletePatientDialog";
 import { AssignPackageDialog } from "@/components/patients/AssignPackageDialog";
-import { usePatients } from "@/hooks/usePatients";
+import { usePatients, Patient } from "@/hooks/usePatients";
 
 interface MedicalRecord {
   id: string;
@@ -54,13 +54,8 @@ interface Evolution {
   previousScore?: number;
 }
 
-interface Patient {
-  id: string;
-  name: string;
+interface PatientWithDetails extends Patient {
   avatar?: string;
-  email: string;
-  phone: string;
-  status: "active" | "inactive";
   medicalRecords?: MedicalRecord[];
   evolutions?: Evolution[];
 }
@@ -76,6 +71,11 @@ const getStatusDetails = (status: Patient["status"]) => {
       return { 
         label: "Inativo", 
         color: "bg-red-100 text-red-800 border-red-200" 
+      };
+    case "completed":
+      return { 
+        label: "Concluído", 
+        color: "bg-blue-100 text-blue-800 border-blue-200" 
       };
     default:
       return { 
@@ -107,7 +107,7 @@ export function Patients() {
   const [searchQuery, setSearchQuery] = useState("");
   const [packageAssignments, setPackageAssignments] = useState<any[]>([]);
 
-  const handleUpdatePatient = (updatedPatient: Patient) => {
+  const handleUpdatePatient = (updatedPatient: PatientWithDetails) => {
     // Converter para o formato esperado pelo hook
     const patientData = {
       name: updatedPatient.name,
@@ -121,7 +121,14 @@ export function Patients() {
   const handleToggleStatus = async (patientId: string) => {
     const patient = patients.find(p => p.id === patientId);
     if (patient) {
-      const newStatus = patient.status === "active" ? "inactive" : "active";
+      let newStatus: Patient["status"];
+      if (patient.status === "active") {
+        newStatus = "inactive";
+      } else if (patient.status === "inactive") {
+        newStatus = "completed";
+      } else {
+        newStatus = "active";
+      }
       await updatePatient(patientId, { status: newStatus });
     }
   };
@@ -223,7 +230,7 @@ export function Patients() {
                       <TableCell>
                         <div className="flex items-center space-x-3">
                           <Avatar className="h-8 w-8">
-                            <AvatarImage src={patient.avatar} alt={patient.name} />
+                            <AvatarImage src={undefined} alt={patient.name} />
                             <AvatarFallback className="bg-movebetter-primary text-white">
                               {patient.name.charAt(0)}
                             </AvatarFallback>
@@ -278,7 +285,15 @@ export function Patients() {
                             onConfirm={() => handleDeletePatient(patient.id)}
                           />
                           <PatientDetails 
-                            patient={patient}
+                            patient={{
+                              ...patient,
+                              email: patient.email || "",
+                              phone: patient.phone || "",
+                              avatar: undefined,
+                              status: patient.status === "completed" ? "active" : patient.status,
+                              medicalRecords: [],
+                              evolutions: []
+                            }}
                             onUpdatePatient={handleUpdatePatient}
                           />
                         </div>
