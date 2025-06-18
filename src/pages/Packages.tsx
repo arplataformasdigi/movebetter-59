@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Pencil, Trash, Package, Edit, UserX } from "lucide-react";
@@ -23,10 +23,22 @@ export default function Packages() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [newRate, setNewRate] = useState({ name: "", rate: 0 });
 
-  const { packages, isLoading: packagesLoading, updatePackage, deletePackage: removePackage } = usePackages();
+  const { packages, isLoading: packagesLoading, updatePackage, deletePackage: removePackage, fetchPackages } = usePackages();
   const { proposals, isLoading: proposalsLoading, addProposal, deleteProposal } = usePackageProposals();
   const { rates, isLoading: ratesLoading, addRate, deleteRate } = useCreditCardRates();
   const { patients, isLoading: patientsLoading } = usePatients();
+
+  // Force refresh packages when component mounts
+  useEffect(() => {
+    console.log('Packages component mounted, refreshing data...');
+    fetchPackages();
+  }, [fetchPackages]);
+
+  // Log packages for debugging
+  useEffect(() => {
+    console.log('Current packages state:', packages);
+    console.log('Packages loading state:', packagesLoading);
+  }, [packages, packagesLoading]);
 
   const handleEditPackage = async (updatedPackage: any) => {
     await updatePackage(updatedPackage.id, updatedPackage);
@@ -74,6 +86,8 @@ export default function Packages() {
     pkg.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
     (statusFilter === "all" || (statusFilter === "active" ? pkg.is_active : !pkg.is_active))
   );
+
+  console.log('Filtered packages:', filteredPackages);
 
   const openEditDialog = (pkg: any) => {
     setEditingPackage(pkg);
@@ -161,6 +175,14 @@ export default function Packages() {
                 </select>
               </div>
 
+              {/* Debug info */}
+              <div className="mb-4 p-2 bg-gray-100 rounded text-sm">
+                <p>Total de pacotes: {packages.length}</p>
+                <p>Pacotes filtrados: {filteredPackages.length}</p>
+                <p>Termo de busca: "{searchTerm}"</p>
+                <p>Filtro de status: {statusFilter}</p>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredPackages.length > 0 ? (
                   filteredPackages.map((pkg) => (
@@ -194,7 +216,7 @@ export default function Packages() {
                             <span>Validade:</span>
                             <span className="font-medium">{pkg.validity_days} dias</span>
                           </div>
-                          {pkg.sessions_included > 0 && (
+                          {pkg.sessions_included && pkg.sessions_included > 0 && (
                             <div className="flex justify-between text-sm">
                               <span>Sessões:</span>
                               <span className="font-medium">{pkg.sessions_included}</span>
@@ -220,8 +242,13 @@ export default function Packages() {
                     </Card>
                   ))
                 ) : (
-                  <div className="col-span-full text-center py-8 text-gray-500">
-                    Nenhum pacote encontrado
+                  <div className="col-span-full text-center py-8">
+                    <div className="text-gray-500 mb-2">
+                      {packages.length === 0 ? "Nenhum pacote criado ainda" : "Nenhum pacote encontrado com os filtros atuais"}
+                    </div>
+                    {packages.length === 0 && (
+                      <CreatePackageDialog />
+                    )}
                   </div>
                 )}
               </div>

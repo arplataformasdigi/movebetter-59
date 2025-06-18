@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -23,7 +22,9 @@ export function usePackages() {
 
   const fetchPackages = async () => {
     try {
+      console.log('Fetching packages from Supabase...');
       setIsLoading(true);
+      
       const { data, error } = await supabase
         .from('packages')
         .select('*')
@@ -33,12 +34,13 @@ export function usePackages() {
         console.error('Error fetching packages:', error);
         toast({
           title: "Erro ao carregar pacotes",
-          description: "Não foi possível carregar a lista de pacotes",
+          description: "Não foi possível carregar a lista de pacotes: " + error.message,
           variant: "destructive",
         });
         return;
       }
 
+      console.log('Packages fetched successfully:', data);
       setPackages(data || []);
     } catch (error) {
       console.error('Error in fetchPackages:', error);
@@ -58,6 +60,8 @@ export function usePackages() {
 
   const addPackage = async (packageData: Omit<Package, 'id' | 'created_at' | 'updated_at'>) => {
     try {
+      console.log('Adding package:', packageData);
+      
       const { data, error } = await supabase
         .from('packages')
         .insert([packageData])
@@ -68,12 +72,13 @@ export function usePackages() {
         console.error('Error adding package:', error);
         toast({
           title: "Erro ao adicionar pacote",
-          description: "Não foi possível adicionar o pacote",
+          description: "Não foi possível adicionar o pacote: " + error.message,
           variant: "destructive",
         });
         return { success: false, error };
       }
 
+      console.log('Package added successfully:', data);
       setPackages(prev => [data, ...prev]);
       toast({
         title: "Pacote adicionado",
@@ -82,6 +87,11 @@ export function usePackages() {
       return { success: true, data };
     } catch (error) {
       console.error('Error in addPackage:', error);
+      toast({
+        title: "Erro inesperado",
+        description: "Erro inesperado ao adicionar pacote",
+        variant: "destructive",
+      });
       return { success: false, error };
     }
   };
