@@ -8,7 +8,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,8 +19,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus } from "lucide-react";
 import { toast } from "sonner";
+import { useAppointments } from "@/hooks/useAppointments";
 
 interface Patient {
   id: string;
@@ -29,75 +28,68 @@ interface Patient {
 }
 
 interface ScheduleAppointmentFormProps {
-  onScheduleAppointment: (appointment: any) => void;
+  isOpen: boolean;
+  onClose: () => void;
+  selectedDate?: Date | null;
   patients: Patient[];
 }
 
-export function ScheduleAppointmentForm({ onScheduleAppointment, patients }: ScheduleAppointmentFormProps) {
-  const [open, setOpen] = useState(false);
+export function ScheduleAppointmentForm({ isOpen, onClose, selectedDate, patients }: ScheduleAppointmentFormProps) {
+  const { addAppointment } = useAppointments();
   const [formData, setFormData] = useState({
     patientId: "",
-    patientName: "",
-    title: "",
-    date: "",
+    sessionType: "",
+    date: selectedDate ? selectedDate.toISOString().split('T')[0] : "",
     time: "",
     duration: 60,
     observations: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  React.useEffect(() => {
+    if (selectedDate) {
+      setFormData(prev => ({
+        ...prev,
+        date: selectedDate.toISOString().split('T')[0]
+      }));
+    }
+  }, [selectedDate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.patientId || !formData.title || !formData.date || !formData.time) {
+    if (!formData.patientId || !formData.sessionType || !formData.date || !formData.time) {
       toast.error("Preencha todos os campos obrigatórios");
       return;
     }
 
-    const selectedPatient = patients.find(p => p.id === formData.patientId);
-    
-    const newAppointment = {
-      id: Date.now().toString(),
-      patientId: formData.patientId,
-      patientName: selectedPatient?.name || "",
-      title: formData.title,
-      date: new Date(formData.date),
-      time: formData.time,
-      duration: formData.duration,
+    const appointmentData = {
+      patient_id: formData.patientId,
+      appointment_date: formData.date,
+      appointment_time: formData.time,
+      session_type: formData.sessionType,
+      duration_minutes: formData.duration,
       observations: formData.observations,
-      status: "scheduled",
+      status: 'scheduled' as const,
     };
 
-    onScheduleAppointment(newAppointment);
-    toast.success("Agendamento criado com sucesso!");
-    setOpen(false);
-    setFormData({
-      patientId: "",
-      patientName: "",
-      title: "",
-      date: "",
-      time: "",
-      duration: 60,
-      observations: "",
-    });
-  };
-
-  const handlePatientChange = (patientId: string) => {
-    const selectedPatient = patients.find(p => p.id === patientId);
-    setFormData({ 
-      ...formData, 
-      patientId, 
-      patientName: selectedPatient?.name || "" 
-    });
+    const result = await addAppointment(appointmentData);
+    
+    if (result.success) {
+      toast.success("Agendamento criado com sucesso!");
+      onClose();
+      setFormData({
+        patientId: "",
+        sessionType: "",
+        date: "",
+        time: "",
+        duration: 60,
+        observations: "",
+      });
+    }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Agendar Nova Sessão
-        </Button>
-      </DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Agendar Nova Sessão</DialogTitle>
@@ -108,7 +100,7 @@ export function ScheduleAppointmentForm({ onScheduleAppointment, patients }: Sch
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label htmlFor="patientId">Nome do Paciente *</Label>
-            <Select value={formData.patientId} onValueChange={handlePatientChange}>
+            <Select value={formData.patientId} onValueChange={(value) => setFormData(prev => ({ ...prev, patientId: value }))}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o paciente" />
               </SelectTrigger>
@@ -123,11 +115,11 @@ export function ScheduleAppointmentForm({ onScheduleAppointment, patients }: Sch
           </div>
           
           <div>
-            <Label htmlFor="title">Tipo de Sessão *</Label>
+            <Label htmlFor="sessionType">Tipo de Sessão *</Label>
             <Input
-              id="title"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              id="sessionType"
+              value={formData.sessionType}
+              onChange={(e) => setFormData(prev => ({ ...prev, sessionType: e.target.value }))}
               placeholder="Ex: Sessão de fisioterapia"
             />
           </div>
@@ -138,7 +130,7 @@ export function ScheduleAppointmentForm({ onScheduleAppointment, patients }: Sch
               id="date"
               type="date"
               value={formData.date}
-              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+              onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
             />
           </div>
           
@@ -148,13 +140,13 @@ export function ScheduleAppointmentForm({ onScheduleAppointment, patients }: Sch
               id="time"
               type="time"
               value={formData.time}
-              onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+              onChange={(e) => setFormData(prev => ({ ...prev, time: e.target.value }))}
             />
           </div>
           
           <div>
             <Label htmlFor="duration">Duração (minutos)</Label>
-            <Select value={formData.duration.toString()} onValueChange={(value) => setFormData({ ...formData, duration: parseInt(value) })}>
+            <Select value={formData.duration.toString()} onValueChange={(value) => setFormData(prev => ({ ...prev, duration: parseInt(value) }))}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -172,14 +164,14 @@ export function ScheduleAppointmentForm({ onScheduleAppointment, patients }: Sch
             <Textarea
               id="observations"
               value={formData.observations}
-              onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
+              onChange={(e) => setFormData(prev => ({ ...prev, observations: e.target.value }))}
               placeholder="Observações adicionais (opcional)"
               rows={3}
             />
           </div>
           
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button type="button" variant="outline" onClick={onClose}>
               Cancelar
             </Button>
             <Button type="submit">

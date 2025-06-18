@@ -16,10 +16,11 @@ interface Transaction {
 
 interface TransactionListProps {
   transactions: Transaction[];
-  onDeleteTransaction: (id: string) => void;
+  onEdit?: (transaction: Transaction) => void;
+  onDeleteTransaction?: (id: string) => void;
 }
 
-export function TransactionList({ transactions, onDeleteTransaction }: TransactionListProps) {
+export function TransactionList({ transactions, onEdit, onDeleteTransaction }: TransactionListProps) {
   return (
     <Card>
       <CardHeader>
@@ -50,14 +51,28 @@ export function TransactionList({ transactions, onDeleteTransaction }: Transacti
                   <div className={`text-lg font-bold ${transaction.type === "income" ? "text-green-600" : "text-red-600"}`}>
                     {transaction.type === "income" ? "+" : "-"}R$ {transaction.amount.toFixed(2)}
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onDeleteTransaction(transaction.id)}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex space-x-1">
+                    {onEdit && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onEdit(transaction)}
+                        className="text-blue-600 hover:text-blue-700"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {onDeleteTransaction && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onDeleteTransaction(transaction.id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))

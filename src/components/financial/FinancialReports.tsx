@@ -16,8 +16,8 @@ interface Transaction {
 
 interface FinancialReportsProps {
   transactions: Transaction[];
-  startDate: string;
-  endDate: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export function FinancialReports({ transactions, startDate, endDate }: FinancialReportsProps) {
@@ -56,6 +56,13 @@ export function FinancialReports({ transactions, startDate, endDate }: Financial
     toast.success("Relatório Excel gerado com sucesso!");
   };
 
+  const defaultStartDate = new Date();
+  defaultStartDate.setMonth(defaultStartDate.getMonth() - 1);
+  const defaultEndDate = new Date();
+
+  const displayStartDate = startDate || defaultStartDate.toISOString().split('T')[0];
+  const displayEndDate = endDate || defaultEndDate.toISOString().split('T')[0];
+
   return (
     <Card>
       <CardHeader>
@@ -79,8 +86,8 @@ export function FinancialReports({ transactions, startDate, endDate }: Financial
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="p-4 border rounded-lg">
               <h3 className="font-medium mb-2">Resumo do Período</h3>
-              <p>De: {new Date(startDate).toLocaleDateString('pt-BR')}</p>
-              <p>Até: {new Date(endDate).toLocaleDateString('pt-BR')}</p>
+              <p>De: {new Date(displayStartDate).toLocaleDateString('pt-BR')}</p>
+              <p>Até: {new Date(displayEndDate).toLocaleDateString('pt-BR')}</p>
               <p className="mt-2">Total de transações: {transactions.length}</p>
             </div>
             <div className="p-4 border rounded-lg">
