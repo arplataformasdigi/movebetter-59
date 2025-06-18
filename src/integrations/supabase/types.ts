@@ -639,30 +639,6 @@ export type Database = {
           },
         ]
       }
-      plan_types: {
-        Row: {
-          created_at: string | null
-          description: string | null
-          id: string
-          is_active: boolean | null
-          name: string
-        }
-        Insert: {
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          name: string
-        }
-        Update: {
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          name?: string
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           created_at: string | null
@@ -706,7 +682,6 @@ export type Database = {
           is_active: boolean | null
           name: string
           patient_id: string | null
-          plan_type_id: string | null
           progress_percentage: number | null
           start_date: string | null
           updated_at: string | null
@@ -720,7 +695,6 @@ export type Database = {
           is_active?: boolean | null
           name: string
           patient_id?: string | null
-          plan_type_id?: string | null
           progress_percentage?: number | null
           start_date?: string | null
           updated_at?: string | null
@@ -734,7 +708,6 @@ export type Database = {
           is_active?: boolean | null
           name?: string
           patient_id?: string | null
-          plan_type_id?: string | null
           progress_percentage?: number | null
           start_date?: string | null
           updated_at?: string | null
@@ -752,13 +725,6 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "patients"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "treatment_plans_plan_type_id_fkey"
-            columns: ["plan_type_id"]
-            isOneToOne: false
-            referencedRelation: "plan_types"
             referencedColumns: ["id"]
           },
         ]

@@ -32,7 +32,9 @@ export function useRecentActivities() {
         .order('created_at', { ascending: false })
         .limit(5);
 
-      if (appointmentsError) throw appointmentsError;
+      if (appointmentsError) {
+        console.error('Error fetching appointments:', appointmentsError);
+      }
 
       // Buscar pacientes recém-cadastrados
       const { data: patients, error: patientsError } = await supabase
@@ -41,7 +43,9 @@ export function useRecentActivities() {
         .order('created_at', { ascending: false })
         .limit(3);
 
-      if (patientsError) throw patientsError;
+      if (patientsError) {
+        console.error('Error fetching patients:', patientsError);
+      }
 
       // Buscar trilhas criadas recentemente
       const { data: plans, error: plansError } = await supabase
@@ -55,7 +59,9 @@ export function useRecentActivities() {
         .order('created_at', { ascending: false })
         .limit(3);
 
-      if (plansError) throw plansError;
+      if (plansError) {
+        console.error('Error fetching treatment plans:', plansError);
+      }
 
       // Combinar e ordenar atividades
       const allActivities: Activity[] = [
@@ -91,11 +97,6 @@ export function useRecentActivities() {
 
     } catch (error) {
       console.error('Error fetching recent activities:', error);
-      toast({
-        title: "Erro ao carregar atividades",
-        description: "Não foi possível carregar as atividades recentes",
-        variant: "destructive",
-      });
     } finally {
       setIsLoading(false);
     }

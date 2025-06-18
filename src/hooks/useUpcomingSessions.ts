@@ -39,7 +39,10 @@ export function useUpcomingSessions() {
         .order('appointment_time', { ascending: true })
         .limit(5);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching upcoming sessions:', error);
+        return;
+      }
 
       const formattedSessions = appointments?.map(apt => ({
         id: apt.id,
@@ -54,11 +57,6 @@ export function useUpcomingSessions() {
 
     } catch (error) {
       console.error('Error fetching upcoming sessions:', error);
-      toast({
-        title: "Erro ao carregar sessões",
-        description: "Não foi possível carregar as próximas sessões",
-        variant: "destructive",
-      });
     } finally {
       setIsLoading(false);
     }

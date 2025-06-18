@@ -30,7 +30,9 @@ export function useDashboardData() {
         .select('id')
         .eq('status', 'active');
 
-      if (patientsError) throw patientsError;
+      if (patientsError) {
+        console.error('Error fetching patients:', patientsError);
+      }
 
       // Buscar sessões completadas
       const { data: completedSessions, error: sessionsError } = await supabase
@@ -38,14 +40,18 @@ export function useDashboardData() {
         .select('id')
         .eq('status', 'completed');
 
-      if (sessionsError) throw sessionsError;
+      if (sessionsError) {
+        console.error('Error fetching appointments:', sessionsError);
+      }
 
       // Buscar pontos de gamificação totais
       const { data: gamificationData, error: gamificationError } = await supabase
         .from('patient_scores')
         .select('total_points');
 
-      if (gamificationError) throw gamificationError;
+      if (gamificationError) {
+        console.error('Error fetching patient scores:', gamificationError);
+      }
 
       // Calcular taxa de progresso média
       const { data: progressData, error: progressError } = await supabase
@@ -53,7 +59,9 @@ export function useDashboardData() {
         .select('progress_percentage')
         .eq('is_active', true);
 
-      if (progressError) throw progressError;
+      if (progressError) {
+        console.error('Error fetching treatment plans:', progressError);
+      }
 
       const totalPoints = gamificationData?.reduce((sum, score) => sum + (score.total_points || 0), 0) || 0;
       const avgProgress = progressData?.length > 0 
@@ -69,11 +77,6 @@ export function useDashboardData() {
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
-      toast({
-        title: "Erro ao carregar dados",
-        description: "Não foi possível carregar as estatísticas do dashboard",
-        variant: "destructive",
-      });
     } finally {
       setIsLoading(false);
     }

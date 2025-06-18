@@ -8,7 +8,6 @@ export interface TreatmentPlan {
   name: string;
   description?: string;
   patient_id?: string;
-  plan_type_id?: string;
   start_date?: string;
   end_date?: string;
   progress_percentage: number;
@@ -19,22 +18,10 @@ export interface TreatmentPlan {
   patients?: {
     name: string;
   };
-  plan_types?: {
-    name: string;
-  };
-}
-
-export interface PlanType {
-  id: string;
-  name: string;
-  description?: string;
-  is_active: boolean;
-  created_at: string;
 }
 
 export function useTreatmentPlans() {
   const [treatmentPlans, setTreatmentPlans] = useState<TreatmentPlan[]>([]);
-  const [planTypes, setPlanTypes] = useState<PlanType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
@@ -45,67 +32,35 @@ export function useTreatmentPlans() {
         .from('treatment_plans')
         .select(`
           *,
-          patients (name),
-          plan_types (name)
+          patients (name)
         `)
         .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching treatment plans:', error);
-        toast({
-          title: "Erro ao carregar trilhas",
-          description: "Não foi possível carregar as trilhas de tratamento",
-          variant: "destructive",
-        });
         return;
       }
 
       setTreatmentPlans(data || []);
     } catch (error) {
       console.error('Error in fetchTreatmentPlans:', error);
-      toast({
-        title: "Erro inesperado",
-        description: "Ocorreu um erro ao carregar as trilhas",
-        variant: "destructive",
-      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const fetchPlanTypes = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('plan_types')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
-
-      if (error) {
-        console.error('Error fetching plan types:', error);
-        return;
-      }
-
-      setPlanTypes(data || []);
-    } catch (error) {
-      console.error('Error in fetchPlanTypes:', error);
-    }
-  };
-
   useEffect(() => {
     fetchTreatmentPlans();
-    fetchPlanTypes();
   }, []);
 
-  const addTreatmentPlan = async (planData: Omit<TreatmentPlan, 'id' | 'created_at' | 'updated_at' | 'patients' | 'plan_types'>) => {
+  const addTreatmentPlan = async (planData: Omit<TreatmentPlan, 'id' | 'created_at' | 'updated_at' | 'patients'>) => {
     try {
       const { data, error } = await supabase
         .from('treatment_plans')
         .insert([planData])
         .select(`
           *,
-          patients (name),
-          plan_types (name)
+          patients (name)
         `)
         .single();
 
@@ -139,8 +94,7 @@ export function useTreatmentPlans() {
         .eq('id', id)
         .select(`
           *,
-          patients (name),
-          plan_types (name)
+          patients (name)
         `)
         .single();
 
@@ -195,45 +149,12 @@ export function useTreatmentPlans() {
     }
   };
 
-  const addPlanType = async (planTypeData: Omit<PlanType, 'id' | 'created_at'>) => {
-    try {
-      const { data, error } = await supabase
-        .from('plan_types')
-        .insert([planTypeData])
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error adding plan type:', error);
-        toast({
-          title: "Erro ao adicionar tipo de trilha",
-          description: "Não foi possível adicionar o tipo de trilha",
-          variant: "destructive",
-        });
-        return { success: false, error };
-      }
-
-      setPlanTypes(prev => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)));
-      toast({
-        title: "Tipo de trilha adicionado",
-        description: "Tipo de trilha foi adicionado com sucesso",
-      });
-      return { success: true, data };
-    } catch (error) {
-      console.error('Error in addPlanType:', error);
-      return { success: false, error };
-    }
-  };
-
   return {
     treatmentPlans,
-    planTypes,
     isLoading,
     fetchTreatmentPlans,
-    fetchPlanTypes,
     addTreatmentPlan,
     updateTreatmentPlan,
     deleteTreatmentPlan,
-    addPlanType,
   };
 }
