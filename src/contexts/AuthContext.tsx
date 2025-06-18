@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
@@ -59,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   role: profile.role as UserRole,
                   crefito: profile.crefito || undefined,
                   phone: profile.phone || undefined,
-                  cpf_cnpj: profile.cpf_cnpj || undefined,
+                  cpf_cnpj: (profile as any).cpf_cnpj || undefined,
                 });
               } else {
                 console.error('Error fetching profile:', error);

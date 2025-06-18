@@ -98,8 +98,9 @@ export default function PersonalData() {
             form.setValue("conselho", profile.crefito || "");
             
             // Se houver CPF salvo, marcar como bloqueado
-            if (profile.cpf_cnpj) {
-              form.setValue("cpfCnpj", profile.cpf_cnpj);
+            const cpfValue = (profile as any).cpf_cnpj;
+            if (cpfValue) {
+              form.setValue("cpfCnpj", cpfValue);
               setCpfCnpjSaved(true);
             }
           }
