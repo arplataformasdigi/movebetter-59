@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { 
   Table,
@@ -19,7 +19,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Users, Power, PowerOff } from "lucide-react";
+import { Users, Power, PowerOff, RefreshCw } from "lucide-react";
 import { AddPatientDialog } from "@/components/patients/AddPatientDialog";
 import { EditPatientDialog } from "@/components/patients/EditPatientDialog";
 import { PatientDetails } from "@/components/patients/PatientDetails";
@@ -110,12 +110,17 @@ const mockPackages = [
 ];
 
 export function Patients() {
-  const { patients, isLoading, updatePatient, deletePatient } = usePatients();
+  const { patients, isLoading, updatePatient, deletePatient, fetchPatients } = usePatients();
   const [searchQuery, setSearchQuery] = useState("");
   const [packageAssignments, setPackageAssignments] = useState<any[]>([]);
 
-  const handleUpdatePatient = (updatedPatient: PatientDetailsType) => {
-    // Converter para o formato esperado pelo hook
+  // Debug: Log patients data
+  useEffect(() => {
+    console.log('Current patients state:', patients);
+    console.log('Is loading:', isLoading);
+  }, [patients, isLoading]);
+
+  const handleUpdatePatient = (updatedPatient: any) => {
     const patientData = {
       name: updatedPatient.name,
       email: updatedPatient.email || undefined,
@@ -146,6 +151,11 @@ export function Patients() {
 
   const handleAssignPackage = (assignment: any) => {
     setPackageAssignments([...packageAssignments, assignment]);
+  };
+
+  const handleRefresh = () => {
+    console.log('Refreshing patients list...');
+    fetchPatients();
   };
 
   const filteredPatients = patients.filter(patient => 
@@ -182,7 +192,17 @@ export function Patients() {
             Gerencie seus pacientes e seus planos de tratamento.
           </p>
         </div>
-        <AddPatientDialog />
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={handleRefresh}
+            disabled={isLoading}
+          >
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Atualizar
+          </Button>
+          <AddPatientDialog />
+        </div>
       </div>
 
       <Card>
@@ -190,7 +210,9 @@ export function Patients() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>Lista de Pacientes</CardTitle>
-              <CardDescription>Gerencie todos os pacientes registrados</CardDescription>
+              <CardDescription>
+                Gerencie todos os pacientes registrados ({patients.length} pacientes encontrados)
+              </CardDescription>
             </div>
             <div className="flex items-center space-x-2">
               <Input 
@@ -215,6 +237,11 @@ export function Patients() {
                   : "Comece cadastrando seu primeiro paciente."
                 }
               </p>
+              {patients.length > 0 && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Total de pacientes no banco: {patients.length}
+                </p>
+              )}
             </div>
           ) : (
             <Table>
@@ -242,7 +269,14 @@ export function Patients() {
                               {patient.name.charAt(0)}
                             </AvatarFallback>
                           </Avatar>
-                          <span className="font-medium">{patient.name}</span>
+                          <div>
+                            <span className="font-medium">{patient.name}</span>
+                            {patient.cpf && (
+                              <div className="text-xs text-muted-foreground">
+                                CPF: {patient.cpf}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell>

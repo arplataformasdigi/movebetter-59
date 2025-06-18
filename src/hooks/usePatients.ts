@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export interface Patient {
   id: string;
@@ -16,16 +16,18 @@ export interface Patient {
   medical_history?: string;
   status: 'active' | 'inactive' | 'completed';
   created_at: string;
+  updated_at?: string;
 }
 
 export function usePatients() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
 
   const fetchPatients = async () => {
     try {
+      console.log('Fetching patients from Supabase...');
       setIsLoading(true);
+      
       const { data, error } = await supabase
         .from('patients')
         .select('*')
@@ -33,22 +35,19 @@ export function usePatients() {
 
       if (error) {
         console.error('Error fetching patients:', error);
-        toast({
-          title: "Erro ao carregar pacientes",
-          description: "Não foi possível carregar a lista de pacientes",
-          variant: "destructive",
-        });
+        toast.error("Erro ao carregar pacientes: " + error.message);
         return;
       }
 
+      console.log('Patients fetched successfully:', data);
       setPatients(data || []);
+      
+      if (data?.length === 0) {
+        console.log('No patients found in database');
+      }
     } catch (error) {
       console.error('Error in fetchPatients:', error);
-      toast({
-        title: "Erro inesperado",
-        description: "Ocorreu um erro ao carregar os pacientes",
-        variant: "destructive",
-      });
+      toast.error("Erro inesperado ao carregar os pacientes");
     } finally {
       setIsLoading(false);
     }
@@ -60,6 +59,8 @@ export function usePatients() {
 
   const addPatient = async (patientData: Omit<Patient, 'id' | 'created_at'>) => {
     try {
+      console.log('Adding patient:', patientData);
+      
       const { data, error } = await supabase
         .from('patients')
         .insert([patientData])
@@ -68,28 +69,25 @@ export function usePatients() {
 
       if (error) {
         console.error('Error adding patient:', error);
-        toast({
-          title: "Erro ao adicionar paciente",
-          description: "Não foi possível adicionar o paciente",
-          variant: "destructive",
-        });
+        toast.error("Erro ao adicionar paciente: " + error.message);
         return { success: false, error };
       }
 
+      console.log('Patient added successfully:', data);
       setPatients(prev => [data, ...prev]);
-      toast({
-        title: "Paciente adicionado",
-        description: "Paciente foi adicionado com sucesso",
-      });
+      toast.success("Paciente adicionado com sucesso");
       return { success: true, data };
     } catch (error) {
       console.error('Error in addPatient:', error);
+      toast.error("Erro inesperado ao adicionar paciente");
       return { success: false, error };
     }
   };
 
   const updatePatient = async (id: string, updates: Partial<Patient>) => {
     try {
+      console.log('Updating patient:', id, updates);
+      
       const { data, error } = await supabase
         .from('patients')
         .update(updates)
@@ -99,28 +97,25 @@ export function usePatients() {
 
       if (error) {
         console.error('Error updating patient:', error);
-        toast({
-          title: "Erro ao atualizar paciente",
-          description: "Não foi possível atualizar o paciente",
-          variant: "destructive",
-        });
+        toast.error("Erro ao atualizar paciente: " + error.message);
         return { success: false, error };
       }
 
+      console.log('Patient updated successfully:', data);
       setPatients(prev => prev.map(p => p.id === id ? data : p));
-      toast({
-        title: "Paciente atualizado",
-        description: "Paciente foi atualizado com sucesso",
-      });
+      toast.success("Paciente atualizado com sucesso");
       return { success: true, data };
     } catch (error) {
       console.error('Error in updatePatient:', error);
+      toast.error("Erro inesperado ao atualizar paciente");
       return { success: false, error };
     }
   };
 
   const deletePatient = async (id: string) => {
     try {
+      console.log('Deleting patient:', id);
+      
       const { error } = await supabase
         .from('patients')
         .delete()
@@ -128,22 +123,17 @@ export function usePatients() {
 
       if (error) {
         console.error('Error deleting patient:', error);
-        toast({
-          title: "Erro ao deletar paciente",
-          description: "Não foi possível deletar o paciente",
-          variant: "destructive",
-        });
+        toast.error("Erro ao deletar paciente: " + error.message);
         return { success: false, error };
       }
 
+      console.log('Patient deleted successfully');
       setPatients(prev => prev.filter(p => p.id !== id));
-      toast({
-        title: "Paciente removido",
-        description: "Paciente foi removido com sucesso",
-      });
+      toast.success("Paciente removido com sucesso");
       return { success: true };
     } catch (error) {
       console.error('Error in deletePatient:', error);
+      toast.error("Erro inesperado ao deletar paciente");
       return { success: false, error };
     }
   };
