@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -26,6 +27,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { User, Shield } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ViaCEPResponse {
   cep: string;
@@ -60,6 +62,7 @@ export default function PersonalData() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [isPasswordLoading, setIsPasswordLoading] = useState(false);
+  const [isSearchingCep, setIsSearchingCep] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -96,44 +99,63 @@ export default function PersonalData() {
     }
   };
 
+  const formatCep = (value: string) => {
+    const numbers = value.replace(/\D/g, "");
+    return numbers.replace(/(\d{5})(\d{3})/, "$1-$2");
+  };
+
   const fetchAddressByCep = async (cep: string) => {
-    if (cep.length >= 8) {
-      try {
-        const formattedCep = cep.replace(/\D/g, "");
-        const response = await fetch(`https://viacep.com.br/ws/${formattedCep}/json/`);
-        const data: ViaCEPResponse = await response.json();
+    const cleanCep = cep.replace(/\D/g, "");
+    
+    if (cleanCep.length !== 8) {
+      return false;
+    }
+
+    setIsSearchingCep(true);
+    
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+      const data: ViaCEPResponse = await response.json();
+      
+      if (!data.erro) {
+        form.setValue("street", data.logradouro);
+        form.setValue("neighborhood", data.bairro);
+        form.setValue("city", data.localidade);
+        form.setValue("state", data.uf);
         
-        if (!data.erro) {
-          form.setValue("street", data.logradouro);
-          form.setValue("neighborhood", data.bairro);
-          form.setValue("city", data.localidade);
-          form.setValue("state", data.uf);
-          return true;
-        } else {
-          toast({
-            title: "CEP não encontrado",
-            description: "O CEP informado não foi encontrado",
-            variant: "destructive",
-          });
-          return false;
-        }
-      } catch (error) {
         toast({
-          title: "Erro",
-          description: "Erro ao buscar o CEP",
+          title: "Endereço encontrado",
+          description: "Os campos foram preenchidos automaticamente",
+        });
+        return true;
+      } else {
+        toast({
+          title: "CEP não encontrado",
+          description: "O CEP informado não foi encontrado",
           variant: "destructive",
         });
         return false;
       }
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao buscar o CEP",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setIsSearchingCep(false);
     }
-    return false;
   };
 
   const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const cep = e.target.value;
-    form.setValue("cep", cep);
-    if (cep.length >= 8) {
-      await fetchAddressByCep(cep);
+    const value = e.target.value;
+    const formattedCep = formatCep(value);
+    form.setValue("cep", formattedCep);
+    
+    const cleanCep = value.replace(/\D/g, "");
+    if (cleanCep.length === 8) {
+      await fetchAddressByCep(cleanCep);
     }
   };
 
@@ -146,23 +168,51 @@ export default function PersonalData() {
     }
   };
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     
-    setTimeout(() => {
+    try {
+      // Aqui você pode implementar a lógica para salvar os dados no Supabase
+      // Por exemplo, atualizar a tabela profiles
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          name: values.name,
+          phone: values.whatsapp,
+          crefito: values.conselho,
+        })
+        .eq('id', user?.id);
+
+      if (error) {
+        throw error;
+      }
+
       toast({
         title: "Dados atualizados",
         description: "Suas informações foram atualizadas com sucesso",
       });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar os dados",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-    }, 1500);
-    
-    console.log(values);
+    }
   };
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsPasswordLoading(true);
+    
+    if (!currentPassword || !newPassword || !confirmNewPassword) {
+      toast({
+        title: "Erro",
+        description: "Todos os campos de senha são obrigatórios",
+        variant: "destructive",
+      });
+      return;
+    }
 
     if (newPassword !== confirmNewPassword) {
       toast({
@@ -170,30 +220,64 @@ export default function PersonalData() {
         description: "As senhas não coincidem",
         variant: "destructive",
       });
-      setIsPasswordLoading(false);
       return;
     }
 
-    setTimeout(() => {
+    if (newPassword.length < 6) {
+      toast({
+        title: "Erro",
+        description: "A nova senha deve ter pelo menos 6 caracteres",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsPasswordLoading(true);
+
+    try {
+      // Usar Supabase para alterar a senha
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) {
+        throw error;
+      }
+
       toast({
         title: "Sucesso",
         description: "Sua senha foi alterada com sucesso",
       });
+      
       setCurrentPassword("");
       setNewPassword("");
       setConfirmNewPassword("");
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao alterar a senha",
+        variant: "destructive",
+      });
+    } finally {
       setIsPasswordLoading(false);
-    }, 1500);
+    }
   };
 
-  const handleDeleteAccount = () => {
-    setTimeout(() => {
+  const handleDeleteAccount = async () => {
+    try {
+      // Implementar lógica de exclusão da conta se necessário
       toast({
         title: "Conta excluída",
         description: "Sua conta foi excluída com sucesso",
       });
       logout();
-    }, 1500);
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao excluir a conta",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -316,8 +400,12 @@ export default function PersonalData() {
                             {...field} 
                             placeholder="00000-000"
                             onChange={handleCepChange}
+                            disabled={isSearchingCep}
                           />
                         </FormControl>
+                        {isSearchingCep && (
+                          <FormDescription>Buscando endereço...</FormDescription>
+                        )}
                         <FormMessage />
                       </FormItem>
                     )}
@@ -448,6 +536,7 @@ export default function PersonalData() {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
+                minLength={6}
               />
             </div>
 
@@ -461,6 +550,7 @@ export default function PersonalData() {
                 value={confirmNewPassword}
                 onChange={(e) => setConfirmNewPassword(e.target.value)}
                 required
+                minLength={6}
               />
             </div>
           </CardContent>
