@@ -1,10 +1,31 @@
+
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { ActivityCard } from "@/components/dashboard/ActivityCard";
 import { UpcomingSessions } from "@/components/dashboard/UpcomingSessions";
+import { useDashboardData } from "@/hooks/useDashboardData";
+import { useRecentActivities } from "@/hooks/useRecentActivities";
+import { useUpcomingSessions } from "@/hooks/useUpcomingSessions";
+
 export function Dashboard() {
-  return <div className="space-y-6">
+  const { stats, isLoading: statsLoading } = useDashboardData();
+  const { activities, isLoading: activitiesLoading } = useRecentActivities();
+  const { sessions, isLoading: sessionsLoading } = useUpcomingSessions();
+
+  if (statsLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground">Carregando dados...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground">
@@ -18,42 +39,42 @@ export function Dashboard() {
             <CardTitle className="text-sm font-medium">Pacientes Ativos</CardTitle>
           </CardHeader>
           <CardContent className="bg-green-100">
-            <div className="text-2xl font-bold">28</div>
-            <p className="text-xs text-muted-foreground">+2.5% desde o mês passado</p>
-            <Progress className="mt-2" value={65} />
+            <div className="text-2xl font-bold">{stats.activePatients}</div>
+            <p className="text-xs text-muted-foreground">Pacientes em acompanhamento</p>
+            <Progress className="mt-2" value={Math.min((stats.activePatients / 50) * 100, 100)} />
           </CardContent>
         </Card>
         
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-2 bg-orange-100">
             <CardTitle className="text-sm font-medium">Sessões Completadas</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">149</div>
-            <p className="text-xs text-muted-foreground">+12% desde o mês passado</p>
-            <Progress className="mt-2" value={78} />
+          <CardContent className="bg-orange-100">
+            <div className="text-2xl font-bold">{stats.completedSessions}</div>
+            <p className="text-xs text-muted-foreground">Sessões realizadas</p>
+            <Progress className="mt-2" value={Math.min((stats.completedSessions / 200) * 100, 100)} />
           </CardContent>
         </Card>
         
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-2 bg-yellow-100">
             <CardTitle className="text-sm font-medium">Taxa de Progresso</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">82%</div>
-            <p className="text-xs text-muted-foreground">+5% desde o mês passado</p>
-            <Progress className="mt-2" value={82} />
+          <CardContent className="bg-yellow-100">
+            <div className="text-2xl font-bold">{stats.progressRate}%</div>
+            <p className="text-xs text-muted-foreground">Progresso médio dos pacientes</p>
+            <Progress className="mt-2" value={stats.progressRate} />
           </CardContent>
         </Card>
         
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-2 bg-blue-100">
             <CardTitle className="text-sm font-medium">Pontos de Gamificação</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">1,482</div>
-            <p className="text-xs text-muted-foreground">+24% desde o mês passado</p>
-            <Progress className="mt-2" value={90} />
+          <CardContent className="bg-blue-100">
+            <div className="text-2xl font-bold">{stats.gamificationPoints.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">Pontos totais acumulados</p>
+            <Progress className="mt-2" value={Math.min((stats.gamificationPoints / 5000) * 100, 100)} />
           </CardContent>
         </Card>
       </div>
@@ -63,11 +84,11 @@ export function Dashboard() {
           <CardHeader>
             <CardTitle>Atividades Recentes</CardTitle>
             <CardDescription>
-              Monitoramento das últimas atividades dos pacientes
+              Monitoramento das últimas atividades do sistema
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ActivityCard />
+            <ActivityCard activities={activities} isLoading={activitiesLoading} />
           </CardContent>
         </Card>
         
@@ -79,10 +100,12 @@ export function Dashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <UpcomingSessions />
+            <UpcomingSessions sessions={sessions} isLoading={sessionsLoading} />
           </CardContent>
         </Card>
       </div>
-    </div>;
+    </div>
+  );
 }
+
 export default Dashboard;

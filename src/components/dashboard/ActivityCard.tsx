@@ -1,130 +1,96 @@
 
 import React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Calendar, User, MapPin } from "lucide-react";
 
 interface Activity {
   id: string;
-  patient: {
-    name: string;
-    avatar?: string;
-  };
-  activity: string;
-  type: "exercise" | "assessment" | "plan" | "achievement";
-  time: string;
+  type: 'appointment' | 'patient' | 'treatment_plan';
+  description: string;
+  date: string;
+  patientName?: string;
 }
 
-const activities: Activity[] = [
-  {
-    id: "1",
-    patient: {
-      name: "Carolina S.",
-      avatar: "",
-    },
-    activity: "Completou série de exercícios de fortalecimento lombar",
-    type: "exercise",
-    time: "12min atrás",
-  },
-  {
-    id: "2",
-    patient: {
-      name: "Roberto M.",
-      avatar: "",
-    },
-    activity: "Alcançou 100 pontos no desafio semanal",
-    type: "achievement",
-    time: "36min atrás",
-  },
-  {
-    id: "3",
-    patient: {
-      name: "Fernanda L.",
-      avatar: "",
-    },
-    activity: "Realizou avaliação postural",
-    type: "assessment",
-    time: "1h atrás",
-  },
-  {
-    id: "4",
-    patient: {
-      name: "Marcelo A.",
-      avatar: "",
-    },
-    activity: "Iniciou novo plano para corredores",
-    type: "plan",
-    time: "2h atrás",
-  },
-  {
-    id: "5",
-    patient: {
-      name: "Juliana P.",
-      avatar: "",
-    },
-    activity: "Completou 5 sessões consecutivas",
-    type: "achievement",
-    time: "3h atrás",
-  },
-];
+interface ActivityCardProps {
+  activities: Activity[];
+  isLoading: boolean;
+}
 
-const getActivityColor = (type: Activity["type"]) => {
-  switch (type) {
-    case "exercise":
-      return "bg-green-100 text-green-800";
-    case "assessment":
-      return "bg-blue-100 text-blue-800";
-    case "plan":
-      return "bg-purple-100 text-purple-800";
-    case "achievement":
-      return "bg-amber-100 text-amber-800";
-    default:
-      return "bg-gray-100 text-gray-800";
+export function ActivityCard({ activities, isLoading }: ActivityCardProps) {
+  const getActivityIcon = (type: Activity['type']) => {
+    switch (type) {
+      case 'appointment':
+        return <Calendar className="h-4 w-4 text-blue-600" />;
+      case 'patient':
+        return <User className="h-4 w-4 text-green-600" />;
+      case 'treatment_plan':
+        return <MapPin className="h-4 w-4 text-purple-600" />;
+      default:
+        return <Calendar className="h-4 w-4 text-gray-600" />;
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="flex items-center space-x-4 animate-pulse">
+            <div className="w-10 h-10 bg-gray-200 rounded-full" />
+            <div className="flex-1 space-y-2">
+              <div className="h-4 bg-gray-200 rounded w-3/4" />
+              <div className="h-3 bg-gray-200 rounded w-1/2" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
   }
-};
 
-const getActivityLabel = (type: Activity["type"]) => {
-  switch (type) {
-    case "exercise":
-      return "Exercício";
-    case "assessment":
-      return "Avaliação";
-    case "plan":
-      return "Plano";
-    case "achievement":
-      return "Conquista";
-    default:
-      return "Atividade";
+  if (activities.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        <Calendar className="mx-auto h-12 w-12 text-muted-foreground/50" />
+        <h3 className="mt-2 text-sm font-medium">Nenhuma atividade recente</h3>
+        <p className="mt-1 text-sm">
+          As atividades aparecerão aqui conforme você usar o sistema.
+        </p>
+      </div>
+    );
   }
-};
 
-export function ActivityCard() {
   return (
     <div className="space-y-4">
       {activities.map((activity) => (
-        <div key={activity.id} className="flex items-start space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-          <Avatar className="h-9 w-9">
-            <AvatarImage src={activity.patient.avatar} alt={activity.patient.name} />
-            <AvatarFallback className="bg-movebetter-primary text-white">
-              {activity.patient.name.charAt(0)}
+        <div key={activity.id} className="flex items-center space-x-4">
+          <Avatar className="h-10 w-10">
+            <AvatarImage src="" alt="" />
+            <AvatarFallback className="bg-movebetter-light">
+              {getActivityIcon(activity.type)}
             </AvatarFallback>
           </Avatar>
-          <div className="flex-1 space-y-1">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium">{activity.patient.name}</p>
-              <Badge className={getActivityColor(activity.type)} variant="outline">
-                {getActivityLabel(activity.type)}
-              </Badge>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-900 truncate">
+              {activity.description}
+            </p>
+            <div className="flex items-center text-sm text-gray-500">
+              {activity.patientName && (
+                <>
+                  <span>{activity.patientName}</span>
+                  <span className="mx-1">•</span>
+                </>
+              )}
+              <span>
+                {formatDistanceToNow(new Date(activity.date), {
+                  addSuffix: true,
+                  locale: ptBR,
+                })}
+              </span>
             </div>
-            <p className="text-sm text-gray-700">{activity.activity}</p>
-            <p className="text-xs text-gray-500">{activity.time}</p>
           </div>
         </div>
       ))}
-      <div className="pt-2">
-        <a href="#" className="text-sm text-movebetter-primary font-medium hover:underline">
-          Ver todas as atividades
-        </a>
-      </div>
     </div>
   );
 }

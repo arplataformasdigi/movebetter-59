@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -23,6 +24,7 @@ import { AddPatientDialog } from "@/components/patients/AddPatientDialog";
 import { PatientDetails } from "@/components/patients/PatientDetails";
 import { DeletePatientDialog } from "@/components/patients/DeletePatientDialog";
 import { AssignPackageDialog } from "@/components/patients/AssignPackageDialog";
+import { usePatients } from "@/hooks/usePatients";
 
 interface MedicalRecord {
   id: string;
@@ -63,69 +65,6 @@ interface Patient {
   evolutions?: Evolution[];
 }
 
-const initialPatients: Patient[] = [
-  {
-    id: "1",
-    name: "Marina Oliveira",
-    avatar: "",
-    email: "marina.o@email.com",
-    phone: "(11) 98765-4321",
-    status: "active",
-    medicalRecords: [],
-    evolutions: [],
-  },
-  {
-    id: "2",
-    name: "Felipe Martins",
-    avatar: "",
-    email: "felipe.m@email.com",
-    phone: "(11) 97654-3210",
-    status: "active",
-    medicalRecords: [],
-    evolutions: [],
-  },
-  {
-    id: "3",
-    name: "Carla Sousa",
-    avatar: "",
-    email: "carla.s@email.com",
-    phone: "(11) 96543-2109",
-    status: "active",
-    medicalRecords: [],
-    evolutions: [],
-  },
-  {
-    id: "4",
-    name: "Ricardo Almeida",
-    avatar: "",
-    email: "ricardo.a@email.com",
-    phone: "(11) 95432-1098",
-    status: "inactive",
-    medicalRecords: [],
-    evolutions: [],
-  },
-  {
-    id: "5",
-    name: "Patricia Mendes",
-    avatar: "",
-    email: "patricia.m@email.com",
-    phone: "(11) 94321-0987",
-    status: "active",
-    medicalRecords: [],
-    evolutions: [],
-  },
-  {
-    id: "6",
-    name: "Gustavo Torres",
-    avatar: "",
-    email: "gustavo.t@email.com",
-    phone: "(11) 93210-9876",
-    status: "active",
-    medicalRecords: [],
-    evolutions: [],
-  },
-];
-
 const getStatusDetails = (status: Patient["status"]) => {
   switch (status) {
     case "active":
@@ -149,45 +88,46 @@ const getStatusDetails = (status: Patient["status"]) => {
 const mockPackages = [
   {
     id: "1",
-    name: "Combo Banho & Tosa Mensal",
+    name: "Combo Fisioterapia Mensal",
     price: 280.00,
-    services: ["2x Banho M", "1x Tosa M"],
+    services: ["4x Sessões", "1x Avaliação"],
     validity: 1,
   },
   {
     id: "2",
-    name: "Pacote Fisioterapia",
+    name: "Pacote Reabilitação",
     price: 450.00,
-    services: ["4x Sessão de Fisioterapia", "1x Avaliação"],
+    services: ["8x Sessões", "2x Avaliações"],
     validity: 2,
   },
 ];
 
 export function Patients() {
-  const [patients, setPatients] = useState<Patient[]>(initialPatients);
+  const { patients, isLoading, updatePatient, deletePatient } = usePatients();
   const [searchQuery, setSearchQuery] = useState("");
   const [packageAssignments, setPackageAssignments] = useState<any[]>([]);
 
-  const handleAddPatient = (newPatient: Patient) => {
-    setPatients([...patients, newPatient]);
-  };
-
   const handleUpdatePatient = (updatedPatient: Patient) => {
-    setPatients(patients.map(patient => 
-      patient.id === updatedPatient.id ? updatedPatient : patient
-    ));
+    // Converter para o formato esperado pelo hook
+    const patientData = {
+      name: updatedPatient.name,
+      email: updatedPatient.email || undefined,
+      phone: updatedPatient.phone || undefined,
+      status: updatedPatient.status,
+    };
+    updatePatient(updatedPatient.id, patientData);
   };
 
-  const handleToggleStatus = (patientId: string) => {
-    setPatients(patients.map(patient => 
-      patient.id === patientId 
-        ? { ...patient, status: patient.status === "active" ? "inactive" : "active" as Patient["status"] }
-        : patient
-    ));
+  const handleToggleStatus = async (patientId: string) => {
+    const patient = patients.find(p => p.id === patientId);
+    if (patient) {
+      const newStatus = patient.status === "active" ? "inactive" : "active";
+      await updatePatient(patientId, { status: newStatus });
+    }
   };
 
-  const handleDeletePatient = (patientId: string) => {
-    setPatients(patients.filter(patient => patient.id !== patientId));
+  const handleDeletePatient = async (patientId: string) => {
+    await deletePatient(patientId);
   };
 
   const handleAssignPackage = (assignment: any) => {
@@ -196,13 +136,26 @@ export function Patients() {
 
   const filteredPatients = patients.filter(patient => 
     patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    patient.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    patient.phone.includes(searchQuery)
+    (patient.email && patient.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (patient.phone && patient.phone.includes(searchQuery))
   );
 
   const getPatientPackage = (patientId: string) => {
     return packageAssignments.find(assignment => assignment.patientId === patientId);
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight flex items-center">
+            <Users className="mr-2 h-8 w-8" /> Pacientes
+          </h1>
+          <p className="text-muted-foreground">Carregando pacientes...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -215,7 +168,7 @@ export function Patients() {
             Gerencie seus pacientes e seus planos de tratamento.
           </p>
         </div>
-        <AddPatientDialog onAddPatient={handleAddPatient} />
+        <AddPatientDialog onAddPatient={() => {}} />
       </div>
 
       <Card>
@@ -236,91 +189,106 @@ export function Patients() {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Contato</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Pacote</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredPatients.map((patient) => {
-                const status = getStatusDetails(patient.status);
-                const assignedPackage = getPatientPackage(patient.id);
-                
-                return (
-                  <TableRow key={patient.id}>
-                    <TableCell>
-                      <div className="flex items-center space-x-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={patient.avatar} alt={patient.name} />
-                          <AvatarFallback className="bg-movebetter-primary text-white">
-                            {patient.name.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="font-medium">{patient.name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        <div>{patient.email}</div>
-                        <div className="text-muted-foreground">{patient.phone}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={status.color}>
-                        {status.label}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {assignedPackage ? (
-                        <div className="text-sm">
-                          <div className="font-medium">{assignedPackage.packageName}</div>
-                          <div className="text-muted-foreground">
-                            R$ {assignedPackage.finalPrice.toFixed(2)}
-                          </div>
+          {filteredPatients.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Users className="mx-auto h-12 w-12 text-muted-foreground/50" />
+              <h3 className="mt-2 text-sm font-medium">
+                {searchQuery ? "Nenhum paciente encontrado" : "Nenhum paciente cadastrado"}
+              </h3>
+              <p className="mt-1 text-sm">
+                {searchQuery 
+                  ? "Tente ajustar sua busca ou cadastre um novo paciente." 
+                  : "Comece cadastrando seu primeiro paciente."
+                }
+              </p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Contato</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Pacote</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredPatients.map((patient) => {
+                  const status = getStatusDetails(patient.status);
+                  const assignedPackage = getPatientPackage(patient.id);
+                  
+                  return (
+                    <TableRow key={patient.id}>
+                      <TableCell>
+                        <div className="flex items-center space-x-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={patient.avatar} alt={patient.name} />
+                            <AvatarFallback className="bg-movebetter-primary text-white">
+                              {patient.name.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium">{patient.name}</span>
                         </div>
-                      ) : (
-                        <AssignPackageDialog
-                          patientId={patient.id}
-                          patientName={patient.name}
-                          packages={mockPackages}
-                          onAssignPackage={handleAssignPackage}
-                        />
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center gap-2 justify-end">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleToggleStatus(patient.id)}
-                          className="h-8 w-8 p-0"
-                        >
-                          {patient.status === "active" ? (
-                            <PowerOff className="h-4 w-4 text-red-600" />
-                          ) : (
-                            <Power className="h-4 w-4 text-green-600" />
-                          )}
-                        </Button>
-                        <DeletePatientDialog 
-                          patientName={patient.name}
-                          onConfirm={() => handleDeletePatient(patient.id)}
-                        />
-                        <PatientDetails 
-                          patient={patient}
-                          onUpdatePatient={handleUpdatePatient}
-                        />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          <div>{patient.email || "Email não informado"}</div>
+                          <div className="text-muted-foreground">{patient.phone || "Telefone não informado"}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={status.color}>
+                          {status.label}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {assignedPackage ? (
+                          <div className="text-sm">
+                            <div className="font-medium">{assignedPackage.packageName}</div>
+                            <div className="text-muted-foreground">
+                              R$ {assignedPackage.finalPrice.toFixed(2)}
+                            </div>
+                          </div>
+                        ) : (
+                          <AssignPackageDialog
+                            patientId={patient.id}
+                            patientName={patient.name}
+                            packages={mockPackages}
+                            onAssignPackage={handleAssignPackage}
+                          />
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center gap-2 justify-end">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleToggleStatus(patient.id)}
+                            className="h-8 w-8 p-0"
+                          >
+                            {patient.status === "active" ? (
+                              <PowerOff className="h-4 w-4 text-red-600" />
+                            ) : (
+                              <Power className="h-4 w-4 text-green-600" />
+                            )}
+                          </Button>
+                          <DeletePatientDialog 
+                            patientName={patient.name}
+                            onConfirm={() => handleDeletePatient(patient.id)}
+                          />
+                          <PatientDetails 
+                            patient={patient}
+                            onUpdatePatient={handleUpdatePatient}
+                          />
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>

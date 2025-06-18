@@ -1,111 +1,73 @@
 
 import React from "react";
-import { Calendar } from "lucide-react";
+import { Calendar, Clock, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-interface Session {
+interface UpcomingSession {
   id: string;
-  patientName: string;
-  type: "pilates" | "running" | "assessment";
   date: string;
   time: string;
+  type: string;
+  patientName: string;
+  status: string;
 }
 
-const sessions: Session[] = [
-  {
-    id: "1",
-    patientName: "Marcos Silva",
-    type: "pilates",
-    date: "Hoje",
-    time: "14:00",
-  },
-  {
-    id: "2",
-    patientName: "Paula Ferraz",
-    type: "assessment",
-    date: "Hoje",
-    time: "16:30",
-  },
-  {
-    id: "3",
-    patientName: "Rodrigo Alves",
-    type: "running",
-    date: "Amanhã",
-    time: "10:15",
-  },
-  {
-    id: "4",
-    patientName: "Sabrina Torres",
-    type: "pilates",
-    date: "Amanhã",
-    time: "15:45",
-  },
-  {
-    id: "5",
-    patientName: "Luciana Braga",
-    type: "assessment",
-    date: "23/05",
-    time: "09:30",
-  },
-];
+interface UpcomingSessionsProps {
+  sessions: UpcomingSession[];
+  isLoading: boolean;
+}
 
-const getSessionTypeDetails = (type: Session["type"]) => {
-  switch (type) {
-    case "pilates":
-      return { 
-        label: "Pilates",
-        color: "bg-green-100 text-green-800 border-green-200" 
-      };
-    case "running":
-      return { 
-        label: "Corrida", 
-        color: "bg-blue-100 text-blue-800 border-blue-200" 
-      };
-    case "assessment":
-      return { 
-        label: "Avaliação", 
-        color: "bg-purple-100 text-purple-800 border-purple-200" 
-      };
-    default:
-      return { 
-        label: "Sessão", 
-        color: "bg-gray-100 text-gray-800 border-gray-200" 
-      };
+export function UpcomingSessions({ sessions, isLoading }: UpcomingSessionsProps) {
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="animate-pulse">
+            <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
+            <div className="h-3 bg-gray-200 rounded w-1/2 mb-2" />
+            <div className="h-3 bg-gray-200 rounded w-2/3" />
+          </div>
+        ))}
+      </div>
+    );
   }
-};
 
-export function UpcomingSessions() {
+  if (sessions.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        <Calendar className="mx-auto h-12 w-12 text-muted-foreground/50" />
+        <h3 className="mt-2 text-sm font-medium">Nenhuma sessão agendada</h3>
+        <p className="mt-1 text-sm">
+          Agende sessões para seus pacientes para vê-las aqui.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
-      {sessions.map((session) => {
-        const sessionType = getSessionTypeDetails(session.type);
-        
-        return (
-          <div key={session.id} className="flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-            <div className="h-10 w-10 rounded-full bg-movebetter-light flex items-center justify-center text-movebetter-primary">
-              <Calendar className="h-5 w-5" />
-            </div>
+      {sessions.map((session) => (
+        <div key={session.id} className="border-b pb-4 last:border-0 last:pb-0">
+          <div className="flex justify-between items-start">
             <div className="flex-1">
-              <div className="flex items-center justify-between">
-                <p className="font-medium text-sm">{session.patientName}</p>
-                <Badge variant="outline" className={sessionType.color}>
-                  {sessionType.label}
-                </Badge>
+              <h4 className="font-medium text-sm">{session.type}</h4>
+              <div className="flex items-center text-sm text-muted-foreground mt-1">
+                <User className="h-3 w-3 mr-1" />
+                <span>{session.patientName}</span>
               </div>
-              <div className="flex items-center justify-between mt-1">
-                <p className="text-xs text-gray-600">{session.date}</p>
-                <p className="text-xs font-medium">{session.time}</p>
+              <div className="flex items-center text-sm text-muted-foreground mt-1">
+                <Calendar className="h-3 w-3 mr-1" />
+                <span>{session.date}</span>
+                <Clock className="h-3 w-3 ml-2 mr-1" />
+                <span>{session.time}</span>
               </div>
             </div>
+            <Badge variant="outline" className="bg-green-100 text-green-800">
+              Agendado
+            </Badge>
           </div>
-        );
-      })}
-      
-      <div className="pt-2">
-        <a href="/calendario" className="text-sm text-movebetter-primary font-medium hover:underline">
-          Ver agenda completa
-        </a>
-      </div>
+        </div>
+      ))}
     </div>
   );
 }
