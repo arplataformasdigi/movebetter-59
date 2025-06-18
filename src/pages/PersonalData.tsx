@@ -28,6 +28,19 @@ import * as z from "zod";
 import { User, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
+// Interface local que estende o tipo do profile para incluir cpf_cnpj
+interface ExtendedProfile {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  crefito?: string;
+  phone?: string;
+  cpf_cnpj?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 interface ViaCEPResponse {
   cep: string;
   logradouro: string;
@@ -91,16 +104,16 @@ export default function PersonalData() {
             .single();
 
           if (profile && !error) {
+            const extendedProfile = profile as ExtendedProfile;
             // Pré-preencher dados do perfil
-            form.setValue("name", profile.name || "");
-            form.setValue("email", profile.email || "");
-            form.setValue("whatsapp", profile.phone || "");
-            form.setValue("conselho", profile.crefito || "");
+            form.setValue("name", extendedProfile.name || "");
+            form.setValue("email", extendedProfile.email || "");
+            form.setValue("whatsapp", extendedProfile.phone || "");
+            form.setValue("conselho", extendedProfile.crefito || "");
             
             // Se houver CPF salvo, marcar como bloqueado
-            const cpfValue = (profile as any).cpf_cnpj;
-            if (cpfValue) {
-              form.setValue("cpfCnpj", cpfValue);
+            if (extendedProfile.cpf_cnpj) {
+              form.setValue("cpfCnpj", extendedProfile.cpf_cnpj);
               setCpfCnpjSaved(true);
             }
           }

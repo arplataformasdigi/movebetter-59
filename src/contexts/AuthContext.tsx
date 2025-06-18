@@ -14,6 +14,19 @@ export interface UserProfile {
   cpf_cnpj?: string;
 }
 
+// Interface local que estende o tipo do profile para incluir cpf_cnpj
+interface ExtendedProfile {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  crefito?: string;
+  phone?: string;
+  cpf_cnpj?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 interface AuthContextType {
   user: UserProfile | null;
   session: Session | null;
@@ -51,14 +64,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               
               if (profile && !error) {
                 console.log('Profile loaded:', profile);
+                const extendedProfile = profile as ExtendedProfile;
                 setUser({
-                  id: profile.id,
-                  name: profile.name,
-                  email: profile.email,
-                  role: profile.role as UserRole,
-                  crefito: profile.crefito || undefined,
-                  phone: profile.phone || undefined,
-                  cpf_cnpj: (profile as any).cpf_cnpj || undefined,
+                  id: extendedProfile.id,
+                  name: extendedProfile.name,
+                  email: extendedProfile.email,
+                  role: extendedProfile.role as UserRole,
+                  crefito: extendedProfile.crefito || undefined,
+                  phone: extendedProfile.phone || undefined,
+                  cpf_cnpj: extendedProfile.cpf_cnpj || undefined,
                 });
               } else {
                 console.error('Error fetching profile:', error);
