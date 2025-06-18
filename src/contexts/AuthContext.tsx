@@ -12,13 +12,14 @@ export interface UserProfile {
   role: UserRole;
   crefito?: string;
   phone?: string;
+  cpf_cnpj?: string;
 }
 
 interface AuthContextType {
   user: UserProfile | null;
   session: Session | null;
   login: (email: string, password: string) => Promise<{ error: any }>;
-  register: (email: string, password: string, name: string) => Promise<{ error: any }>;
+  register: (email: string, password: string, name: string, cpf?: string) => Promise<{ error: any }>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -58,6 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   role: profile.role as UserRole,
                   crefito: profile.crefito || undefined,
                   phone: profile.phone || undefined,
+                  cpf_cnpj: profile.cpf_cnpj || undefined,
                 });
               } else {
                 console.error('Error fetching profile:', error);
@@ -109,8 +111,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   };
 
-  const register = async (email: string, password: string, name: string) => {
-    console.log('Attempting registration for:', email, 'with name:', name);
+  const register = async (email: string, password: string, name: string, cpf?: string) => {
+    console.log('Attempting registration for:', email, 'with name:', name, 'and CPF:', cpf);
     
     const { error } = await supabase.auth.signUp({
       email,
@@ -118,6 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       options: {
         data: {
           name: name,
+          cpf: cpf,
         },
         emailRedirectTo: `${window.location.origin}/`,
       },

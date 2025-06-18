@@ -20,6 +20,7 @@ import { Eye, EyeOff } from "lucide-react";
 const registerSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
   email: z.string().email("Email inválido").min(1, "Email é obrigatório"),
+  cpf: z.string().min(11, "CPF inválido").regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, "Formato de CPF inválido"),
   password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
   confirmPassword: z.string().min(1, "Confirmação de senha é obrigatória"),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -41,10 +42,28 @@ export function RegisterForm() {
     defaultValues: {
       name: "",
       email: "",
+      cpf: "",
       password: "",
       confirmPassword: "",
     },
   });
+
+  const formatCpf = (value: string) => {
+    // Remove tudo que não é dígito
+    const numbers = value.replace(/\D/g, "");
+    
+    // Aplica a máscara CPF: XXX.XXX.XXX-XX
+    if (numbers.length <= 3) return numbers;
+    if (numbers.length <= 6) return numbers.replace(/(\d{3})(\d{1,3})/, "$1.$2");
+    if (numbers.length <= 9) return numbers.replace(/(\d{3})(\d{3})(\d{1,3})/, "$1.$2.$3");
+    return numbers.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, "$1.$2.$3-$4");
+  };
+
+  const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const formatted = formatCpf(value);
+    form.setValue("cpf", formatted);
+  };
 
   const onSubmit = async (data: RegisterFormValues) => {
     setIsLoading(true);
@@ -52,10 +71,11 @@ export function RegisterForm() {
     try {
       console.log('Submitting registration form with data:', { 
         name: data.name, 
-        email: data.email 
+        email: data.email,
+        cpf: data.cpf
       });
       
-      const { error } = await register(data.email, data.password, data.name);
+      const { error } = await register(data.email, data.password, data.name, data.cpf);
       
       if (error) {
         console.error('Registration failed:', error);
@@ -122,6 +142,25 @@ export function RegisterForm() {
               <FormLabel>Email</FormLabel>
               <FormControl>
                 <Input placeholder="seu@email.com" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="cpf"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>CPF</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder="000.000.000-00" 
+                  {...field}
+                  onChange={handleCpfChange}
+                  maxLength={14}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

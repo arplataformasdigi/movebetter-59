@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -82,26 +81,61 @@ export default function PersonalData() {
   });
 
   useEffect(() => {
-    if (form.getValues("cpfCnpj")) {
-      setCpfCnpjSaved(true);
-    }
-  }, []);
+    const loadUserData = async () => {
+      if (user?.id) {
+        try {
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+
+          if (profile && !error) {
+            // Pré-preencher dados do perfil
+            form.setValue("name", profile.name || "");
+            form.setValue("email", profile.email || "");
+            form.setValue("whatsapp", profile.phone || "");
+            form.setValue("conselho", profile.crefito || "");
+            
+            // Se houver CPF salvo, marcar como bloqueado
+            if (profile.cpf_cnpj) {
+              form.setValue("cpfCnpj", profile.cpf_cnpj);
+              setCpfCnpjSaved(true);
+            }
+          }
+        } catch (error) {
+          console.error('Erro ao carregar dados do usuário:', error);
+        }
+      }
+    };
+
+    loadUserData();
+  }, [user, form]);
 
   const formatCpfCnpj = (value: string) => {
+    // Remove tudo que não é dígito
     const numbers = value.replace(/\D/g, "");
     
     if (numbers.length <= 11) {
-      // CPF
-      return numbers.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+      // CPF: xxx.xxx.xxx-xx
+      if (numbers.length <= 3) return numbers;
+      if (numbers.length <= 6) return numbers.replace(/(\d{3})(\d{1,3})/, "$1.$2");
+      if (numbers.length <= 9) return numbers.replace(/(\d{3})(\d{3})(\d{1,3})/, "$1.$2.$3");
+      return numbers.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, "$1.$2.$3-$4");
     } else {
-      // CNPJ
-      return numbers.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
+      // CNPJ: xx.xxx.xxx/xxxx-xx
+      if (numbers.length <= 2) return numbers;
+      if (numbers.length <= 5) return numbers.replace(/(\d{2})(\d{1,3})/, "$1.$2");
+      if (numbers.length <= 8) return numbers.replace(/(\d{2})(\d{3})(\d{1,3})/, "$1.$2.$3");
+      if (numbers.length <= 12) return numbers.replace(/(\d{2})(\d{3})(\d{3})(\d{1,4})/, "$1.$2.$3/$4");
+      return numbers.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{1,2})/, "$1.$2.$3/$4-$5");
     }
   };
 
   const formatCep = (value: string) => {
     const numbers = value.replace(/\D/g, "");
-    return numbers.replace(/(\d{5})(\d{3})/, "$1-$2");
+    if (numbers.length <= 5) return numbers;
+    return numbers.replace(/(\d{5})(\d{1,3})/, "$1-$2");
   };
 
   const fetchAddressByCep = async (cep: string) => {
@@ -163,24 +197,27 @@ export default function PersonalData() {
     const value = e.target.value;
     const formatted = formatCpfCnpj(value);
     form.setValue("cpfCnpj", formatted);
-    if (formatted && !cpfCnpjSaved) {
-      setCpfCnpjSaved(true);
-    }
   };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     
     try {
-      // Aqui você pode implementar a lógica para salvar os dados no Supabase
-      // Por exemplo, atualizar a tabela profiles
+      const updateData: any = {
+        name: values.name,
+        phone: values.whatsapp,
+        crefito: values.conselho,
+      };
+
+      // Só adiciona CPF/CNPJ se não estiver salvo ainda
+      if (values.cpfCnpj && !cpfCnpjSaved) {
+        updateData.cpf_cnpj = values.cpfCnpj;
+        setCpfCnpjSaved(true);
+      }
+
       const { error } = await supabase
         .from('profiles')
-        .update({
-          name: values.name,
-          phone: values.whatsapp,
-          crefito: values.conselho,
-        })
+        .update(updateData)
         .eq('id', user?.id);
 
       if (error) {
@@ -192,6 +229,7 @@ export default function PersonalData() {
         description: "Suas informações foram atualizadas com sucesso",
       });
     } catch (error) {
+      console.error('Erro ao atualizar dados:', error);
       toast({
         title: "Erro",
         description: "Erro ao atualizar os dados",
@@ -235,7 +273,6 @@ export default function PersonalData() {
     setIsPasswordLoading(true);
 
     try {
-      // Usar Supabase para alterar a senha
       const { error } = await supabase.auth.updateUser({
         password: newPassword
       });
@@ -253,6 +290,7 @@ export default function PersonalData() {
       setNewPassword("");
       setConfirmNewPassword("");
     } catch (error: any) {
+      console.error('Erro ao alterar senha:', error);
       toast({
         title: "Erro",
         description: error.message || "Erro ao alterar a senha",
@@ -265,7 +303,6 @@ export default function PersonalData() {
 
   const handleDeleteAccount = async () => {
     try {
-      // Implementar lógica de exclusão da conta se necessário
       toast({
         title: "Conta excluída",
         description: "Sua conta foi excluída com sucesso",
@@ -340,7 +377,7 @@ export default function PersonalData() {
                           {...field} 
                           placeholder="000.000.000-00 ou 00.000.000/0000-00" 
                           disabled={cpfCnpjSaved}
-                          onChange={handleCpfCnpjChange}
+                          onChange={cpfCnpjSaved ? undefined : handleCpfCnpjChange}
                           maxLength={18}
                         />
                       </FormControl>
@@ -401,6 +438,7 @@ export default function PersonalData() {
                             placeholder="00000-000"
                             onChange={handleCepChange}
                             disabled={isSearchingCep}
+                            maxLength={9}
                           />
                         </FormControl>
                         {isSearchingCep && (
