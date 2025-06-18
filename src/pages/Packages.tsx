@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Pencil, Trash, Package, Edit, UserX } from "lucide-react";
+import { Plus, Pencil, Trash, Package } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -74,8 +74,6 @@ export default function Packages() {
     pkg.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
     (statusFilter === "all" || (statusFilter === "active" ? pkg.is_active : !pkg.is_active))
   );
-
-  console.log('Filtered packages:', filteredPackages);
 
   const openEditDialog = (pkg: any) => {
     setEditingPackage(pkg);
@@ -161,14 +159,6 @@ export default function Packages() {
                   <option value="active">Ativo</option>
                   <option value="inactive">Inativo</option>
                 </select>
-              </div>
-
-              {/* Debug info */}
-              <div className="mb-4 p-2 bg-gray-100 rounded text-sm">
-                <p>Total de pacotes: {packages.length}</p>
-                <p>Pacotes filtrados: {filteredPackages.length}</p>
-                <p>Termo de busca: "{searchTerm}"</p>
-                <p>Filtro de status: {statusFilter}</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

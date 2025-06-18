@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -21,7 +21,7 @@ export function usePackages() {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  const fetchPackages = useCallback(async () => {
+  const fetchPackages = async () => {
     try {
       console.log('Fetching packages from Supabase...');
       setIsLoading(true);
@@ -53,11 +53,11 @@ export function usePackages() {
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  };
 
   useEffect(() => {
     fetchPackages();
-  }, [fetchPackages]);
+  }, []); // Dependências vazias para executar apenas uma vez
 
   const addPackage = async (packageData: Omit<Package, 'id' | 'created_at' | 'updated_at'>) => {
     try {
