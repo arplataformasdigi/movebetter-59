@@ -54,8 +54,14 @@ interface Evolution {
   previousScore?: number;
 }
 
-interface PatientWithDetails extends Patient {
+// Interface for PatientDetails component (compatible with the component's expected type)
+interface PatientDetailsType {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
   avatar?: string;
+  status: "active" | "inactive";
   medicalRecords?: MedicalRecord[];
   evolutions?: Evolution[];
 }
@@ -107,13 +113,13 @@ export function Patients() {
   const [searchQuery, setSearchQuery] = useState("");
   const [packageAssignments, setPackageAssignments] = useState<any[]>([]);
 
-  const handleUpdatePatient = (updatedPatient: PatientWithDetails) => {
+  const handleUpdatePatient = (updatedPatient: PatientDetailsType) => {
     // Converter para o formato esperado pelo hook
     const patientData = {
       name: updatedPatient.name,
       email: updatedPatient.email || undefined,
       phone: updatedPatient.phone || undefined,
-      status: updatedPatient.status,
+      status: updatedPatient.status === "inactive" ? "inactive" as const : "active" as const,
     };
     updatePatient(updatedPatient.id, patientData);
   };
@@ -286,7 +292,8 @@ export function Patients() {
                           />
                           <PatientDetails 
                             patient={{
-                              ...patient,
+                              id: patient.id,
+                              name: patient.name,
                               email: patient.email || "",
                               phone: patient.phone || "",
                               avatar: undefined,
