@@ -1,7 +1,8 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
 
 interface LeaderboardUser {
   id: string;
@@ -12,50 +13,88 @@ interface LeaderboardUser {
   rank: number;
 }
 
-const leaderboardData: LeaderboardUser[] = [
-  {
-    id: "1",
-    name: "Roberto Almeida",
-    avatar: "",
-    points: 2840,
-    streak: 12,
-    rank: 1,
-  },
-  {
-    id: "2",
-    name: "Camila Vieira",
-    avatar: "",
-    points: 2215,
-    streak: 8,
-    rank: 2,
-  },
-  {
-    id: "3",
-    name: "Thiago Moreira",
-    avatar: "",
-    points: 1998,
-    streak: 15,
-    rank: 3,
-  },
-  {
-    id: "4",
-    name: "Beatriz Costa",
-    avatar: "",
-    points: 1876,
-    streak: 6,
-    rank: 4,
-  },
-  {
-    id: "5",
-    name: "Eduardo Lima",
-    avatar: "",
-    points: 1645,
-    streak: 9,
-    rank: 5,
-  },
-];
-
 export function LeaderBoard() {
+  const [leaderboardData, setLeaderboardData] = useState<LeaderboardUser[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchLeaderboardData();
+  }, []);
+
+  const fetchLeaderboardData = async () => {
+    try {
+      setIsLoading(true);
+      
+      const { data: patientsWithScores, error } = await supabase
+        .from('patients')
+        .select(`
+          id,
+          name,
+          patient_scores (
+            total_points,
+            streak_days
+          )
+        `)
+        .eq('status', 'active')
+        .limit(5);
+
+      if (error) {
+        console.error('Error fetching leaderboard data:', error);
+        return;
+      }
+
+      const formattedData: LeaderboardUser[] = (patientsWithScores || [])
+        .map((patient) => {
+          const score = patient.patient_scores?.[0];
+          return {
+            id: patient.id,
+            name: patient.name,
+            avatar: "",
+            points: score?.total_points || 0,
+            streak: score?.streak_days || 0,
+            rank: 0, // Will be set after sorting
+          };
+        })
+        .sort((a, b) => b.points - a.points)
+        .slice(0, 5)
+        .map((user, index) => ({
+          ...user,
+          rank: index + 1,
+        }));
+
+      setLeaderboardData(formattedData);
+    } catch (error) {
+      console.error('Error in fetchLeaderboardData:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-2">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="flex items-center space-x-4 p-3 rounded-lg animate-pulse">
+            <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
+            <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
+            <div className="flex-1">
+              <div className="h-4 bg-gray-200 rounded mb-2"></div>
+              <div className="h-3 bg-gray-200 rounded w-24"></div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (leaderboardData.length === 0) {
+    return (
+      <div className="text-center p-4 text-gray-500">
+        Nenhum paciente com pontuação encontrado
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-2">
       {leaderboardData.map((user) => (

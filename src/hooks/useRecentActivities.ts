@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 
 interface Activity {
   id: string;
@@ -14,14 +13,13 @@ interface Activity {
 export function useRecentActivities() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
 
   const fetchRecentActivities = async () => {
     try {
       setIsLoading(true);
 
       // Buscar agendamentos recentes
-      const { data: appointments, error: appointmentsError } = await supabase
+      const { data: appointments } = await supabase
         .from('appointments')
         .select(`
           id,
@@ -32,23 +30,15 @@ export function useRecentActivities() {
         .order('created_at', { ascending: false })
         .limit(5);
 
-      if (appointmentsError) {
-        console.error('Error fetching appointments:', appointmentsError);
-      }
-
       // Buscar pacientes recém-cadastrados
-      const { data: patients, error: patientsError } = await supabase
+      const { data: patients } = await supabase
         .from('patients')
         .select('id, name, created_at')
         .order('created_at', { ascending: false })
         .limit(3);
 
-      if (patientsError) {
-        console.error('Error fetching patients:', patientsError);
-      }
-
       // Buscar trilhas criadas recentemente
-      const { data: plans, error: plansError } = await supabase
+      const { data: plans } = await supabase
         .from('treatment_plans')
         .select(`
           id,
@@ -58,10 +48,6 @@ export function useRecentActivities() {
         `)
         .order('created_at', { ascending: false })
         .limit(3);
-
-      if (plansError) {
-        console.error('Error fetching treatment plans:', plansError);
-      }
 
       // Combinar e ordenar atividades
       const allActivities: Activity[] = [

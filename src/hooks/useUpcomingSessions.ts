@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 
 interface UpcomingSession {
   id: string;
@@ -15,7 +14,6 @@ interface UpcomingSession {
 export function useUpcomingSessions() {
   const [sessions, setSessions] = useState<UpcomingSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
 
   const fetchUpcomingSessions = async () => {
     try {
@@ -23,7 +21,7 @@ export function useUpcomingSessions() {
 
       const today = new Date().toISOString().split('T')[0];
 
-      const { data: appointments, error } = await supabase
+      const { data: appointments } = await supabase
         .from('appointments')
         .select(`
           id,
@@ -38,11 +36,6 @@ export function useUpcomingSessions() {
         .order('appointment_date', { ascending: true })
         .order('appointment_time', { ascending: true })
         .limit(5);
-
-      if (error) {
-        console.error('Error fetching upcoming sessions:', error);
-        return;
-      }
 
       const formattedSessions = appointments?.map(apt => ({
         id: apt.id,
