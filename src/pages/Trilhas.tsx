@@ -1,152 +1,57 @@
 
-import React, { useEffect } from "react";
+import React, { useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Trash, Eye, Play, Pause, RefreshCw } from "lucide-react";
+import { Plus, Eye, Edit, Trash, RefreshCw, Target, User, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { useTreatmentPlans } from "@/hooks/useTreatmentPlans";
 import { AddTreatmentPlanDialog } from "@/components/plans/AddTreatmentPlanDialog";
 import { EditTreatmentPlanDialog } from "@/components/plans/EditTreatmentPlanDialog";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-
-interface PlanCardProps {
-  plan: any;
-  onToggleStatus: (id: string) => void;
-  onDelete: (id: string) => void;
-}
-
-const PlanCard: React.FC<PlanCardProps> = ({ plan, onToggleStatus, onDelete }) => {
-  const handleDelete = () => {
-    if (plan.progress_percentage > 0) {
-      alert("Não é possível excluir uma trilha com progresso iniciado.");
-      return;
-    }
-    const confirmed = window.confirm(`Tem certeza que deseja excluir a trilha "${plan.name}"?`);
-    if (confirmed) {
-      onDelete(plan.id);
-    }
-  };
-
-  const handleToggleStatus = () => {
-    onToggleStatus(plan.id);
-  };
-
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return "Não definido";
-    return format(new Date(dateString), "dd/MM/yyyy", { locale: ptBR });
-  };
-
-  const calculateDuration = () => {
-    if (!plan.start_date || !plan.end_date) return "Não definido";
-    const start = new Date(plan.start_date);
-    const end = new Date(plan.end_date);
-    const diffTime = Math.abs(end.getTime() - start.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    const weeks = Math.ceil(diffDays / 7);
-    return `${weeks} semanas`;
-  };
-
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-start">
-          <CardTitle className="text-lg">{plan.name}</CardTitle>
-          <div className="flex items-center gap-2">
-            <Badge className={plan.is_active ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"}>
-              {plan.is_active ? "Ativo" : "Pausado"}
-            </Badge>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleToggleStatus}
-              className="h-8 w-8 p-0"
-            >
-              {plan.is_active ? (
-                <Pause className="h-4 w-4 text-amber-600" />
-              ) : (
-                <Play className="h-4 w-4 text-green-600" />
-              )}
-            </Button>
-          </div>
-        </div>
-        <div className="text-sm text-gray-500">
-          Paciente: {plan.patients?.name || "Não atribuído"}
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span>Duração:</span>
-            <span className="font-medium">{calculateDuration()}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span>Início:</span>
-            <span className="font-medium">{formatDate(plan.start_date)}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span>Fim:</span>
-            <span className="font-medium">{formatDate(plan.end_date)}</span>
-          </div>
-          <div className="space-y-1">
-            <div className="flex justify-between text-sm">
-              <span>Progresso:</span>
-              <span className="font-medium">{plan.progress_percentage || 0}%</span>
-            </div>
-            <div className="w-full h-2 bg-gray-100 rounded-full">
-              <div 
-                className="h-full rounded-full bg-movebetter-primary" 
-                style={{ width: `${plan.progress_percentage || 0}%` }}
-              ></div>
-            </div>
-          </div>
-          {plan.description && (
-            <div className="mt-2">
-              <div className="text-sm text-gray-600">{plan.description}</div>
-            </div>
-          )}
-        </div>
-      </CardContent>
-      <CardFooter className="flex justify-between">
-        <div className="flex gap-2">
-          <EditTreatmentPlanDialog plan={plan} />
-          <Button variant="outline" size="sm">
-            <Eye className="h-4 w-4 mr-1" /> Visualizar
-          </Button>
-        </div>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="text-red-600 border-red-200 hover:bg-red-50"
-          onClick={handleDelete}
-        >
-          <Trash className="h-4 w-4 mr-1" /> Excluir
-        </Button>
-      </CardFooter>
-    </Card>
-  );
-};
+import { ViewTreatmentPlanDialog } from "@/components/plans/ViewTreatmentPlanDialog";
+import { useTreatmentPlans } from "@/hooks/useTreatmentPlans";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function Trilhas() {
-  const [searchTerm, setSearchTerm] = React.useState("");
-  const { treatmentPlans, isLoading, updateTreatmentPlan, deleteTreatmentPlan, fetchTreatmentPlans } = useTreatmentPlans();
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [planToDelete, setPlanToDelete] = useState(null);
 
-  // Debug: Log treatment plans data
-  useEffect(() => {
-    console.log('Current treatment plans state:', treatmentPlans);
-    console.log('Is loading treatment plans:', isLoading);
-  }, [treatmentPlans, isLoading]);
+  const { treatmentPlans, isLoading, fetchTreatmentPlans, deleteTreatmentPlan } = useTreatmentPlans();
 
-  const handleToggleStatus = async (planId: string) => {
-    const plan = treatmentPlans.find(p => p.id === planId);
-    if (plan) {
-      await updateTreatmentPlan(planId, { is_active: !plan.is_active });
-    }
+  console.log('Treatment plans in component:', treatmentPlans);
+
+  const handleView = (plan) => {
+    setSelectedPlan(plan);
+    setIsViewDialogOpen(true);
   };
 
-  const handleDeletePlan = async (planId: string) => {
-    await deleteTreatmentPlan(planId);
+  const handleEdit = (plan) => {
+    setSelectedPlan(plan);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDeleteClick = (plan) => {
+    setPlanToDelete(plan);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (planToDelete) {
+      await deleteTreatmentPlan(planToDelete.id);
+      setIsDeleteDialogOpen(false);
+      setPlanToDelete(null);
+    }
   };
 
   const handleRefresh = () => {
@@ -154,18 +59,10 @@ export default function Trilhas() {
     fetchTreatmentPlans();
   };
 
-  const filteredPlans = treatmentPlans.filter(plan => 
-    plan.patients?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    plan.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Trilhas de Acompanhamento</h1>
-          <p className="text-muted-foreground">Carregando trilhas...</p>
-        </div>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-lg">Carregando trilhas de tratamento...</div>
       </div>
     );
   }
@@ -174,63 +71,151 @@ export default function Trilhas() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Trilhas de Acompanhamento</h1>
+          <h1 className="text-2xl font-bold tracking-tight flex items-center">
+            <Target className="mr-2 h-6 w-6" /> Trilhas de Tratamento
+          </h1>
           <p className="text-muted-foreground">
-            Gerencie as trilhas de tratamento ({treatmentPlans.length} trilhas encontradas)
+            Gerencie planos de tratamento personalizados ({treatmentPlans.length} trilhas encontradas)
           </p>
         </div>
         <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={handleRefresh}
-            disabled={isLoading}
-          >
+          <Button variant="outline" onClick={handleRefresh}>
             <RefreshCw className="mr-2 h-4 w-4" />
             Atualizar
           </Button>
-          <AddTreatmentPlanDialog />
+          <Button onClick={() => setIsAddDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Nova Trilha
+          </Button>
         </div>
       </div>
-      
-      <div className="flex items-center justify-between space-x-2 mb-6">
-        <Input
-          placeholder="Buscar por nome do paciente ou trilha..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-sm"
-        />
-      </div>
-      
-      {filteredPlans.length === 0 ? (
-        <div className="text-center py-8 text-muted-foreground">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            {searchTerm ? "Nenhuma trilha encontrada" : "Nenhuma trilha cadastrada"}
-          </h3>
-          <p className="text-gray-600 mb-4">
-            {searchTerm 
-              ? "Tente ajustar sua busca ou cadastre uma nova trilha." 
-              : "Comece criando sua primeira trilha de tratamento."
-            }
-          </p>
-          {treatmentPlans.length > 0 && (
-            <p className="text-xs text-muted-foreground">
-              Total de trilhas no banco: {treatmentPlans.length}
+
+      {treatmentPlans.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Target className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium text-center mb-2">Nenhuma trilha encontrada</h3>
+            <p className="text-muted-foreground text-center mb-4">
+              Crie trilhas de tratamento personalizadas para seus pacientes
             </p>
-          )}
-          {!searchTerm && <AddTreatmentPlanDialog />}
-        </div>
+            <Button onClick={() => setIsAddDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Criar primeira trilha
+            </Button>
+          </CardContent>
+        </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredPlans.map((plan) => (
-            <PlanCard 
-              key={plan.id} 
-              plan={plan} 
-              onToggleStatus={handleToggleStatus}
-              onDelete={handleDeletePlan}
-            />
+          {treatmentPlans.map((plan) => (
+            <Card key={plan.id} className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <CardTitle className="text-lg">{plan.name}</CardTitle>
+                  <Badge className={plan.is_active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
+                    {plan.is_active ? "Ativo" : "Inativo"}
+                  </Badge>
+                </div>
+                <CardDescription className="line-clamp-2">
+                  {plan.description || "Sem descrição"}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <User className="h-4 w-4 mr-2" />
+                    <span>{plan.patients?.name || 'Paciente não definido'}</span>
+                  </div>
+                  
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    <span>
+                      {plan.start_date ? new Date(plan.start_date).toLocaleDateString('pt-BR') : 'Data não definida'}
+                    </span>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between text-sm mb-1">
+                      <span>Progresso</span>
+                      <span>{plan.progress_percentage}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full" 
+                        style={{ width: `${plan.progress_percentage}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between pt-2">
+                    <div className="flex gap-1">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => handleView(plan)}
+                      >
+                        <Eye className="h-4 w-4 mr-1" /> Ver
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => handleEdit(plan)}
+                      >
+                        <Edit className="h-4 w-4 mr-1" /> Editar
+                      </Button>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-red-600 border-red-200 hover:bg-red-50"
+                      onClick={() => handleDeleteClick(plan)}
+                    >
+                      <Trash className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}
+
+      <AddTreatmentPlanDialog 
+        open={isAddDialogOpen} 
+        onOpenChange={setIsAddDialogOpen} 
+      />
+      
+      <EditTreatmentPlanDialog
+        plan={selectedPlan}
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+      />
+
+      <ViewTreatmentPlanDialog
+        plan={selectedPlan}
+        open={isViewDialogOpen}
+        onOpenChange={setIsViewDialogOpen}
+      />
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir a trilha "{planToDelete?.name}"? 
+              Esta ação não pode ser desfeita e todos os exercícios associados também serão removidos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

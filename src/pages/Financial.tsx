@@ -9,12 +9,20 @@ import { TransactionList } from "@/components/financial/TransactionList";
 import { FinancialSummary } from "@/components/financial/FinancialSummary";
 import { FinancialReports } from "@/components/financial/FinancialReports";
 import { CategoryManager } from "@/components/financial/CategoryManager";
+import { CategoryAnalysis } from "@/components/financial/CategoryAnalysis";
 import { useFinancialTransactions } from "@/hooks/useFinancialTransactions";
 
 export default function Financial() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
-  const { transactions, isLoading, deleteTransaction } = useFinancialTransactions();
+  const { 
+    transactions, 
+    categories, 
+    isLoading, 
+    deleteTransaction, 
+    addCategory, 
+    deleteCategory 
+  } = useFinancialTransactions();
 
   const handleEditTransaction = (transaction: any) => {
     setEditingTransaction(transaction);
@@ -30,6 +38,14 @@ export default function Financial() {
     await deleteTransaction(id);
   };
 
+  const handleAddCategory = async (categoryData: any) => {
+    await addCategory(categoryData);
+  };
+
+  const handleDeleteCategory = async (categoryId: string) => {
+    await deleteCategory(categoryId);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -41,7 +57,7 @@ export default function Financial() {
   // Transform transactions to match expected format
   const transformedTransactions = transactions.map(transaction => ({
     ...transaction,
-    date: transaction.transaction_date,
+    date: transaction.transaction_date || new Date().toISOString().split('T')[0],
     category: transaction.financial_categories?.name || 'Não categorizado'
   }));
 
@@ -65,21 +81,11 @@ export default function Financial() {
         </TabsList>
 
         <TabsContent value="transactions" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Transações Recentes</CardTitle>
-              <CardDescription>
-                Visualize e gerencie todas as transações financeiras
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <TransactionList 
-                transactions={transformedTransactions}
-                onEdit={handleEditTransaction}
-                onDeleteTransaction={handleDeleteTransaction}
-              />
-            </CardContent>
-          </Card>
+          <TransactionList 
+            transactions={transformedTransactions}
+            onEdit={handleEditTransaction}
+            onDeleteTransaction={handleDeleteTransaction}
+          />
         </TabsContent>
 
         <TabsContent value="reports" className="space-y-4">
@@ -92,26 +98,14 @@ export default function Financial() {
 
         <TabsContent value="categories" className="space-y-4">
           <CategoryManager 
-            categories={[]}
-            onAddCategory={() => {}}
-            onDeleteCategory={() => {}}
+            categories={categories}
+            onAddCategory={handleAddCategory}
+            onDeleteCategory={handleDeleteCategory}
           />
         </TabsContent>
 
         <TabsContent value="analysis" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Análises Avançadas</CardTitle>
-              <CardDescription>
-                Análises detalhadas dos dados financeiros
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-gray-500">
-                Funcionalidade de análises avançadas em desenvolvimento
-              </div>
-            </CardContent>
-          </Card>
+          <CategoryAnalysis transactions={transformedTransactions} />
         </TabsContent>
       </Tabs>
 

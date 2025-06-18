@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
@@ -7,6 +6,7 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import { Button } from "@/components/ui/button";
 import { Plus, RefreshCw } from "lucide-react";
 import { ScheduleAppointmentForm } from "@/components/calendar/ScheduleAppointmentForm";
+import { AppointmentDetailsDialog } from "@/components/calendar/AppointmentDetailsDialog";
 import { useAppointments } from "@/hooks/useAppointments";
 import { usePatients } from "@/hooks/usePatients";
 
@@ -41,6 +41,8 @@ const messages = {
 export default function CalendarPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
 
   const { appointments, isLoading: isLoadingAppointments, fetchAppointments } = useAppointments();
   const { patients, isLoading: isLoadingPatients } = usePatients();
@@ -58,6 +60,8 @@ export default function CalendarPage() {
 
   const handleSelectEvent = (event: any) => {
     console.log("Evento selecionado:", event);
+    setSelectedAppointment(event.resource);
+    setIsDetailsDialogOpen(true);
   };
 
   const handleRefresh = () => {
@@ -133,52 +137,48 @@ export default function CalendarPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={handleRefresh}
-            disabled={isLoadingAppointments}
-          >
+          <Button variant="outline" onClick={handleRefresh}>
             <RefreshCw className="mr-2 h-4 w-4" />
             Atualizar
           </Button>
           <Button onClick={() => setIsDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" /> Novo Agendamento
+            <Plus className="mr-2 h-4 w-4" />
+            Novo Agendamento
           </Button>
         </div>
       </div>
 
-      {appointments.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-sm border p-8 text-center">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum agendamento encontrado</h3>
-          <p className="text-gray-600 mb-4">Comece criando seu primeiro agendamento.</p>
-          <Button onClick={() => setIsDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" /> Criar Agendamento
-          </Button>
-        </div>
-      ) : (
-        <div className="bg-white rounded-lg shadow-sm border p-4" style={{ height: "600px" }}>
-          <Calendar
-            localizer={localizer}
-            events={events}
-            startAccessor="start"
-            endAccessor="end"
-            style={{ height: "100%" }}
-            onSelectSlot={handleSelectSlot}
-            onSelectEvent={handleSelectEvent}
-            selectable
-            popup
-            messages={messages}
-            culture="pt-BR"
-            eventPropGetter={eventStyleGetter}
-          />
-        </div>
-      )}
+      <div className="bg-white rounded-lg border p-4" style={{ height: "600px" }}>
+        <Calendar
+          localizer={localizer}
+          events={events}
+          startAccessor="start"
+          endAccessor="end"
+          style={{ height: "100%" }}
+          onSelectSlot={handleSelectSlot}
+          onSelectEvent={handleSelectEvent}
+          selectable
+          eventPropGetter={eventStyleGetter}
+          messages={messages}
+          views={['month', 'week', 'day']}
+          defaultView="month"
+        />
+      </div>
 
       <ScheduleAppointmentForm
         isOpen={isDialogOpen}
-        onClose={() => setIsDialogOpen(false)}
+        onClose={() => {
+          setIsDialogOpen(false);
+          setSelectedDate(null);
+        }}
         selectedDate={selectedDate}
         patients={patients}
+      />
+
+      <AppointmentDetailsDialog
+        appointment={selectedAppointment}
+        open={isDetailsDialogOpen}
+        onOpenChange={setIsDetailsDialogOpen}
       />
     </div>
   );

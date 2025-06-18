@@ -126,6 +126,19 @@ export function useTreatmentPlans() {
     try {
       console.log('Deleting treatment plan:', id);
       
+      // First delete related plan exercises
+      const { error: exercisesError } = await supabase
+        .from('plan_exercises')
+        .delete()
+        .eq('treatment_plan_id', id);
+
+      if (exercisesError) {
+        console.error('Error deleting plan exercises:', exercisesError);
+        toast.error("Erro ao deletar exercícios da trilha: " + exercisesError.message);
+        return { success: false, error: exercisesError };
+      }
+
+      // Then delete the treatment plan
       const { error } = await supabase
         .from('treatment_plans')
         .delete()

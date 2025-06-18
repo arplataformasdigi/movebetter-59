@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export interface CreditCardRate {
   id: string;
@@ -14,35 +14,29 @@ export interface CreditCardRate {
 export function useCreditCardRates() {
   const [rates, setRates] = useState<CreditCardRate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
 
   const fetchRates = async () => {
     try {
+      console.log('Fetching credit card rates from Supabase...');
       setIsLoading(true);
+      
       const { data, error } = await supabase
         .from('credit_card_rates')
         .select('*')
         .eq('is_active', true)
-        .order('created_at', { ascending: false });
+        .order('name');
 
       if (error) {
         console.error('Error fetching rates:', error);
-        toast({
-          title: "Erro ao carregar taxas",
-          description: "Não foi possível carregar as taxas de cartão",
-          variant: "destructive",
-        });
+        toast.error("Erro ao carregar taxas: " + error.message);
         return;
       }
 
+      console.log('Rates fetched successfully:', data);
       setRates(data || []);
     } catch (error) {
       console.error('Error in fetchRates:', error);
-      toast({
-        title: "Erro inesperado",
-        description: "Ocorreu um erro ao carregar as taxas",
-        variant: "destructive",
-      });
+      toast.error("Erro inesperado ao carregar as taxas");
     } finally {
       setIsLoading(false);
     }
@@ -54,6 +48,8 @@ export function useCreditCardRates() {
 
   const addRate = async (rateData: Omit<CreditCardRate, 'id' | 'created_at'>) => {
     try {
+      console.log('Adding rate:', rateData);
+      
       const { data, error } = await supabase
         .from('credit_card_rates')
         .insert([rateData])
@@ -62,28 +58,25 @@ export function useCreditCardRates() {
 
       if (error) {
         console.error('Error adding rate:', error);
-        toast({
-          title: "Erro ao adicionar taxa",
-          description: "Não foi possível adicionar a taxa",
-          variant: "destructive",
-        });
+        toast.error("Erro ao adicionar taxa: " + error.message);
         return { success: false, error };
       }
 
-      setRates(prev => [data, ...prev]);
-      toast({
-        title: "Taxa adicionada",
-        description: "Taxa foi adicionada com sucesso",
-      });
+      console.log('Rate added successfully:', data);
+      setRates(prev => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)));
+      toast.success("Taxa adicionada com sucesso");
       return { success: true, data };
     } catch (error) {
       console.error('Error in addRate:', error);
+      toast.error("Erro inesperado ao adicionar taxa");
       return { success: false, error };
     }
   };
 
   const deleteRate = async (id: string) => {
     try {
+      console.log('Deleting rate:', id);
+      
       const { error } = await supabase
         .from('credit_card_rates')
         .delete()
@@ -91,22 +84,17 @@ export function useCreditCardRates() {
 
       if (error) {
         console.error('Error deleting rate:', error);
-        toast({
-          title: "Erro ao deletar taxa",
-          description: "Não foi possível deletar a taxa",
-          variant: "destructive",
-        });
+        toast.error("Erro ao deletar taxa: " + error.message);
         return { success: false, error };
       }
 
+      console.log('Rate deleted successfully');
       setRates(prev => prev.filter(r => r.id !== id));
-      toast({
-        title: "Taxa removida",
-        description: "Taxa foi removida com sucesso",
-      });
+      toast.success("Taxa removida com sucesso");
       return { success: true };
     } catch (error) {
       console.error('Error in deleteRate:', error);
+      toast.error("Erro inesperado ao deletar taxa");
       return { success: false, error };
     }
   };
