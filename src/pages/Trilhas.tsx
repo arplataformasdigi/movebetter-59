@@ -1,8 +1,8 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Trash, Eye, Play, Pause } from "lucide-react";
+import { Plus, Trash, Eye, Play, Pause, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useTreatmentPlans } from "@/hooks/useTreatmentPlans";
@@ -130,7 +130,13 @@ const PlanCard: React.FC<PlanCardProps> = ({ plan, onToggleStatus, onDelete }) =
 
 export default function Trilhas() {
   const [searchTerm, setSearchTerm] = React.useState("");
-  const { treatmentPlans, isLoading, updateTreatmentPlan, deleteTreatmentPlan } = useTreatmentPlans();
+  const { treatmentPlans, isLoading, updateTreatmentPlan, deleteTreatmentPlan, fetchTreatmentPlans } = useTreatmentPlans();
+
+  // Debug: Log treatment plans data
+  useEffect(() => {
+    console.log('Current treatment plans state:', treatmentPlans);
+    console.log('Is loading treatment plans:', isLoading);
+  }, [treatmentPlans, isLoading]);
 
   const handleToggleStatus = async (planId: string) => {
     const plan = treatmentPlans.find(p => p.id === planId);
@@ -143,6 +149,11 @@ export default function Trilhas() {
     await deleteTreatmentPlan(planId);
   };
 
+  const handleRefresh = () => {
+    console.log('Refreshing treatment plans...');
+    fetchTreatmentPlans();
+  };
+
   const filteredPlans = treatmentPlans.filter(plan => 
     plan.patients?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     plan.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -150,8 +161,11 @@ export default function Trilhas() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg">Carregando trilhas...</div>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Trilhas de Acompanhamento</h1>
+          <p className="text-muted-foreground">Carregando trilhas...</p>
+        </div>
       </div>
     );
   }
@@ -159,8 +173,23 @@ export default function Trilhas() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold tracking-tight">Trilhas de Acompanhamento</h1>
-        <AddTreatmentPlanDialog />
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Trilhas de Acompanhamento</h1>
+          <p className="text-muted-foreground">
+            Gerencie as trilhas de tratamento ({treatmentPlans.length} trilhas encontradas)
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={handleRefresh}
+            disabled={isLoading}
+          >
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Atualizar
+          </Button>
+          <AddTreatmentPlanDialog />
+        </div>
       </div>
       
       <div className="flex items-center justify-between space-x-2 mb-6">
@@ -172,22 +201,36 @@ export default function Trilhas() {
         />
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredPlans.length > 0 ? (
-          filteredPlans.map((plan) => (
+      {filteredPlans.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground">
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            {searchTerm ? "Nenhuma trilha encontrada" : "Nenhuma trilha cadastrada"}
+          </h3>
+          <p className="text-gray-600 mb-4">
+            {searchTerm 
+              ? "Tente ajustar sua busca ou cadastre uma nova trilha." 
+              : "Comece criando sua primeira trilha de tratamento."
+            }
+          </p>
+          {treatmentPlans.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              Total de trilhas no banco: {treatmentPlans.length}
+            </p>
+          )}
+          {!searchTerm && <AddTreatmentPlanDialog />}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredPlans.map((plan) => (
             <PlanCard 
               key={plan.id} 
               plan={plan} 
               onToggleStatus={handleToggleStatus}
               onDelete={handleDeletePlan}
             />
-          ))
-        ) : (
-          <div className="col-span-full text-center py-8 text-gray-500">
-            {searchTerm ? "Nenhuma trilha encontrada com os critérios de busca." : "Nenhuma trilha cadastrada ainda."}
-          </div>
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

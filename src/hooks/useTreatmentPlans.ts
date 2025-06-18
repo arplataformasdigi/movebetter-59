@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export interface TreatmentPlan {
   id: string;
@@ -23,11 +23,12 @@ export interface TreatmentPlan {
 export function useTreatmentPlans() {
   const [treatmentPlans, setTreatmentPlans] = useState<TreatmentPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
 
   const fetchTreatmentPlans = async () => {
     try {
+      console.log('Fetching treatment plans from Supabase...');
       setIsLoading(true);
+      
       const { data, error } = await supabase
         .from('treatment_plans')
         .select(`
@@ -38,12 +39,19 @@ export function useTreatmentPlans() {
 
       if (error) {
         console.error('Error fetching treatment plans:', error);
+        toast.error("Erro ao carregar trilhas: " + error.message);
         return;
       }
 
+      console.log('Treatment plans fetched successfully:', data);
       setTreatmentPlans(data || []);
+      
+      if (data?.length === 0) {
+        console.log('No treatment plans found in database');
+      }
     } catch (error) {
       console.error('Error in fetchTreatmentPlans:', error);
+      toast.error("Erro inesperado ao carregar as trilhas");
     } finally {
       setIsLoading(false);
     }
@@ -55,6 +63,8 @@ export function useTreatmentPlans() {
 
   const addTreatmentPlan = async (planData: Omit<TreatmentPlan, 'id' | 'created_at' | 'updated_at' | 'patients'>) => {
     try {
+      console.log('Adding treatment plan:', planData);
+      
       const { data, error } = await supabase
         .from('treatment_plans')
         .insert([planData])
@@ -66,28 +76,25 @@ export function useTreatmentPlans() {
 
       if (error) {
         console.error('Error adding treatment plan:', error);
-        toast({
-          title: "Erro ao adicionar trilha",
-          description: "Não foi possível adicionar a trilha de tratamento",
-          variant: "destructive",
-        });
+        toast.error("Erro ao adicionar trilha: " + error.message);
         return { success: false, error };
       }
 
+      console.log('Treatment plan added successfully:', data);
       setTreatmentPlans(prev => [data, ...prev]);
-      toast({
-        title: "Trilha adicionada",
-        description: "Trilha de tratamento foi adicionada com sucesso",
-      });
+      toast.success("Trilha adicionada com sucesso");
       return { success: true, data };
     } catch (error) {
       console.error('Error in addTreatmentPlan:', error);
+      toast.error("Erro inesperado ao adicionar trilha");
       return { success: false, error };
     }
   };
 
   const updateTreatmentPlan = async (id: string, updates: Partial<TreatmentPlan>) => {
     try {
+      console.log('Updating treatment plan:', id, updates);
+      
       const { data, error } = await supabase
         .from('treatment_plans')
         .update(updates)
@@ -100,28 +107,25 @@ export function useTreatmentPlans() {
 
       if (error) {
         console.error('Error updating treatment plan:', error);
-        toast({
-          title: "Erro ao atualizar trilha",
-          description: "Não foi possível atualizar a trilha de tratamento",
-          variant: "destructive",
-        });
+        toast.error("Erro ao atualizar trilha: " + error.message);
         return { success: false, error };
       }
 
+      console.log('Treatment plan updated successfully:', data);
       setTreatmentPlans(prev => prev.map(p => p.id === id ? data : p));
-      toast({
-        title: "Trilha atualizada",
-        description: "Trilha de tratamento foi atualizada com sucesso",
-      });
+      toast.success("Trilha atualizada com sucesso");
       return { success: true, data };
     } catch (error) {
       console.error('Error in updateTreatmentPlan:', error);
+      toast.error("Erro inesperado ao atualizar trilha");
       return { success: false, error };
     }
   };
 
   const deleteTreatmentPlan = async (id: string) => {
     try {
+      console.log('Deleting treatment plan:', id);
+      
       const { error } = await supabase
         .from('treatment_plans')
         .delete()
@@ -129,22 +133,17 @@ export function useTreatmentPlans() {
 
       if (error) {
         console.error('Error deleting treatment plan:', error);
-        toast({
-          title: "Erro ao deletar trilha",
-          description: "Não foi possível deletar a trilha de tratamento",
-          variant: "destructive",
-        });
+        toast.error("Erro ao deletar trilha: " + error.message);
         return { success: false, error };
       }
 
+      console.log('Treatment plan deleted successfully');
       setTreatmentPlans(prev => prev.filter(p => p.id !== id));
-      toast({
-        title: "Trilha removida",
-        description: "Trilha de tratamento foi removida com sucesso",
-      });
+      toast.success("Trilha removida com sucesso");
       return { success: true };
     } catch (error) {
       console.error('Error in deleteTreatmentPlan:', error);
+      toast.error("Erro inesperado ao deletar trilha");
       return { success: false, error };
     }
   };

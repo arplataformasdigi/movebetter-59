@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface UpcomingSession {
   id: string;
@@ -17,11 +18,12 @@ export function useUpcomingSessions() {
 
   const fetchUpcomingSessions = async () => {
     try {
+      console.log('Fetching upcoming sessions from Supabase...');
       setIsLoading(true);
 
       const today = new Date().toISOString().split('T')[0];
 
-      const { data: appointments } = await supabase
+      const { data: appointments, error } = await supabase
         .from('appointments')
         .select(`
           id,
@@ -37,6 +39,14 @@ export function useUpcomingSessions() {
         .order('appointment_time', { ascending: true })
         .limit(5);
 
+      if (error) {
+        console.error('Error fetching upcoming sessions:', error);
+        toast.error("Erro ao carregar próximas sessões: " + error.message);
+        return;
+      }
+
+      console.log('Upcoming sessions fetched successfully:', appointments);
+
       const formattedSessions = appointments?.map(apt => ({
         id: apt.id,
         date: new Date(apt.appointment_date).toLocaleDateString('pt-BR'),
@@ -50,6 +60,7 @@ export function useUpcomingSessions() {
 
     } catch (error) {
       console.error('Error fetching upcoming sessions:', error);
+      toast.error("Erro inesperado ao carregar próximas sessões");
     } finally {
       setIsLoading(false);
     }

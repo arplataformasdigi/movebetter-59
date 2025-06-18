@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export interface Appointment {
   id: string;
@@ -24,11 +24,12 @@ export interface Appointment {
 export function useAppointments() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
 
   const fetchAppointments = async () => {
     try {
+      console.log('Fetching appointments from Supabase...');
       setIsLoading(true);
+      
       const { data, error } = await supabase
         .from('appointments')
         .select(`
@@ -40,22 +41,19 @@ export function useAppointments() {
 
       if (error) {
         console.error('Error fetching appointments:', error);
-        toast({
-          title: "Erro ao carregar agendamentos",
-          description: "Não foi possível carregar a lista de agendamentos",
-          variant: "destructive",
-        });
+        toast.error("Erro ao carregar agendamentos: " + error.message);
         return;
       }
 
+      console.log('Appointments fetched successfully:', data);
       setAppointments(data || []);
+      
+      if (data?.length === 0) {
+        console.log('No appointments found in database');
+      }
     } catch (error) {
       console.error('Error in fetchAppointments:', error);
-      toast({
-        title: "Erro inesperado",
-        description: "Ocorreu um erro ao carregar os agendamentos",
-        variant: "destructive",
-      });
+      toast.error("Erro inesperado ao carregar os agendamentos");
     } finally {
       setIsLoading(false);
     }
@@ -67,6 +65,8 @@ export function useAppointments() {
 
   const addAppointment = async (appointmentData: Omit<Appointment, 'id' | 'created_at' | 'updated_at' | 'patients'>) => {
     try {
+      console.log('Adding appointment:', appointmentData);
+      
       const { data, error } = await supabase
         .from('appointments')
         .insert([appointmentData])
@@ -78,31 +78,28 @@ export function useAppointments() {
 
       if (error) {
         console.error('Error adding appointment:', error);
-        toast({
-          title: "Erro ao adicionar agendamento",
-          description: "Não foi possível adicionar o agendamento",
-          variant: "destructive",
-        });
+        toast.error("Erro ao adicionar agendamento: " + error.message);
         return { success: false, error };
       }
 
+      console.log('Appointment added successfully:', data);
       setAppointments(prev => [...prev, data].sort((a, b) => 
         new Date(a.appointment_date + ' ' + a.appointment_time).getTime() - 
         new Date(b.appointment_date + ' ' + b.appointment_time).getTime()
       ));
-      toast({
-        title: "Agendamento adicionado",
-        description: "Agendamento foi adicionado com sucesso",
-      });
+      toast.success("Agendamento adicionado com sucesso");
       return { success: true, data };
     } catch (error) {
       console.error('Error in addAppointment:', error);
+      toast.error("Erro inesperado ao adicionar agendamento");
       return { success: false, error };
     }
   };
 
   const updateAppointment = async (id: string, updates: Partial<Appointment>) => {
     try {
+      console.log('Updating appointment:', id, updates);
+      
       const { data, error } = await supabase
         .from('appointments')
         .update(updates)
@@ -115,28 +112,25 @@ export function useAppointments() {
 
       if (error) {
         console.error('Error updating appointment:', error);
-        toast({
-          title: "Erro ao atualizar agendamento",
-          description: "Não foi possível atualizar o agendamento",
-          variant: "destructive",
-        });
+        toast.error("Erro ao atualizar agendamento: " + error.message);
         return { success: false, error };
       }
 
+      console.log('Appointment updated successfully:', data);
       setAppointments(prev => prev.map(a => a.id === id ? data : a));
-      toast({
-        title: "Agendamento atualizado",
-        description: "Agendamento foi atualizado com sucesso",
-      });
+      toast.success("Agendamento atualizado com sucesso");
       return { success: true, data };
     } catch (error) {
       console.error('Error in updateAppointment:', error);
+      toast.error("Erro inesperado ao atualizar agendamento");
       return { success: false, error };
     }
   };
 
   const deleteAppointment = async (id: string) => {
     try {
+      console.log('Deleting appointment:', id);
+      
       const { error } = await supabase
         .from('appointments')
         .delete()
@@ -144,22 +138,17 @@ export function useAppointments() {
 
       if (error) {
         console.error('Error deleting appointment:', error);
-        toast({
-          title: "Erro ao deletar agendamento",
-          description: "Não foi possível deletar o agendamento",
-          variant: "destructive",
-        });
+        toast.error("Erro ao deletar agendamento: " + error.message);
         return { success: false, error };
       }
 
+      console.log('Appointment deleted successfully');
       setAppointments(prev => prev.filter(a => a.id !== id));
-      toast({
-        title: "Agendamento removido",
-        description: "Agendamento foi removido com sucesso",
-      });
+      toast.success("Agendamento removido com sucesso");
       return { success: true };
     } catch (error) {
       console.error('Error in deleteAppointment:', error);
+      toast.error("Erro inesperado ao deletar agendamento");
       return { success: false, error };
     }
   };
