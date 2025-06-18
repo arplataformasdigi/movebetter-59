@@ -23,22 +23,10 @@ export default function Packages() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [newRate, setNewRate] = useState({ name: "", rate: 0 });
 
-  const { packages, isLoading: packagesLoading, updatePackage, deletePackage: removePackage, fetchPackages } = usePackages();
+  const { packages, isLoading: packagesLoading, updatePackage, deletePackage: removePackage } = usePackages();
   const { proposals, isLoading: proposalsLoading, addProposal, deleteProposal } = usePackageProposals();
   const { rates, isLoading: ratesLoading, addRate, deleteRate } = useCreditCardRates();
   const { patients, isLoading: patientsLoading } = usePatients();
-
-  // Force refresh packages when component mounts
-  useEffect(() => {
-    console.log('Packages component mounted, refreshing data...');
-    fetchPackages();
-  }, [fetchPackages]);
-
-  // Log packages for debugging
-  useEffect(() => {
-    console.log('Current packages state:', packages);
-    console.log('Packages loading state:', packagesLoading);
-  }, [packages, packagesLoading]);
 
   const handleEditPackage = async (updatedPackage: any) => {
     await updatePackage(updatedPackage.id, updatedPackage);
