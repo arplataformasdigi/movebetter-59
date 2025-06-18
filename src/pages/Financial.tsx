@@ -1,170 +1,105 @@
 
 import React, { useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DollarSign } from "lucide-react";
-import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 import { TransactionForm } from "@/components/financial/TransactionForm";
 import { TransactionList } from "@/components/financial/TransactionList";
 import { FinancialSummary } from "@/components/financial/FinancialSummary";
 import { FinancialReports } from "@/components/financial/FinancialReports";
 import { CategoryManager } from "@/components/financial/CategoryManager";
-
-interface Transaction {
-  id: string;
-  type: "income" | "expense";
-  description: string;
-  amount: number;
-  date: string;
-  category: string;
-}
-
-interface Category {
-  id: string;
-  name: string;
-  type: "income" | "expense";
-}
-
-const mockTransactions: Transaction[] = [
-  {
-    id: "1",
-    type: "income",
-    description: "Sessão de Pilates - Maria Silva",
-    amount: 80.00,
-    date: "2025-06-08",
-    category: "Atendimento",
-  },
-  {
-    id: "2",
-    type: "expense",
-    description: "Material para exercícios",
-    amount: 150.00,
-    date: "2025-06-07",
-    category: "Equipamentos",
-  },
-  {
-    id: "3",
-    type: "income",
-    description: "Pacote vendido - João Santos",
-    amount: 280.00,
-    date: "2025-06-06",
-    category: "Pacotes",
-  },
-];
-
-const initialCategories: Category[] = [
-  { id: "1", name: "Atendimento", type: "income" },
-  { id: "2", name: "Pacotes", type: "income" },
-  { id: "3", name: "Equipamentos", type: "expense" },
-  { id: "4", name: "Marketing", type: "expense" },
-];
+import { useFinancialTransactions } from "@/hooks/useFinancialTransactions";
 
 export default function Financial() {
-  const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
-  const [categories, setCategories] = useState<Category[]>(initialCategories);
-  const [startDate, setStartDate] = useState("2025-06-01");
-  const [endDate, setEndDate] = useState("2025-06-30");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState(null);
+  const { transactions, isLoading } = useFinancialTransactions();
 
-  const filteredTransactions = transactions.filter(transaction => {
-    const transactionDate = new Date(transaction.date);
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    return transactionDate >= start && transactionDate <= end;
-  });
-
-  const handleAddTransaction = (transaction: Transaction) => {
-    setTransactions([...transactions, transaction]);
+  const handleEditTransaction = (transaction: any) => {
+    setEditingTransaction(transaction);
+    setIsDialogOpen(true);
   };
 
-  const handleDeleteTransaction = (id: string) => {
-    setTransactions(transactions.filter(t => t.id !== id));
-    toast.success("Transação removida com sucesso!");
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false);
+    setEditingTransaction(null);
   };
 
-  const handleAddCategory = (category: Category) => {
-    setCategories([...categories, category]);
-  };
-
-  const handleDeleteCategory = (categoryId: string) => {
-    setCategories(categories.filter(cat => cat.id !== categoryId));
-    toast.success("Categoria removida com sucesso!");
-  };
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-lg">Carregando dados financeiros...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center">
-            <DollarSign className="mr-2 h-8 w-8" /> Financeiro
-          </h1>
-          <p className="text-muted-foreground">
-            Gerencie receitas, despesas e relatórios financeiros.
-          </p>
-        </div>
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold tracking-tight">Gestão Financeira</h1>
+        <Button onClick={() => setIsDialogOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" /> Nova Transação
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <div>
-          <Label htmlFor="startDate">Data Inicial</Label>
-          <Input
-            id="startDate"
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-          />
-        </div>
-        <div>
-          <Label htmlFor="endDate">Data Final</Label>
-          <Input
-            id="endDate"
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-          />
-        </div>
-      </div>
-
-      <FinancialSummary transactions={filteredTransactions} />
+      <FinancialSummary transactions={transactions} />
 
       <Tabs defaultValue="transactions" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="transactions">Transações</TabsTrigger>
-          <TabsTrigger value="add">Adicionar</TabsTrigger>
-          <TabsTrigger value="categories">Categorias</TabsTrigger>
           <TabsTrigger value="reports">Relatórios</TabsTrigger>
+          <TabsTrigger value="categories">Categorias</TabsTrigger>
+          <TabsTrigger value="analysis">Análises</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="transactions" className="space-y-6">
-          <TransactionList 
-            transactions={filteredTransactions} 
-            onDeleteTransaction={handleDeleteTransaction}
-          />
+        <TabsContent value="transactions" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Transações Recentes</CardTitle>
+              <CardDescription>
+                Visualize e gerencie todas as transações financeiras
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <TransactionList 
+                transactions={transactions}
+                onEdit={handleEditTransaction}
+              />
+            </CardContent>
+          </Card>
         </TabsContent>
 
-        <TabsContent value="add" className="space-y-6">
-          <TransactionForm 
-            onAddTransaction={handleAddTransaction}
-            categories={categories}
-          />
+        <TabsContent value="reports" className="space-y-4">
+          <FinancialReports transactions={transactions} />
         </TabsContent>
 
-        <TabsContent value="categories" className="space-y-6">
-          <CategoryManager
-            categories={categories}
-            onAddCategory={handleAddCategory}
-            onDeleteCategory={handleDeleteCategory}
-          />
+        <TabsContent value="categories" className="space-y-4">
+          <CategoryManager />
         </TabsContent>
 
-        <TabsContent value="reports" className="space-y-6">
-          <FinancialReports 
-            transactions={filteredTransactions}
-            startDate={startDate}
-            endDate={endDate}
-          />
+        <TabsContent value="analysis" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Análises Avançadas</CardTitle>
+              <CardDescription>
+                Análises detalhadas dos dados financeiros
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8 text-gray-500">
+                Funcionalidade de análises avançadas em desenvolvimento
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
+
+      <TransactionForm
+        open={isDialogOpen}
+        onOpenChange={handleCloseDialog}
+        transaction={editingTransaction}
+      />
     </div>
   );
 }

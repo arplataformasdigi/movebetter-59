@@ -6,84 +6,63 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Plus, Pencil, Trash, Eye, Play, Pause } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { useTreatmentPlans } from "@/hooks/useTreatmentPlans";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
-interface Plan {
-  id: string;
-  title: string;
-  patientName: string;
-  status: "active" | "paused";
-  duration: string;
-  exercisesCount: number;
-  progress: number;
+interface PlanCardProps {
+  plan: any;
+  onToggleStatus: (id: string) => void;
+  onDelete: (id: string) => void;
 }
 
-const mockPlans: Plan[] = [
-  {
-    id: "1",
-    title: "Reabilitação pós-lesão",
-    patientName: "Carlos Oliveira",
-    status: "active",
-    duration: "8 semanas",
-    exercisesCount: 12,
-    progress: 25,
-  },
-  {
-    id: "2",
-    title: "Fortalecimento Core",
-    patientName: "Mariana Costa",
-    status: "active",
-    duration: "6 semanas",
-    exercisesCount: 8,
-    progress: 50,
-  },
-  {
-    id: "3",
-    title: "Preparação Maratona",
-    patientName: "Pedro Santos",
-    status: "paused",
-    duration: "12 semanas",
-    exercisesCount: 20,
-    progress: 75,
-  },
-  {
-    id: "4",
-    title: "Postura e Equilíbrio",
-    patientName: "Carla Souza",
-    status: "active",
-    duration: "8 semanas",
-    exercisesCount: 15,
-    progress: 60,
-  },
-];
-
-const PlanCard: React.FC<{ plan: Plan; onToggleStatus: (id: string) => void; onDelete: (id: string) => void }> = ({ plan, onToggleStatus, onDelete }) => {
+const PlanCard: React.FC<PlanCardProps> = ({ plan, onToggleStatus, onDelete }) => {
   const handleDelete = () => {
-    if (plan.progress > 0) {
+    if (plan.progress_percentage > 0) {
       alert("Não é possível excluir uma trilha com progresso iniciado.");
       return;
     }
-    const confirmed = window.confirm(`Tem certeza que deseja excluir a trilha "${plan.title}"?`);
+    const confirmed = window.confirm(`Tem certeza que deseja excluir a trilha "${plan.name}"?`);
     if (confirmed) {
       onDelete(plan.id);
     }
+  };
+
+  const handleToggleStatus = () => {
+    onToggleStatus(plan.id);
+  };
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "Não definido";
+    return format(new Date(dateString), "dd/MM/yyyy", { locale: ptBR });
+  };
+
+  const calculateDuration = () => {
+    if (!plan.start_date || !plan.end_date) return "Não definido";
+    const start = new Date(plan.start_date);
+    const end = new Date(plan.end_date);
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const weeks = Math.ceil(diffDays / 7);
+    return `${weeks} semanas`;
   };
 
   return (
     <Card>
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
-          <CardTitle className="text-lg">{plan.title}</CardTitle>
+          <CardTitle className="text-lg">{plan.name}</CardTitle>
           <div className="flex items-center gap-2">
-            <Badge className={plan.status === "active" ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"}>
-              {plan.status === "active" ? "Ativo" : "Pausado"}
+            <Badge className={plan.is_active ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"}>
+              {plan.is_active ? "Ativo" : "Pausado"}
             </Badge>
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onToggleStatus(plan.id)}
+              onClick={handleToggleStatus}
               className="h-8 w-8 p-0"
             >
-              {plan.status === "active" ? (
+              {plan.is_active ? (
                 <Pause className="h-4 w-4 text-amber-600" />
               ) : (
                 <Play className="h-4 w-4 text-green-600" />
@@ -91,27 +70,37 @@ const PlanCard: React.FC<{ plan: Plan; onToggleStatus: (id: string) => void; onD
             </Button>
           </div>
         </div>
-        <div className="text-sm text-gray-500">Paciente: {plan.patientName}</div>
+        <div className="text-sm text-gray-500">
+          Paciente: {plan.patients?.name || "Não atribuído"}
+        </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
             <span>Duração:</span>
-            <span className="font-medium">{plan.duration}</span>
+            <span className="font-medium">{calculateDuration()}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span>Exercícios:</span>
-            <span className="font-medium">{plan.exercisesCount}</span>
+            <span>Tipo:</span>
+            <span className="font-medium">{plan.plan_types?.name || "Não definido"}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span>Início:</span>
+            <span className="font-medium">{formatDate(plan.start_date)}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span>Fim:</span>
+            <span className="font-medium">{formatDate(plan.end_date)}</span>
           </div>
           <div className="space-y-1">
             <div className="flex justify-between text-sm">
               <span>Progresso:</span>
-              <span className="font-medium">{plan.progress}%</span>
+              <span className="font-medium">{plan.progress_percentage || 0}%</span>
             </div>
             <div className="w-full h-2 bg-gray-100 rounded-full">
               <div 
                 className="h-full rounded-full bg-movebetter-primary" 
-                style={{ width: `${plan.progress}%` }}
+                style={{ width: `${plan.progress_percentage || 0}%` }}
               ></div>
             </div>
           </div>
@@ -141,23 +130,31 @@ const PlanCard: React.FC<{ plan: Plan; onToggleStatus: (id: string) => void; onD
 
 export default function Trilhas() {
   const [searchTerm, setSearchTerm] = React.useState("");
-  const [plans, setPlans] = React.useState<Plan[]>(mockPlans);
+  const { treatmentPlans, isLoading, updateTreatmentPlan, deleteTreatmentPlan } = useTreatmentPlans();
 
-  const handleToggleStatus = (planId: string) => {
-    setPlans(plans.map(plan => 
-      plan.id === planId 
-        ? { ...plan, status: plan.status === "active" ? "paused" : "active" as Plan["status"] }
-        : plan
-    ));
+  const handleToggleStatus = async (planId: string) => {
+    const plan = treatmentPlans.find(p => p.id === planId);
+    if (plan) {
+      await updateTreatmentPlan(planId, { is_active: !plan.is_active });
+    }
   };
 
-  const handleDeletePlan = (planId: string) => {
-    setPlans(plans.filter(plan => plan.id !== planId));
+  const handleDeletePlan = async (planId: string) => {
+    await deleteTreatmentPlan(planId);
   };
 
-  const filteredPlans = plans.filter(plan => 
-    plan.patientName.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredPlans = treatmentPlans.filter(plan => 
+    plan.patients?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    plan.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-lg">Carregando trilhas...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -172,7 +169,7 @@ export default function Trilhas() {
       
       <div className="flex items-center justify-between space-x-2 mb-6">
         <Input
-          placeholder="Buscar por nome do paciente..."
+          placeholder="Buscar por nome do paciente ou trilha..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-sm"
@@ -180,14 +177,20 @@ export default function Trilhas() {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredPlans.map((plan) => (
-          <PlanCard 
-            key={plan.id} 
-            plan={plan} 
-            onToggleStatus={handleToggleStatus}
-            onDelete={handleDeletePlan}
-          />
-        ))}
+        {filteredPlans.length > 0 ? (
+          filteredPlans.map((plan) => (
+            <PlanCard 
+              key={plan.id} 
+              plan={plan} 
+              onToggleStatus={handleToggleStatus}
+              onDelete={handleDeletePlan}
+            />
+          ))
+        ) : (
+          <div className="col-span-full text-center py-8 text-gray-500">
+            {searchTerm ? "Nenhuma trilha encontrada com os critérios de busca." : "Nenhuma trilha cadastrada ainda."}
+          </div>
+        )}
       </div>
     </div>
   );
