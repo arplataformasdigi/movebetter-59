@@ -39,10 +39,19 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export function AddTreatmentPlanDialog() {
-  const [open, setOpen] = React.useState(false);
+interface AddTreatmentPlanDialogProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
+
+export function AddTreatmentPlanDialog({ open, onOpenChange }: AddTreatmentPlanDialogProps) {
+  const [internalOpen, setInternalOpen] = React.useState(false);
   const { addTreatmentPlan } = useTreatmentPlans();
   const { patients } = usePatients();
+  
+  const isControlled = open !== undefined && onOpenChange !== undefined;
+  const isOpen = isControlled ? open : internalOpen;
+  const setIsOpen = isControlled ? onOpenChange : setInternalOpen;
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -71,76 +80,71 @@ export function AddTreatmentPlanDialog() {
     if (result.success) {
       toast.success("Trilha criada com sucesso");
       form.reset();
-      setOpen(false);
+      setIsOpen(false);
     }
   }
 
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" /> Criar Nova Trilha
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[525px]">
-        <DialogHeader>
-          <DialogTitle>Criar Nova Trilha</DialogTitle>
-          <DialogDescription>
-            Preencha as informações da trilha de tratamento.
-          </DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome da Trilha</FormLabel>
+  const DialogComponent = (
+    <DialogContent className="sm:max-w-[525px]">
+      <DialogHeader>
+        <DialogTitle>Nova Trilha</DialogTitle>
+        <DialogDescription>
+          Crie uma nova trilha de tratamento para seus pacientes.
+        </DialogDescription>
+      </DialogHeader>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nome da Trilha</FormLabel>
+                <FormControl>
+                  <Input placeholder="Nome da trilha" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Descrição</FormLabel>
+                <FormControl>
+                  <Textarea placeholder="Descrição da trilha" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="patient_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Paciente</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
-                    <Input placeholder="Nome da trilha" {...field} />
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um paciente" />
+                    </SelectTrigger>
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descrição</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Descrição da trilha" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="patient_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Paciente</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um paciente" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {patients.map((patient) => (
-                        <SelectItem key={patient.id} value={patient.id}>
-                          {patient.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  <SelectContent>
+                    {patients.map((patient) => (
+                      <SelectItem key={patient.id} value={patient.id}>
+                        {patient.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <div className="grid grid-cols-2 gap-4">
             <FormField
               control={form.control}
               name="start_date"
@@ -159,7 +163,7 @@ export function AddTreatmentPlanDialog() {
               name="end_date"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Data de Fim (opcional)</FormLabel>
+                  <FormLabel>Data de Fim</FormLabel>
                   <FormControl>
                     <Input type="date" {...field} />
                   </FormControl>
@@ -167,12 +171,32 @@ export function AddTreatmentPlanDialog() {
                 </FormItem>
               )}
             />
-            <DialogFooter>
-              <Button type="submit">Criar Trilha</Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
+          </div>
+          <DialogFooter>
+            <Button type="submit">Criar Trilha</Button>
+          </DialogFooter>
+        </form>
+      </Form>
+    </DialogContent>
+  );
+
+  if (isControlled) {
+    return (
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        {DialogComponent}
+      </Dialog>
+    );
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button>
+          <Plus className="mr-2 h-4 w-4" />
+          Nova Trilha
+        </Button>
+      </DialogTrigger>
+      {DialogComponent}
     </Dialog>
   );
 }
