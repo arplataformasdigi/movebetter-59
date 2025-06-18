@@ -34,6 +34,13 @@ export default function Financial() {
     );
   }
 
+  // Transform transactions to match expected format
+  const transformedTransactions = transactions.map(transaction => ({
+    ...transaction,
+    date: transaction.transaction_date,
+    category: transaction.financial_categories?.name || 'Não categorizado'
+  }));
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -43,7 +50,7 @@ export default function Financial() {
         </Button>
       </div>
 
-      <FinancialSummary transactions={transactions} />
+      <FinancialSummary transactions={transformedTransactions} />
 
       <Tabs defaultValue="transactions" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
@@ -63,7 +70,7 @@ export default function Financial() {
             </CardHeader>
             <CardContent>
               <TransactionList 
-                transactions={transactions}
+                transactions={transformedTransactions}
                 onEdit={handleEditTransaction}
               />
             </CardContent>
@@ -71,11 +78,15 @@ export default function Financial() {
         </TabsContent>
 
         <TabsContent value="reports" className="space-y-4">
-          <FinancialReports transactions={transactions} />
+          <FinancialReports transactions={transformedTransactions} />
         </TabsContent>
 
         <TabsContent value="categories" className="space-y-4">
-          <CategoryManager />
+          <CategoryManager 
+            categories={[]}
+            onAddCategory={() => {}}
+            onDeleteCategory={() => {}}
+          />
         </TabsContent>
 
         <TabsContent value="analysis" className="space-y-4">
@@ -96,8 +107,8 @@ export default function Financial() {
       </Tabs>
 
       <TransactionForm
-        open={isDialogOpen}
-        onOpenChange={handleCloseDialog}
+        isOpen={isDialogOpen}
+        onClose={handleCloseDialog}
         transaction={editingTransaction}
       />
     </div>

@@ -42,8 +42,6 @@ const messages = {
 export default function CalendarPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [patientFilter, setPatientFilter] = useState<string>("all");
 
   const { appointments, isLoading: isLoadingAppointments } = useAppointments();
   const { patients, isLoading: isLoadingPatients } = usePatients();
@@ -58,34 +56,24 @@ export default function CalendarPage() {
   };
 
   // Converter appointments para eventos do calendar
-  const events = appointments
-    .filter(appointment => {
-      if (statusFilter !== "all" && appointment.status !== statusFilter) {
-        return false;
-      }
-      if (patientFilter !== "all" && appointment.patient_id !== patientFilter) {
-        return false;
-      }
-      return true;
-    })
-    .map(appointment => {
-      const appointmentDate = new Date(appointment.appointment_date);
-      const [hours, minutes] = appointment.appointment_time.split(':').map(Number);
-      
-      const start = new Date(appointmentDate);
-      start.setHours(hours, minutes, 0, 0);
-      
-      const end = new Date(start);
-      end.setMinutes(end.getMinutes() + (appointment.duration_minutes || 60));
+  const events = appointments.map(appointment => {
+    const appointmentDate = new Date(appointment.appointment_date);
+    const [hours, minutes] = appointment.appointment_time.split(':').map(Number);
+    
+    const start = new Date(appointmentDate);
+    start.setHours(hours, minutes, 0, 0);
+    
+    const end = new Date(start);
+    end.setMinutes(end.getMinutes() + (appointment.duration_minutes || 60));
 
-      return {
-        id: appointment.id,
-        title: `${appointment.session_type} - ${appointment.patients?.name || 'Paciente não encontrado'}`,
-        start,
-        end,
-        resource: appointment,
-      };
-    });
+    return {
+      id: appointment.id,
+      title: `${appointment.session_type} - ${appointment.patients?.name || 'Paciente não encontrado'}`,
+      start,
+      end,
+      resource: appointment,
+    };
+  });
 
   const eventStyleGetter = (event: any) => {
     const status = event.resource.status;
@@ -134,14 +122,6 @@ export default function CalendarPage() {
         </Button>
       </div>
 
-      <AppointmentFilter
-        statusFilter={statusFilter}
-        onStatusChange={setStatusFilter}
-        patientFilter={patientFilter}
-        onPatientChange={setPatientFilter}
-        patients={patients}
-      />
-
       <div className="bg-white rounded-lg shadow-sm border p-4" style={{ height: "600px" }}>
         <Calendar
           localizer={localizer}
@@ -160,8 +140,8 @@ export default function CalendarPage() {
       </div>
 
       <ScheduleAppointmentForm
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
         selectedDate={selectedDate}
         patients={patients}
       />
