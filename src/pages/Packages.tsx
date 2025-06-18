@@ -285,7 +285,7 @@ export default function Packages() {
                   <CardDescription>Crie propostas para pacientes</CardDescription>
                 </div>
                 <SellPackageDialog 
-                  packages={packages} 
+                  packages={packages.map(pkg => ({ ...pkg, validity: pkg.validity_days }))}
                   onSellPackage={handleCreateProposal}
                   isProposal={true}
                   creditCardRates={rates}

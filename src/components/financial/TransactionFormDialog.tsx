@@ -82,6 +82,7 @@ export function TransactionFormDialog({ isOpen, onClose, transaction }: Transact
       transaction_date: formData.date,
       category_id: null, // Will need to be mapped to actual category
       notes: formData.category, // Temporary mapping
+      payment_status: "paid" as const, // Add required payment_status
     };
 
     let result;

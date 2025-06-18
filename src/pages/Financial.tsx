@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { TransactionForm } from "@/components/financial/TransactionForm";
+import { TransactionFormDialog } from "@/components/financial/TransactionFormDialog";
 import { TransactionList } from "@/components/financial/TransactionList";
 import { FinancialSummary } from "@/components/financial/FinancialSummary";
 import { FinancialReports } from "@/components/financial/FinancialReports";
@@ -14,7 +14,7 @@ import { useFinancialTransactions } from "@/hooks/useFinancialTransactions";
 export default function Financial() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
-  const { transactions, isLoading } = useFinancialTransactions();
+  const { transactions, isLoading, deleteTransaction } = useFinancialTransactions();
 
   const handleEditTransaction = (transaction: any) => {
     setEditingTransaction(transaction);
@@ -24,6 +24,10 @@ export default function Financial() {
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
     setEditingTransaction(null);
+  };
+
+  const handleDeleteTransaction = async (id: string) => {
+    await deleteTransaction(id);
   };
 
   if (isLoading) {
@@ -72,13 +76,18 @@ export default function Financial() {
               <TransactionList 
                 transactions={transformedTransactions}
                 onEdit={handleEditTransaction}
+                onDeleteTransaction={handleDeleteTransaction}
               />
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="reports" className="space-y-4">
-          <FinancialReports transactions={transformedTransactions} />
+          <FinancialReports 
+            transactions={transformedTransactions}
+            startDate=""
+            endDate=""
+          />
         </TabsContent>
 
         <TabsContent value="categories" className="space-y-4">
@@ -106,7 +115,7 @@ export default function Financial() {
         </TabsContent>
       </Tabs>
 
-      <TransactionForm
+      <TransactionFormDialog
         isOpen={isDialogOpen}
         onClose={handleCloseDialog}
         transaction={editingTransaction}
