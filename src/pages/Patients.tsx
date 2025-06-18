@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Users, Power, PowerOff } from "lucide-react";
 import { AddPatientDialog } from "@/components/patients/AddPatientDialog";
+import { EditPatientDialog } from "@/components/patients/EditPatientDialog";
 import { PatientDetails } from "@/components/patients/PatientDetails";
 import { DeletePatientDialog } from "@/components/patients/DeletePatientDialog";
 import { AssignPackageDialog } from "@/components/patients/AssignPackageDialog";
@@ -181,7 +182,7 @@ export function Patients() {
             Gerencie seus pacientes e seus planos de tratamento.
           </p>
         </div>
-        <AddPatientDialog onAddPatient={() => {}} />
+        <AddPatientDialog />
       </div>
 
       <Card>
@@ -286,6 +287,7 @@ export function Patients() {
                               <Power className="h-4 w-4 text-green-600" />
                             )}
                           </Button>
+                          <EditPatientDialog patient={patient} />
                           <DeletePatientDialog 
                             patientName={patient.name}
                             onConfirm={() => handleDeletePatient(patient.id)}

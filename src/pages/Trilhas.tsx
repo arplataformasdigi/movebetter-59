@@ -1,12 +1,13 @@
 
 import React from "react";
-import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Pencil, Trash, Eye, Play, Pause } from "lucide-react";
+import { Plus, Trash, Eye, Play, Pause } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useTreatmentPlans } from "@/hooks/useTreatmentPlans";
+import { AddTreatmentPlanDialog } from "@/components/plans/AddTreatmentPlanDialog";
+import { EditTreatmentPlanDialog } from "@/components/plans/EditTreatmentPlanDialog";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -81,10 +82,6 @@ const PlanCard: React.FC<PlanCardProps> = ({ plan, onToggleStatus, onDelete }) =
             <span className="font-medium">{calculateDuration()}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span>Tipo:</span>
-            <span className="font-medium">{plan.plan_types?.name || "Não definido"}</span>
-          </div>
-          <div className="flex justify-between text-sm">
             <span>Início:</span>
             <span className="font-medium">{formatDate(plan.start_date)}</span>
           </div>
@@ -104,13 +101,16 @@ const PlanCard: React.FC<PlanCardProps> = ({ plan, onToggleStatus, onDelete }) =
               ></div>
             </div>
           </div>
+          {plan.description && (
+            <div className="mt-2">
+              <div className="text-sm text-gray-600">{plan.description}</div>
+            </div>
+          )}
         </div>
       </CardContent>
       <CardFooter className="flex justify-between">
         <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            <Pencil className="h-4 w-4 mr-1" /> Editar
-          </Button>
+          <EditTreatmentPlanDialog plan={plan} />
           <Button variant="outline" size="sm">
             <Eye className="h-4 w-4 mr-1" /> Visualizar
           </Button>
@@ -160,11 +160,7 @@ export default function Trilhas() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold tracking-tight">Trilhas de Acompanhamento</h1>
-        <Link to="/trilhas/criar">
-          <Button>
-            <Plus className="mr-2 h-4 w-4" /> Criar Nova Trilha
-          </Button>
-        </Link>
+        <AddTreatmentPlanDialog />
       </div>
       
       <div className="flex items-center justify-between space-x-2 mb-6">

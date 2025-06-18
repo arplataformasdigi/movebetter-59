@@ -22,29 +22,37 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { usePatients } from "@/hooks/usePatients";
+import { usePatients, Patient } from "@/hooks/usePatients";
+import { Pencil } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(3, { message: "Nome deve ter pelo menos 3 caracteres" }),
   email: z.string().email({ message: "E-mail inválido" }).optional().or(z.literal("")),
   phone: z.string().min(10, { message: "Telefone deve ter pelo menos 10 dígitos" }).optional().or(z.literal("")),
   cpf: z.string().optional(),
+  status: z.enum(["active", "inactive", "completed"]),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
-export function AddPatientDialog() {
+interface EditPatientDialogProps {
+  patient: Patient;
+}
+
+export function EditPatientDialog({ patient }: EditPatientDialogProps) {
   const [open, setOpen] = React.useState(false);
-  const { addPatient } = usePatients();
+  const { updatePatient } = usePatients();
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
-      email: "",
-      phone: "",
-      cpf: "",
+      name: patient.name,
+      email: patient.email || "",
+      phone: patient.phone || "",
+      cpf: patient.cpf || "",
+      status: patient.status,
     },
   });
 
@@ -54,14 +62,13 @@ export function AddPatientDialog() {
       email: values.email || undefined,
       phone: values.phone || undefined,
       cpf: values.cpf || undefined,
-      status: "active" as const,
+      status: values.status,
     };
     
-    const result = await addPatient(patientData);
+    const result = await updatePatient(patient.id, patientData);
     
     if (result.success) {
-      toast.success("Paciente adicionado com sucesso");
-      form.reset();
+      toast.success("Paciente atualizado com sucesso");
       setOpen(false);
     }
   }
@@ -69,15 +76,15 @@ export function AddPatientDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-movebetter-primary hover:bg-movebetter-primary/90">
-          Adicionar Paciente
+        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+          <Pencil className="h-4 w-4" />
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
-          <DialogTitle>Adicionar Novo Paciente</DialogTitle>
+          <DialogTitle>Editar Paciente</DialogTitle>
           <DialogDescription>
-            Preencha as informações do paciente abaixo.
+            Atualize as informações do paciente.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -126,7 +133,7 @@ export function AddPatientDialog() {
               name="cpf"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>CPF (opcional)</FormLabel>
+                  <FormLabel>CPF</FormLabel>
                   <FormControl>
                     <Input placeholder="000.000.000-00" {...field} />
                   </FormControl>
@@ -134,8 +141,30 @@ export function AddPatientDialog() {
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Status</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="active">Ativo</SelectItem>
+                      <SelectItem value="inactive">Inativo</SelectItem>
+                      <SelectItem value="completed">Concluído</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <DialogFooter>
-              <Button type="submit">Adicionar</Button>
+              <Button type="submit">Salvar Alterações</Button>
             </DialogFooter>
           </form>
         </Form>
