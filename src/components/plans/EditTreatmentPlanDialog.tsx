@@ -42,28 +42,50 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 interface EditTreatmentPlanDialogProps {
-  plan: TreatmentPlan;
+  plan: TreatmentPlan | null;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function EditTreatmentPlanDialog({ plan }: EditTreatmentPlanDialogProps) {
-  const [open, setOpen] = React.useState(false);
+export function EditTreatmentPlanDialog({ plan, open, onOpenChange }: EditTreatmentPlanDialogProps) {
+  const [internalOpen, setInternalOpen] = React.useState(false);
   const { updateTreatmentPlan } = useTreatmentPlans();
   const { patients } = usePatients();
+  
+  const isControlled = open !== undefined && onOpenChange !== undefined;
+  const isOpen = isControlled ? open : internalOpen;
+  const setIsOpen = isControlled ? onOpenChange : setInternalOpen;
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: plan.name,
-      description: plan.description || "",
-      patient_id: plan.patient_id || "",
-      start_date: plan.start_date || "",
-      end_date: plan.end_date || "",
-      progress_percentage: plan.progress_percentage,
-      is_active: plan.is_active,
+      name: plan?.name || "",
+      description: plan?.description || "",
+      patient_id: plan?.patient_id || "",
+      start_date: plan?.start_date || "",
+      end_date: plan?.end_date || "",
+      progress_percentage: plan?.progress_percentage || 0,
+      is_active: plan?.is_active || true,
     },
   });
 
+  React.useEffect(() => {
+    if (plan) {
+      form.reset({
+        name: plan.name,
+        description: plan.description || "",
+        patient_id: plan.patient_id || "",
+        start_date: plan.start_date || "",
+        end_date: plan.end_date || "",
+        progress_percentage: plan.progress_percentage,
+        is_active: plan.is_active,
+      });
+    }
+  }, [plan, form]);
+
   async function onSubmit(values: FormValues) {
+    if (!plan) return;
+    
     const planData = {
       name: values.name,
       description: values.description || undefined,
@@ -78,129 +100,143 @@ export function EditTreatmentPlanDialog({ plan }: EditTreatmentPlanDialogProps) 
     
     if (result.success) {
       toast.success("Trilha atualizada com sucesso");
-      setOpen(false);
+      setIsOpen(false);
     }
   }
 
+  if (!plan) return null;
+
+  const DialogComponent = (
+    <DialogContent className="sm:max-w-[525px]">
+      <DialogHeader>
+        <DialogTitle>Editar Trilha</DialogTitle>
+        <DialogDescription>
+          Atualize as informações da trilha de tratamento.
+        </DialogDescription>
+      </DialogHeader>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nome da Trilha</FormLabel>
+                <FormControl>
+                  <Input placeholder="Nome da trilha" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Descrição</FormLabel>
+                <FormControl>
+                  <Textarea placeholder="Descrição da trilha" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="patient_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Paciente</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um paciente" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {patients.map((patient) => (
+                      <SelectItem key={patient.id} value={patient.id}>
+                        {patient.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="start_date"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Data de Início</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="end_date"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Data de Fim</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <FormField
+            control={form.control}
+            name="progress_percentage"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Progresso (%)</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    min="0" 
+                    max="100" 
+                    {...field} 
+                    onChange={(e) => field.onChange(Number(e.target.value))}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <DialogFooter>
+            <Button type="submit">Salvar Alterações</Button>
+          </DialogFooter>
+        </form>
+      </Form>
+    </DialogContent>
+  );
+
+  if (isControlled) {
+    return (
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        {DialogComponent}
+      </Dialog>
+    );
+  }
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           <Pencil className="h-4 w-4 mr-1" /> Editar
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[525px]">
-        <DialogHeader>
-          <DialogTitle>Editar Trilha</DialogTitle>
-          <DialogDescription>
-            Atualize as informações da trilha de tratamento.
-          </DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome da Trilha</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Nome da trilha" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descrição</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Descrição da trilha" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="patient_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Paciente</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um paciente" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {patients.map((patient) => (
-                        <SelectItem key={patient.id} value={patient.id}>
-                          {patient.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="start_date"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Data de Início</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="end_date"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Data de Fim</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <FormField
-              control={form.control}
-              name="progress_percentage"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Progresso (%)</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      min="0" 
-                      max="100" 
-                      {...field} 
-                      onChange={(e) => field.onChange(Number(e.target.value))}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <DialogFooter>
-              <Button type="submit">Salvar Alterações</Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
+      {DialogComponent}
     </Dialog>
   );
 }
