@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { Eye, EyeOff } from "lucide-react";
 
 const registerSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
@@ -32,6 +33,8 @@ export function RegisterForm() {
   const { toast } = useToast();
   const { register } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -59,8 +62,8 @@ export function RegisterForm() {
         });
       } else {
         toast({
-          title: "Cadastro realizado!",
-          description: "Verifique seu email para confirmar sua conta.",
+          title: "Cadastro realizado com sucesso!",
+          description: "Sua conta de administrador foi criada. Faça login para continuar.",
         });
         form.reset();
       }
@@ -114,7 +117,26 @@ export function RegisterForm() {
             <FormItem>
               <FormLabel>Senha</FormLabel>
               <FormControl>
-                <Input type="password" placeholder="******" {...field} />
+                <div className="relative">
+                  <Input 
+                    type={showPassword ? "text" : "password"} 
+                    placeholder="******" 
+                    {...field} 
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4 text-gray-400" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-400" />
+                    )}
+                  </Button>
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -128,7 +150,26 @@ export function RegisterForm() {
             <FormItem>
               <FormLabel>Confirmar senha</FormLabel>
               <FormControl>
-                <Input type="password" placeholder="******" {...field} />
+                <div className="relative">
+                  <Input 
+                    type={showConfirmPassword ? "text" : "password"} 
+                    placeholder="******" 
+                    {...field} 
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4 text-gray-400" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-400" />
+                    )}
+                  </Button>
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -136,7 +177,7 @@ export function RegisterForm() {
         />
 
         <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? "Enviando..." : "Criar conta de administrador"}
+          {isLoading ? "Criando conta..." : "Criar conta de administrador"}
         </Button>
       </form>
     </Form>

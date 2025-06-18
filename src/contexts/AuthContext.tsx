@@ -55,6 +55,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               crefito: profile.crefito || undefined,
               phone: profile.phone || undefined,
             });
+          } else {
+            console.error('Error fetching profile:', error);
           }
         } else {
           setUser(null);
@@ -68,7 +70,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (session) {
         console.log('Existing session found:', session);
       }
-      setIsLoading(false);
+      if (!session) {
+        setIsLoading(false);
+      }
     });
 
     return () => subscription.unsubscribe();
