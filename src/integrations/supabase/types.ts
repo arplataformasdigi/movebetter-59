@@ -18,6 +18,7 @@ export type Database = {
           duration_minutes: number | null
           id: string
           notes: string | null
+          observations: string | null
           patient_id: string | null
           session_type: string
           status: Database["public"]["Enums"]["appointment_status"] | null
@@ -31,6 +32,7 @@ export type Database = {
           duration_minutes?: number | null
           id?: string
           notes?: string | null
+          observations?: string | null
           patient_id?: string | null
           session_type: string
           status?: Database["public"]["Enums"]["appointment_status"] | null
@@ -44,6 +46,7 @@ export type Database = {
           duration_minutes?: number | null
           id?: string
           notes?: string | null
+          observations?: string | null
           patient_id?: string | null
           session_type?: string
           status?: Database["public"]["Enums"]["appointment_status"] | null
@@ -65,6 +68,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      credit_card_rates: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          rate: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          rate: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          rate?: number
+        }
+        Relationships: []
       }
       exercises: {
         Row: {
@@ -280,6 +307,75 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      package_proposals: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          created_date: string | null
+          expiry_date: string | null
+          final_price: number
+          id: string
+          installments: number | null
+          other_costs: number | null
+          other_costs_note: string | null
+          package_id: string | null
+          package_price: number
+          patient_name: string
+          payment_method: string
+          transport_cost: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          created_date?: string | null
+          expiry_date?: string | null
+          final_price: number
+          id?: string
+          installments?: number | null
+          other_costs?: number | null
+          other_costs_note?: string | null
+          package_id?: string | null
+          package_price: number
+          patient_name: string
+          payment_method: string
+          transport_cost?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          created_date?: string | null
+          expiry_date?: string | null
+          final_price?: number
+          id?: string
+          installments?: number | null
+          other_costs?: number | null
+          other_costs_note?: string | null
+          package_id?: string | null
+          package_price?: number
+          patient_name?: string
+          payment_method?: string
+          transport_cost?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "package_proposals_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "package_proposals_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
             referencedColumns: ["id"]
           },
         ]
