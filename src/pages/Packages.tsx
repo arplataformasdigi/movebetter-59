@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,10 +27,6 @@ export default function Packages() {
   const { proposals, isLoading: proposalsLoading, addProposal, deleteProposal } = usePackageProposals();
   const { rates, isLoading: ratesLoading, addRate, deleteRate } = useCreditCardRates();
   const { patients, isLoading: patientsLoading } = usePatients();
-
-  const handleCreatePackage = (newPackage: any) => {
-    // Handled by CreatePackageDialog
-  };
 
   const handleEditPackage = async (updatedPackage: any) => {
     await updatePackage(updatedPackage.id, updatedPackage);
@@ -104,6 +99,7 @@ export default function Packages() {
     price: pkg.price,
     validity: pkg.validity_days || 30,
     status: pkg.is_active ? "active" as const : "inactive" as const,
+    sessions_included: pkg.sessions_included || 0,
   }));
 
   if (packagesLoading || proposalsLoading || ratesLoading || patientsLoading) {
@@ -143,7 +139,7 @@ export default function Packages() {
                   <CardTitle>Configuração de Pacotes</CardTitle>
                   <CardDescription>Crie e gerencie seus pacotes de fisioterapia</CardDescription>
                 </div>
-                <CreatePackageDialog onCreatePackage={handleCreatePackage} />
+                <CreatePackageDialog />
               </div>
             </CardHeader>
             <CardContent>
@@ -198,6 +194,12 @@ export default function Packages() {
                             <span>Validade:</span>
                             <span className="font-medium">{pkg.validity_days} dias</span>
                           </div>
+                          {pkg.sessions_included > 0 && (
+                            <div className="flex justify-between text-sm">
+                              <span>Sessões:</span>
+                              <span className="font-medium">{pkg.sessions_included}</span>
+                            </div>
+                          )}
                         </div>
                         <div className="flex justify-between mt-4">
                           <div className="flex gap-2">

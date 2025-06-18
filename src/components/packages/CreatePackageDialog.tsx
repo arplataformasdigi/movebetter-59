@@ -13,51 +13,47 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus } from "lucide-react";
+import { usePackages } from "@/hooks/usePackages";
 
-interface Package {
-  id: string;
-  name: string;
-  description: string;
-  services: string[];
-  price: number;
-  validity: number;
-  status: "active" | "inactive";
-}
-
-interface CreatePackageDialogProps {
-  onCreatePackage: (pkg: Package) => void;
-}
-
-export function CreatePackageDialog({ onCreatePackage }: CreatePackageDialogProps) {
+export function CreatePackageDialog() {
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     services: [""],
     price: 0,
-    validity: 1,
+    validity_days: 30,
+    sessions_included: 0,
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const { addPackage } = usePackages();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newPackage: Package = {
-      id: Date.now().toString(),
+    
+    const packageData = {
       name: formData.name,
       description: formData.description,
       services: formData.services.filter(s => s.trim() !== ""),
       price: formData.price,
-      validity: formData.validity,
-      status: "active",
+      validity_days: formData.validity_days,
+      sessions_included: formData.sessions_included,
+      is_active: true,
     };
-    onCreatePackage(newPackage);
-    setOpen(false);
-    setFormData({
-      name: "",
-      description: "",
-      services: [""],
-      price: 0,
-      validity: 1,
-    });
+
+    const result = await addPackage(packageData);
+    
+    if (result.success) {
+      setOpen(false);
+      setFormData({
+        name: "",
+        description: "",
+        services: [""],
+        price: 0,
+        validity_days: 30,
+        sessions_included: 0,
+      });
+    }
   };
 
   const addService = () => {
@@ -143,7 +139,7 @@ export function CreatePackageDialog({ onCreatePackage }: CreatePackageDialogProp
             </Button>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <Label htmlFor="price">Preço (R$)</Label>
               <Input
@@ -156,12 +152,22 @@ export function CreatePackageDialog({ onCreatePackage }: CreatePackageDialogProp
               />
             </div>
             <div>
-              <Label htmlFor="validity">Validade (meses)</Label>
+              <Label htmlFor="validity_days">Validade (dias)</Label>
               <Input
-                id="validity"
+                id="validity_days"
                 type="number"
-                value={formData.validity}
-                onChange={(e) => setFormData(prev => ({ ...prev, validity: parseInt(e.target.value) || 1 }))}
+                value={formData.validity_days}
+                onChange={(e) => setFormData(prev => ({ ...prev, validity_days: parseInt(e.target.value) || 30 }))}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="sessions_included">Sessões Incluídas</Label>
+              <Input
+                id="sessions_included"
+                type="number"
+                value={formData.sessions_included}
+                onChange={(e) => setFormData(prev => ({ ...prev, sessions_included: parseInt(e.target.value) || 0 }))}
                 required
               />
             </div>
