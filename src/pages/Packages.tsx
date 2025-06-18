@@ -95,6 +95,17 @@ export default function Packages() {
     }
   };
 
+  // Transform packages for SellPackageDialog with proper type safety
+  const transformedPackages = packages.map(pkg => ({
+    id: pkg.id,
+    name: pkg.name,
+    description: pkg.description || "",
+    services: pkg.services || [],
+    price: pkg.price,
+    validity: pkg.validity_days || 30,
+    status: pkg.is_active ? "active" as const : "inactive" as const,
+  }));
+
   if (packagesLoading || proposalsLoading || ratesLoading || patientsLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -285,7 +296,7 @@ export default function Packages() {
                   <CardDescription>Crie propostas para pacientes</CardDescription>
                 </div>
                 <SellPackageDialog 
-                  packages={packages.map(pkg => ({ ...pkg, validity: pkg.validity_days }))}
+                  packages={transformedPackages}
                   onSellPackage={handleCreateProposal}
                   isProposal={true}
                   creditCardRates={rates}
