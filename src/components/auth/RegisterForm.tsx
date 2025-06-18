@@ -50,17 +50,35 @@ export function RegisterForm() {
     setIsLoading(true);
     
     try {
+      console.log('Submitting registration form with data:', { 
+        name: data.name, 
+        email: data.email 
+      });
+      
       const { error } = await register(data.email, data.password, data.name);
       
       if (error) {
+        console.error('Registration failed:', error);
+        
+        let errorMessage = "Ocorreu um erro ao realizar o cadastro. Tente novamente.";
+        
+        if (error.message === "User already registered") {
+          errorMessage = "Este email já está cadastrado";
+        } else if (error.message.includes("Invalid email")) {
+          errorMessage = "Email inválido";
+        } else if (error.message.includes("Password")) {
+          errorMessage = "Senha inválida - deve ter pelo menos 6 caracteres";
+        } else if (error.message.includes("Database error")) {
+          errorMessage = "Erro no banco de dados. Tente novamente em alguns momentos.";
+        }
+        
         toast({
           title: "Erro no cadastro",
-          description: error.message === "User already registered" 
-            ? "Este email já está cadastrado" 
-            : error.message,
+          description: errorMessage,
           variant: "destructive",
         });
       } else {
+        console.log('Registration successful');
         toast({
           title: "Cadastro realizado com sucesso!",
           description: "Sua conta de administrador foi criada. Faça login para continuar.",
@@ -68,10 +86,10 @@ export function RegisterForm() {
         form.reset();
       }
     } catch (error) {
-      console.error('Register error:', error);
+      console.error('Unexpected registration error:', error);
       toast({
         title: "Erro no cadastro",
-        description: "Ocorreu um erro ao realizar o cadastro. Tente novamente.",
+        description: "Ocorreu um erro inesperado. Tente novamente.",
         variant: "destructive",
       });
     } finally {

@@ -38,20 +38,32 @@ export function LoginForm() {
     setIsLoading(true);
     
     try {
+      console.log('Submitting login form for:', data.email);
       const { error } = await login(data.email, data.password);
       
       if (error) {
+        console.error('Login failed:', error);
+        
+        let errorMessage = "Ocorreu um erro durante o login. Tente novamente.";
+        
+        if (error.message === "Invalid login credentials") {
+          errorMessage = "Email ou senha incorretos";
+        } else if (error.message.includes("Email not confirmed")) {
+          errorMessage = "Confirme seu email antes de fazer login";
+        } else if (error.message.includes("Too many requests")) {
+          errorMessage = "Muitas tentativas. Tente novamente em alguns minutos.";
+        }
+        
         toast({
           title: "Erro ao fazer login",
-          description: error.message === "Invalid login credentials" 
-            ? "Email ou senha incorretos" 
-            : error.message,
+          description: errorMessage,
           variant: "destructive",
         });
       } else {
+        console.log('Login successful, redirecting...');
         toast({
           title: "Login realizado com sucesso!",
-          description: "Bem-vindo ao MoveBetter",
+          description: "Bem-vindo ao Fisio Smart Care",
         });
         
         // Redirecionar para dashboard após login bem-sucedido
@@ -59,10 +71,10 @@ export function LoginForm() {
         navigate(from, { replace: true });
       }
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('Unexpected login error:', error);
       toast({
         title: "Erro ao fazer login",
-        description: "Ocorreu um erro durante o login. Tente novamente.",
+        description: "Ocorreu um erro inesperado. Tente novamente.",
         variant: "destructive",
       });
     } finally {

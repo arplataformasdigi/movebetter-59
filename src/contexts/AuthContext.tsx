@@ -39,25 +39,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session);
         
         if (session?.user) {
-          // Fetch user profile from profiles table
-          const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-          
-          if (profile && !error) {
-            setUser({
-              id: profile.id,
-              name: profile.name,
-              email: profile.email,
-              role: profile.role as UserRole,
-              crefito: profile.crefito || undefined,
-              phone: profile.phone || undefined,
-            });
-          } else {
-            console.error('Error fetching profile:', error);
-          }
+          // Defer profile fetching to avoid blocking auth state change
+          setTimeout(async () => {
+            try {
+              // Fetch user profile from profiles table
+              const { data: profile, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', session.user.id)
+                .single();
+              
+              if (profile && !error) {
+                console.log('Profile loaded:', profile);
+                setUser({
+                  id: profile.id,
+                  name: profile.name,
+                  email: profile.email,
+                  role: profile.role as UserRole,
+                  crefito: profile.crefito || undefined,
+                  phone: profile.phone || undefined,
+                });
+              } else {
+                console.error('Error fetching profile:', error);
+                // If profile doesn't exist, user email and ID are still available from session
+                setUser({
+                  id: session.user.id,
+                  name: session.user.user_metadata?.name || session.user.email || '',
+                  email: session.user.email || '',
+                  role: 'admin', // Default role
+                });
+              }
+            } catch (error) {
+              console.error('Unexpected error fetching profile:', error);
+            }
+          }, 0);
         } else {
           setUser(null);
         }
@@ -79,14 +94,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
+    console.log('Attempting login for:', email);
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
+    
+    if (error) {
+      console.error('Login error:', error);
+    } else {
+      console.log('Login successful');
+    }
+    
     return { error };
   };
 
   const register = async (email: string, password: string, name: string) => {
+    console.log('Attempting registration for:', email, 'with name:', name);
+    
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -97,10 +122,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         emailRedirectTo: `${window.location.origin}/`,
       },
     });
+    
+    if (error) {
+      console.error('Registration error:', error);
+    } else {
+      console.log('Registration initiated successfully');
+    }
+    
     return { error };
   };
 
   const logout = async () => {
+    console.log('Logging out user');
     await supabase.auth.signOut();
   };
 
