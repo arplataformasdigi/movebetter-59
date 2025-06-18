@@ -19,6 +19,7 @@ export interface PackageProposal {
   created_by?: string;
   created_at: string;
   updated_at: string;
+  package_name?: string;
   packages?: {
     name: string;
   };
@@ -67,11 +68,27 @@ export function usePackageProposals() {
     fetchProposals();
   }, []);
 
-  const addProposal = async (proposalData: Omit<PackageProposal, 'id' | 'created_at' | 'updated_at' | 'packages'>) => {
+  const addProposal = async (proposalData: any) => {
     try {
+      // Mapear os dados para o formato da tabela Supabase
+      const supabaseProposal = {
+        package_id: proposalData.packageId,
+        package_name: proposalData.packageName,
+        patient_name: proposalData.patientName,
+        package_price: proposalData.packagePrice,
+        transport_cost: proposalData.transportCost || 0,
+        other_costs: proposalData.otherCosts || 0,
+        other_costs_note: proposalData.otherCostsNote || null,
+        payment_method: proposalData.paymentMethod,
+        installments: proposalData.installments || 1,
+        final_price: proposalData.finalPrice,
+        created_date: proposalData.purchaseDate,
+        expiry_date: proposalData.expiryDate || null,
+      };
+
       const { data, error } = await supabase
         .from('package_proposals')
-        .insert([proposalData])
+        .insert([supabaseProposal])
         .select(`
           *,
           packages (name)

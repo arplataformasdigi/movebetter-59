@@ -38,10 +38,15 @@ export default function Packages() {
   };
 
   const handleCreateProposal = async (proposalData: any) => {
+    console.log('Creating proposal with data:', proposalData);
+    
     const result = await addProposal(proposalData);
     if (result?.success) {
+      console.log('Proposal created successfully, downloading PDF...');
       // Após criar a proposta com sucesso, oferecer o download do PDF
       handleDownloadPDF(proposalData);
+    } else {
+      console.error('Failed to create proposal:', result?.error);
     }
   };
 
@@ -369,7 +374,7 @@ Data: ${new Date().toLocaleDateString("pt-BR")}
                           <p className="font-medium">{proposal.patient_name}</p>
                         </div>
                         <div>
-                          <p className="font-medium">{proposal.packages?.name || 'Pacote não encontrado'}</p>
+                          <p className="font-medium">{proposal.package_name || proposal.packages?.name || 'Pacote não encontrado'}</p>
                         </div>
                         <div>
                           <p className="text-sm">Pacote: R$ {proposal.package_price.toFixed(2)}</p>

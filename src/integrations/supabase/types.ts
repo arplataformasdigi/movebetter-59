@@ -323,6 +323,7 @@ export type Database = {
           other_costs: number | null
           other_costs_note: string | null
           package_id: string | null
+          package_name: string | null
           package_price: number
           patient_name: string
           payment_method: string
@@ -340,6 +341,7 @@ export type Database = {
           other_costs?: number | null
           other_costs_note?: string | null
           package_id?: string | null
+          package_name?: string | null
           package_price: number
           patient_name: string
           payment_method: string
@@ -357,6 +359,7 @@ export type Database = {
           other_costs?: number | null
           other_costs_note?: string | null
           package_id?: string | null
+          package_name?: string | null
           package_price?: number
           patient_name?: string
           payment_method?: string
