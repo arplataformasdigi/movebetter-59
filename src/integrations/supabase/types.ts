@@ -9,7 +9,664 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      appointments: {
+        Row: {
+          appointment_date: string
+          appointment_time: string
+          created_at: string | null
+          created_by: string | null
+          duration_minutes: number | null
+          id: string
+          notes: string | null
+          patient_id: string | null
+          session_type: string
+          status: Database["public"]["Enums"]["appointment_status"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          appointment_date: string
+          appointment_time: string
+          created_at?: string | null
+          created_by?: string | null
+          duration_minutes?: number | null
+          id?: string
+          notes?: string | null
+          patient_id?: string | null
+          session_type: string
+          status?: Database["public"]["Enums"]["appointment_status"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          appointment_date?: string
+          appointment_time?: string
+          created_at?: string | null
+          created_by?: string | null
+          duration_minutes?: number | null
+          id?: string
+          notes?: string | null
+          patient_id?: string | null
+          session_type?: string
+          status?: Database["public"]["Enums"]["appointment_status"] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exercises: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          description: string | null
+          difficulty_level: number | null
+          duration_minutes: number | null
+          equipment_needed: string[] | null
+          id: string
+          image_url: string | null
+          instructions: string | null
+          is_active: boolean | null
+          name: string
+          video_url: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          difficulty_level?: number | null
+          duration_minutes?: number | null
+          equipment_needed?: string[] | null
+          id?: string
+          image_url?: string | null
+          instructions?: string | null
+          is_active?: boolean | null
+          name: string
+          video_url?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          difficulty_level?: number | null
+          duration_minutes?: number | null
+          equipment_needed?: string[] | null
+          id?: string
+          image_url?: string | null
+          instructions?: string | null
+          is_active?: boolean | null
+          name?: string
+          video_url?: string | null
+        }
+        Relationships: []
+      }
+      financial_categories: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          type: Database["public"]["Enums"]["transaction_type"]
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          type: Database["public"]["Enums"]["transaction_type"]
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          type?: Database["public"]["Enums"]["transaction_type"]
+        }
+        Relationships: []
+      }
+      financial_transactions: {
+        Row: {
+          amount: number
+          category_id: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string
+          due_date: string | null
+          id: string
+          notes: string | null
+          patient_id: string | null
+          payment_date: string | null
+          payment_status: Database["public"]["Enums"]["payment_status"] | null
+          transaction_date: string | null
+          type: Database["public"]["Enums"]["transaction_type"]
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          category_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          patient_id?: string | null
+          payment_date?: string | null
+          payment_status?: Database["public"]["Enums"]["payment_status"] | null
+          transaction_date?: string | null
+          type: Database["public"]["Enums"]["transaction_type"]
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          category_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          patient_id?: string | null
+          payment_date?: string | null
+          payment_status?: Database["public"]["Enums"]["payment_status"] | null
+          transaction_date?: string | null
+          type?: Database["public"]["Enums"]["transaction_type"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_transactions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "financial_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_transactions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_transactions_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medical_records: {
+        Row: {
+          appointment_id: string | null
+          chief_complaint: string | null
+          created_at: string | null
+          created_by: string | null
+          date: string | null
+          diagnosis: string | null
+          id: string
+          medications: string | null
+          next_appointment: string | null
+          patient_id: string | null
+          physical_examination: string | null
+          recommendations: string | null
+          treatment_plan: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          appointment_id?: string | null
+          chief_complaint?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          date?: string | null
+          diagnosis?: string | null
+          id?: string
+          medications?: string | null
+          next_appointment?: string | null
+          patient_id?: string | null
+          physical_examination?: string | null
+          recommendations?: string | null
+          treatment_plan?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          appointment_id?: string | null
+          chief_complaint?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          date?: string | null
+          diagnosis?: string | null
+          id?: string
+          medications?: string | null
+          next_appointment?: string | null
+          patient_id?: string | null
+          physical_examination?: string | null
+          recommendations?: string | null
+          treatment_plan?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medical_records_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medical_records_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medical_records_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      packages: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          price: number
+          services: string[] | null
+          sessions_included: number | null
+          updated_at: string | null
+          validity_days: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          price: number
+          services?: string[] | null
+          sessions_included?: number | null
+          updated_at?: string | null
+          validity_days?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          price?: number
+          services?: string[] | null
+          sessions_included?: number | null
+          updated_at?: string | null
+          validity_days?: number | null
+        }
+        Relationships: []
+      }
+      patient_packages: {
+        Row: {
+          assigned_date: string | null
+          created_at: string | null
+          expiry_date: string | null
+          final_price: number | null
+          id: string
+          package_id: string | null
+          patient_id: string | null
+          sessions_used: number | null
+          status: string | null
+        }
+        Insert: {
+          assigned_date?: string | null
+          created_at?: string | null
+          expiry_date?: string | null
+          final_price?: number | null
+          id?: string
+          package_id?: string | null
+          patient_id?: string | null
+          sessions_used?: number | null
+          status?: string | null
+        }
+        Update: {
+          assigned_date?: string | null
+          created_at?: string | null
+          expiry_date?: string | null
+          final_price?: number | null
+          id?: string
+          package_id?: string | null
+          patient_id?: string | null
+          sessions_used?: number | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_packages_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_packages_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patient_scores: {
+        Row: {
+          achievements: string[] | null
+          completed_exercises: number | null
+          created_at: string | null
+          id: string
+          is_tracks_active: boolean | null
+          last_activity_date: string | null
+          level_number: number | null
+          patient_id: string | null
+          streak_days: number | null
+          total_points: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          achievements?: string[] | null
+          completed_exercises?: number | null
+          created_at?: string | null
+          id?: string
+          is_tracks_active?: boolean | null
+          last_activity_date?: string | null
+          level_number?: number | null
+          patient_id?: string | null
+          streak_days?: number | null
+          total_points?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          achievements?: string[] | null
+          completed_exercises?: number | null
+          created_at?: string | null
+          id?: string
+          is_tracks_active?: boolean | null
+          last_activity_date?: string | null
+          level_number?: number | null
+          patient_id?: string | null
+          streak_days?: number | null
+          total_points?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_scores_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patients: {
+        Row: {
+          address: string | null
+          birth_date: string | null
+          cpf: string | null
+          created_at: string | null
+          created_by: string | null
+          email: string | null
+          emergency_contact: string | null
+          emergency_phone: string | null
+          id: string
+          medical_history: string | null
+          name: string
+          phone: string | null
+          status: Database["public"]["Enums"]["patient_status"] | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          address?: string | null
+          birth_date?: string | null
+          cpf?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          email?: string | null
+          emergency_contact?: string | null
+          emergency_phone?: string | null
+          id?: string
+          medical_history?: string | null
+          name: string
+          phone?: string | null
+          status?: Database["public"]["Enums"]["patient_status"] | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          address?: string | null
+          birth_date?: string | null
+          cpf?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          email?: string | null
+          emergency_contact?: string | null
+          emergency_phone?: string | null
+          id?: string
+          medical_history?: string | null
+          name?: string
+          phone?: string | null
+          status?: Database["public"]["Enums"]["patient_status"] | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patients_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plan_exercises: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          day_number: number
+          duration_minutes: number | null
+          exercise_id: string | null
+          id: string
+          is_completed: boolean | null
+          notes: string | null
+          repetitions: number | null
+          sets: number | null
+          treatment_plan_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          day_number: number
+          duration_minutes?: number | null
+          exercise_id?: string | null
+          id?: string
+          is_completed?: boolean | null
+          notes?: string | null
+          repetitions?: number | null
+          sets?: number | null
+          treatment_plan_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          day_number?: number
+          duration_minutes?: number | null
+          exercise_id?: string | null
+          id?: string
+          is_completed?: boolean | null
+          notes?: string | null
+          repetitions?: number | null
+          sets?: number | null
+          treatment_plan_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_exercises_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "exercises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_exercises_treatment_plan_id_fkey"
+            columns: ["treatment_plan_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plan_types: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          crefito: string | null
+          email: string
+          id: string
+          name: string
+          phone: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          crefito?: string | null
+          email: string
+          id: string
+          name: string
+          phone?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          crefito?: string | null
+          email?: string
+          id?: string
+          name?: string
+          phone?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      treatment_plans: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          patient_id: string | null
+          plan_type_id: string | null
+          progress_percentage: number | null
+          start_date: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          patient_id?: string | null
+          plan_type_id?: string | null
+          progress_percentage?: number | null
+          start_date?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          patient_id?: string | null
+          plan_type_id?: string | null
+          progress_percentage?: number | null
+          start_date?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "treatment_plans_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_plans_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_plans_plan_type_id_fkey"
+            columns: ["plan_type_id"]
+            isOneToOne: false
+            referencedRelation: "plan_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +675,11 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      appointment_status: "scheduled" | "completed" | "cancelled" | "no_show"
+      patient_status: "active" | "inactive" | "completed"
+      payment_status: "pending" | "paid" | "overdue" | "cancelled"
+      transaction_type: "income" | "expense"
+      user_role: "admin" | "patient"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +794,12 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      appointment_status: ["scheduled", "completed", "cancelled", "no_show"],
+      patient_status: ["active", "inactive", "completed"],
+      payment_status: ["pending", "paid", "overdue", "cancelled"],
+      transaction_type: ["income", "expense"],
+      user_role: ["admin", "patient"],
+    },
   },
 } as const

@@ -1,8 +1,11 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface RankingUser {
   id: string;
@@ -11,74 +14,9 @@ interface RankingUser {
   progress: number;
   position: number;
   trilhasAtivas: boolean;
+  totalPoints: number;
+  completedExercises: number;
 }
-
-const rankingData: RankingUser[] = [
-  {
-    id: "1",
-    name: "Carla Souza",
-    avatar: "",
-    progress: 85,
-    position: 1,
-    trilhasAtivas: true,
-  },
-  {
-    id: "2",
-    name: "Pedro Santos",
-    avatar: "",
-    progress: 90,
-    position: 2,
-    trilhasAtivas: false,
-  },
-  {
-    id: "3",
-    name: "Ricardo Alves",
-    avatar: "",
-    progress: 78,
-    position: 3,
-    trilhasAtivas: true,
-  },
-  {
-    id: "4",
-    name: "Mariana Costa",
-    avatar: "",
-    progress: 45,
-    position: 4,
-    trilhasAtivas: false,
-  },
-  {
-    id: "5",
-    name: "Carlos Oliveira",
-    avatar: "",
-    progress: 75,
-    position: 5,
-    trilhasAtivas: true,
-  },
-  {
-    id: "6",
-    name: "Luiza Mendes",
-    avatar: "",
-    progress: 68,
-    position: 6,
-    trilhasAtivas: false,
-  },
-  {
-    id: "7",
-    name: "Bruno Cardoso",
-    avatar: "",
-    progress: 60,
-    position: 7,
-    trilhasAtivas: true,
-  },
-  {
-    id: "8",
-    name: "Juliana Lima",
-    avatar: "",
-    progress: 42,
-    position: 8,
-    trilhasAtivas: false,
-  },
-];
 
 const getPositionColor = (position: number): string => {
   switch (position) {
@@ -95,11 +33,96 @@ const getPositionColor = (position: number): string => {
 
 export default function Ranking() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [users] = useState<RankingUser[]>(rankingData);
+  const [users, setUsers] = useState<RankingUser[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+  
+  useEffect(() => {
+    fetchRankingData();
+  }, []);
+
+  const fetchRankingData = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Buscar pacientes com seus scores
+      const { data: patientsWithScores, error } = await supabase
+        .from('patients')
+        .select(`
+          id,
+          name,
+          patient_scores (
+            total_points,
+            completed_exercises,
+            is_tracks_active
+          )
+        `)
+        .eq('status', 'active');
+
+      if (error) {
+        console.error('Error fetching ranking data:', error);
+        toast({
+          title: "Erro ao carregar ranking",
+          description: "Não foi possível carregar os dados do ranking",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Processar dados e calcular ranking
+      const rankingData: RankingUser[] = (patientsWithScores || [])
+        .map((patient) => {
+          const score = patient.patient_scores?.[0];
+          const totalPoints = score?.total_points || 0;
+          const completedExercises = score?.completed_exercises || 0;
+          
+          // Calcular progresso baseado em exercícios completados (assumindo 100 exercícios como máximo)
+          const progress = Math.min((completedExercises / 100) * 100, 100);
+          
+          return {
+            id: patient.id,
+            name: patient.name,
+            avatar: "",
+            progress: Math.round(progress),
+            position: 0, // Será definido após ordenação
+            trilhasAtivas: score?.is_tracks_active || false,
+            totalPoints,
+            completedExercises,
+          };
+        })
+        .sort((a, b) => b.totalPoints - a.totalPoints) // Ordenar por pontos
+        .map((user, index) => ({
+          ...user,
+          position: index + 1,
+        }));
+
+      setUsers(rankingData);
+    } catch (error) {
+      console.error('Error in fetchRankingData:', error);
+      toast({
+        title: "Erro inesperado",
+        description: "Ocorreu um erro ao carregar o ranking",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   const filteredRanking = users.filter(user => 
     user.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Ranking de Pacientes</h1>
+          <p className="text-gray-500 mt-1">Carregando dados...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -158,7 +181,12 @@ export default function Ranking() {
                   {user.name.charAt(0)}
                 </AvatarFallback>
               </Avatar>
-              <span className="font-medium">{user.name}</span>
+              <div>
+                <span className="font-medium">{user.name}</span>
+                <div className="text-xs text-gray-500">
+                  {user.totalPoints} pontos • {user.completedExercises} exercícios
+                </div>
+              </div>
             </div>
             
             <div className="col-span-3">
@@ -192,9 +220,11 @@ export default function Ranking() {
           </div>
         ))}
         
-        {filteredRanking.length === 0 && (
+        {filteredRanking.length === 0 && !isLoading && (
           <div className="p-8 text-center">
-            <p className="text-gray-500">Nenhum paciente encontrado</p>
+            <p className="text-gray-500">
+              {searchTerm ? "Nenhum paciente encontrado" : "Nenhum paciente cadastrado"}
+            </p>
           </div>
         )}
       </div>

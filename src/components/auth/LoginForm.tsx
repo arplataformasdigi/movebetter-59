@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const loginSchema = z.object({
   email: z.string().email("Email inválido").min(1, "Email é obrigatório"),
@@ -19,6 +20,8 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export function LoginForm() {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<LoginFormValues>({
@@ -33,69 +36,28 @@ export function LoginForm() {
     setIsLoading(true);
     
     try {
-      // Simulação de login - em ambiente real usaria autenticação
-      if (data.email === "admin@movebetter.com" && data.password === "123456") {
-        // Simular usuário autenticado para o admin
-        localStorage.setItem("user", JSON.stringify({
-          id: "1",
-          name: "Administrador",
-          email: data.email,
-          role: "admin"
-        }));
-        toast({
-          title: "Login realizado com sucesso!",
-          description: "Bem-vindo ao MoveBetter",
-        });
-        navigate("/");
-      } else if (data.email === "gestor@movebetter.com" && data.password === "123456") {
-        // Simular usuário autenticado para o gestor
-        localStorage.setItem("user", JSON.stringify({
-          id: "2",
-          name: "Gestor",
-          email: data.email,
-          role: "manager"
-        }));
-        toast({
-          title: "Login realizado com sucesso!",
-          description: "Bem-vindo ao MoveBetter",
-        });
-        navigate("/");
-      } else if (data.email === "profissional@movebetter.com" && data.password === "123456") {
-        // Simular usuário autenticado para o profissional
-        localStorage.setItem("user", JSON.stringify({
-          id: "3",
-          name: "Profissional",
-          email: data.email,
-          role: "professional",
-          crefito: "12345-F"
-        }));
-        toast({
-          title: "Login realizado com sucesso!",
-          description: "Bem-vindo ao MoveBetter",
-        });
-        navigate("/");
-      } else if (data.email === "paciente@email.com" && data.password === "123456") {
-        // Simular usuário autenticado para o paciente
-        localStorage.setItem("user", JSON.stringify({
-          id: "4",
-          name: "Paciente Exemplo",
-          email: data.email,
-          role: "patient",
-          professionalId: "3"
-        }));
-        toast({
-          title: "Login realizado com sucesso!",
-          description: "Bem-vindo ao MoveBetter",
-        });
-        navigate("/paciente");
-      } else {
+      const { error } = await login(data.email, data.password);
+      
+      if (error) {
         toast({
           title: "Erro ao fazer login",
-          description: "Email ou senha incorretos",
+          description: error.message === "Invalid login credentials" 
+            ? "Email ou senha incorretos" 
+            : error.message,
           variant: "destructive",
         });
+      } else {
+        toast({
+          title: "Login realizado com sucesso!",
+          description: "Bem-vindo ao MoveBetter",
+        });
+        
+        // Redirect to the page they were trying to access, or default to dashboard
+        const from = location.state?.from || "/";
+        navigate(from, { replace: true });
       }
     } catch (error) {
+      console.error('Login error:', error);
       toast({
         title: "Erro ao fazer login",
         description: "Ocorreu um erro durante o login. Tente novamente.",
@@ -140,14 +102,6 @@ export function LoginForm() {
         <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading ? "Entrando..." : "Entrar"}
         </Button>
-        
-        <div className="text-sm text-center text-muted-foreground mt-2">
-          <p className="mb-4">Contas para teste:</p>
-          <p>Admin: admin@movebetter.com / 123456</p>
-          <p>Gestor: gestor@movebetter.com / 123456</p>
-          <p>Profissional: profissional@movebetter.com / 123456</p>
-          <p>Paciente: paciente@email.com / 123456</p>
-        </div>
       </form>
     </Form>
   );

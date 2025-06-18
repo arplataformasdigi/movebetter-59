@@ -1,6 +1,5 @@
 
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,6 +14,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const registerSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
@@ -30,7 +30,7 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export function RegisterForm() {
   const { toast } = useToast();
-  const navigate = useNavigate();
+  const { register } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<RegisterFormValues>({
@@ -47,16 +47,25 @@ export function RegisterForm() {
     setIsLoading(true);
     
     try {
-      // Em um ambiente real, aqui seria feita a chamada para API de registro
-      toast({
-        title: "Cadastro enviado",
-        description: "Sua solicitação de cadastro foi enviada e será avaliada pelo administrador.",
-      });
+      const { error } = await register(data.email, data.password, data.name);
       
-      // Redireciona de volta ao login
-      navigate("/auth");
+      if (error) {
+        toast({
+          title: "Erro no cadastro",
+          description: error.message === "User already registered" 
+            ? "Este email já está cadastrado" 
+            : error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Cadastro realizado!",
+          description: "Verifique seu email para confirmar sua conta.",
+        });
+        form.reset();
+      }
     } catch (error) {
-      console.error(error);
+      console.error('Register error:', error);
       toast({
         title: "Erro no cadastro",
         description: "Ocorreu um erro ao realizar o cadastro. Tente novamente.",
@@ -127,7 +136,7 @@ export function RegisterForm() {
         />
 
         <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? "Enviando..." : "Solicitar cadastro"}
+          {isLoading ? "Enviando..." : "Criar conta de administrador"}
         </Button>
       </form>
     </Form>
