@@ -6,144 +6,207 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CalendarDays, User, Activity, Target } from "lucide-react";
 import { TreatmentPlan } from "@/hooks/useTreatmentPlans";
 import { usePlanExercises } from "@/hooks/usePlanExercises";
+import { Eye, User, Calendar, Target, Clock, Dumbbell } from "lucide-react";
 
 interface ViewTreatmentPlanDialogProps {
   plan: TreatmentPlan | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function ViewTreatmentPlanDialog({ plan, open, onOpenChange }: ViewTreatmentPlanDialogProps) {
+  const [internalOpen, setInternalOpen] = React.useState(false);
   const { planExercises, isLoading } = usePlanExercises(plan?.id);
+  
+  const isControlled = open !== undefined && onOpenChange !== undefined;
+  const isOpen = isControlled ? open : internalOpen;
+  const setIsOpen = isControlled ? onOpenChange : setInternalOpen;
 
   if (!plan) return null;
 
-  const groupedExercises = planExercises.reduce((acc, exercise) => {
-    if (!acc[exercise.day_number]) {
-      acc[exercise.day_number] = [];
-    }
-    acc[exercise.day_number].push(exercise);
-    return acc;
-  }, {} as Record<number, typeof planExercises>);
+  const DialogComponent = (
+    <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
+      <DialogHeader>
+        <DialogTitle className="flex items-center gap-2">
+          <Target className="h-5 w-5" />
+          {plan.name}
+        </DialogTitle>
+        <DialogDescription>
+          Visualização completa da trilha de tratamento
+        </DialogDescription>
+      </DialogHeader>
+      
+      <div className="space-y-6">
+        {/* Plan Information */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">Paciente:</span>
+              <span className="text-sm">{plan.patients?.name || 'Não definido'}</span>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">Início:</span>
+              <span className="text-sm">
+                {plan.start_date ? new Date(plan.start_date).toLocaleDateString('pt-BR') : 'Não definido'}
+              </span>
+            </div>
+            
+            {plan.end_date && (
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Fim:</span>
+                <span className="text-sm">
+                  {new Date(plan.end_date).toLocaleDateString('pt-BR')}
+                </span>
+              </div>
+            )}
+          </div>
+          
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">Status:</span>
+              <Badge className={plan.is_active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
+                {plan.is_active ? "Ativo" : "Inativo"}
+              </Badge>
+            </div>
+            
+            <div>
+              <div className="flex items-center justify-between text-sm mb-1">
+                <span className="font-medium">Progresso</span>
+                <span>{plan.progress_percentage}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-blue-600 h-2 rounded-full" 
+                  style={{ width: `${plan.progress_percentage}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[800px] max-h-[600px] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Target className="h-5 w-5" />
-            {plan.name}
-          </DialogTitle>
-          <DialogDescription>{plan.description}</DialogDescription>
-        </DialogHeader>
+        {/* Description */}
+        {plan.description && (
+          <div>
+            <h4 className="text-sm font-medium mb-2">Descrição</h4>
+            <p className="text-sm text-muted-foreground bg-gray-50 p-3 rounded-md">
+              {plan.description}
+            </p>
+          </div>
+        )}
 
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Exercises */}
+        <div>
+          <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+            <Dumbbell className="h-4 w-4" />
+            Exercícios do Plano
+          </h4>
+          
+          {isLoading ? (
+            <div className="text-sm text-muted-foreground">Carregando exercícios...</div>
+          ) : planExercises.length === 0 ? (
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  Paciente
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="font-medium">{plan.patients?.name || 'Não informado'}</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <CalendarDays className="h-4 w-4" />
-                  Período
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm">
-                  {plan.start_date ? new Date(plan.start_date).toLocaleDateString('pt-BR') : 'Não informado'} - {' '}
-                  {plan.end_date ? new Date(plan.end_date).toLocaleDateString('pt-BR') : 'Em andamento'}
+              <CardContent className="text-center py-6">
+                <Dumbbell className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">
+                  Nenhum exercício adicionado a esta trilha
                 </p>
               </CardContent>
             </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="h-4 w-4" />
-                Progresso
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-blue-600 h-2 rounded-full" 
-                    style={{ width: `${plan.progress_percentage}%` }}
-                  />
-                </div>
-                <span className="text-sm font-medium">{plan.progress_percentage}%</span>
-              </div>
-              <Badge className={plan.is_active ? "bg-green-100 text-green-800 mt-2" : "bg-red-100 text-red-800 mt-2"}>
-                {plan.is_active ? "Ativo" : "Inativo"}
-              </Badge>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Exercícios por Dia</CardTitle>
-              <CardDescription>
-                {isLoading ? 'Carregando exercícios...' : `${planExercises.length} exercícios encontrados`}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="text-center py-4 text-gray-500">Carregando exercícios...</div>
-              ) : Object.keys(groupedExercises).length > 0 ? (
-                <div className="space-y-4">
-                  {Object.entries(groupedExercises).map(([day, exercises]) => (
-                    <div key={day} className="border rounded-lg p-4">
-                      <h4 className="font-medium mb-3">Dia {day}</h4>
-                      <div className="space-y-2">
-                        {exercises.map((exercise) => (
-                          <div key={exercise.id} className="bg-gray-50 p-3 rounded">
-                            <h5 className="font-medium">{exercise.exercises?.name}</h5>
-                            {exercise.exercises?.description && (
-                              <p className="text-sm text-gray-600 mt-1">{exercise.exercises.description}</p>
-                            )}
-                            <div className="flex gap-4 mt-2 text-sm text-gray-500">
-                              {exercise.repetitions && <span>Repetições: {exercise.repetitions}</span>}
-                              {exercise.sets && <span>Séries: {exercise.sets}</span>}
-                              {exercise.duration_minutes && <span>Duração: {exercise.duration_minutes} min</span>}
-                            </div>
-                            {exercise.notes && (
-                              <p className="text-sm text-gray-600 mt-2"><strong>Notas:</strong> {exercise.notes}</p>
-                            )}
-                            <Badge className={exercise.is_completed ? "bg-green-100 text-green-800 mt-2" : "bg-yellow-100 text-yellow-800 mt-2"}>
-                              {exercise.is_completed ? "Concluído" : "Pendente"}
-                            </Badge>
-                          </div>
-                        ))}
-                      </div>
+          ) : (
+            <div className="space-y-3">
+              {planExercises.map((planEx) => (
+                <Card key={planEx.id} className="border-l-4 border-l-blue-500">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm">
+                        Dia {planEx.day_number} - {planEx.exercises?.name}
+                      </CardTitle>
+                      <Badge variant={planEx.is_completed ? "default" : "secondary"}>
+                        {planEx.is_completed ? "Concluído" : "Pendente"}
+                      </Badge>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  Nenhum exercício cadastrado para este plano
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    {planEx.exercises?.description && (
+                      <CardDescription className="text-xs">
+                        {planEx.exercises.description}
+                      </CardDescription>
+                    )}
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                      {planEx.repetitions && (
+                        <div className="flex items-center gap-1">
+                          <span className="font-medium">Repetições:</span>
+                          <span>{planEx.repetitions}</span>
+                        </div>
+                      )}
+                      {planEx.sets && (
+                        <div className="flex items-center gap-1">
+                          <span className="font-medium">Séries:</span>
+                          <span>{planEx.sets}</span>
+                        </div>
+                      )}
+                      {planEx.duration_minutes && (
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          <span>{planEx.duration_minutes}min</span>
+                        </div>
+                      )}
+                      {planEx.completed_at && (
+                        <div className="flex items-center gap-1">
+                          <span className="font-medium">Concluído:</span>
+                          <span>{new Date(planEx.completed_at).toLocaleDateString('pt-BR')}</span>
+                        </div>
+                      )}
+                    </div>
+                    {planEx.notes && (
+                      <div className="mt-2 p-2 bg-gray-50 rounded text-xs">
+                        <span className="font-medium">Observações: </span>
+                        {planEx.notes}
+                      </div>
+                    )}
+                    {planEx.exercises?.instructions && (
+                      <div className="mt-2 p-2 bg-blue-50 rounded text-xs">
+                        <span className="font-medium">Instruções: </span>
+                        {planEx.exercises.instructions}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
-      </DialogContent>
+      </div>
+    </DialogContent>
+  );
+
+  if (isControlled) {
+    return (
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        {DialogComponent}
+      </Dialog>
+    );
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          <Eye className="h-4 w-4 mr-1" /> Ver
+        </Button>
+      </DialogTrigger>
+      {DialogComponent}
     </Dialog>
   );
 }
