@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   };
 
-  const fetchUserProfile = async (userId: string): Promise<UserProfile> => {
+  const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
     try {
       console.log('Fetching profile for user:', userId);
       const { data: profile, error } = await supabase
@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (error && error.code !== 'PGRST116') {
         console.error('Error fetching profile:', error);
-        throw error;
+        return null;
       }
 
       if (profile) {
@@ -71,64 +71,63 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
       }
       
-      // Se não encontrou o profile, retorna null para criar um padrão
-      console.log('Profile not found, will use default');
+      console.log('Profile not found');
       return null;
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);
       return null;
     }
   };
+
+  const handleAuthStateChange = async (event: string, newSession: Session | null) => {
+    console.log('Auth state changed:', event, newSession?.user?.email || 'no session');
+    
+    setSession(newSession);
+    
+    if (newSession?.user) {
+      try {
+        console.log('Processing user profile...');
+        const profile = await fetchUserProfile(newSession.user.id);
+        
+        if (profile) {
+          setUser(profile);
+        } else {
+          // Create default profile if none exists
+          const defaultProfile = createDefaultProfile(newSession.user);
+          setUser(defaultProfile);
+          console.log('Using default profile:', defaultProfile);
+        }
+      } catch (error) {
+        console.error('Error processing user profile:', error);
+        // Always create a basic profile so user can continue
+        const defaultProfile = createDefaultProfile(newSession.user);
+        setUser(defaultProfile);
+      }
+    } else {
+      console.log('No user session, clearing state');
+      setUser(null);
+    }
+    
+    // Always set loading to false after processing
+    setIsLoading(false);
+  };
   
   useEffect(() => {
     console.log('Initializing auth...');
     
-    // Configure auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email || 'no session');
-        
-        setSession(session);
-        
-        if (session?.user) {
-          try {
-            console.log('User authenticated, processing profile...');
-            
-            // Try to fetch existing profile
-            const profile = await fetchUserProfile(session.user.id);
-            
-            if (profile) {
-              setUser(profile);
-            } else {
-              // Create default profile if none exists
-              const defaultProfile = createDefaultProfile(session.user);
-              setUser(defaultProfile);
-              console.log('Using default profile:', defaultProfile);
-            }
-          } catch (error) {
-            console.error('Error processing user profile:', error);
-            // Even on error, create a basic profile so user can continue
-            const defaultProfile = createDefaultProfile(session.user);
-            setUser(defaultProfile);
-          } finally {
-            setIsLoading(false);
-          }
-        } else {
-          console.log('No user session, clearing state');
-          setUser(null);
-          setIsLoading(false);
-        }
-      }
-    );
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
 
-    // Check for existing session
+    // Check for existing session - this will trigger the auth state change if there's a session
     supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
       console.log('Initial session check:', existingSession?.user?.email || 'none');
       
-      // If no existing session, stop loading immediately
+      // If no existing session, immediately stop loading
       if (!existingSession) {
+        console.log('No existing session, stopping loading');
         setIsLoading(false);
       }
+      // If there is a session, the auth state change handler will be called automatically
     });
 
     return () => {
@@ -150,6 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
     } else {
       console.log('Login successful');
+      // Don't set loading to false here - let auth state change handle it
     }
     
     return { error };
