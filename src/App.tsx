@@ -137,9 +137,6 @@ const App = () => (
               </ProtectedRoute>
             } />
 
-            {/* Redirecionar para a página inicial */}
-            <Route path="/" element={<Navigate to="/auth" />} />
-
             {/* Página 404 */}
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -16,6 +16,14 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { user, isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
 
+  console.log('ProtectedRoute check:', {
+    isLoading,
+    isAuthenticated,
+    userRole: user?.role,
+    allowedRoles,
+    currentPath: location.pathname
+  });
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -28,12 +36,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (!isAuthenticated || !user) {
-    // Redireciona para o login caso não esteja autenticado
+    console.log('User not authenticated, redirecting to auth');
     return <Navigate to="/auth" state={{ from: location.pathname }} replace />;
   }
 
   // Se tem roles definidas, verifica se o usuário tem acesso
   if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
+    console.log('User role not allowed, redirecting based on role');
     // Redireciona para a página apropriada com base no papel do usuário
     if (user.role === "patient") {
       return <Navigate to="/paciente" replace />;
@@ -41,5 +50,6 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/" replace />;
   }
 
+  console.log('Access granted to protected route');
   return <>{children}</>;
 };

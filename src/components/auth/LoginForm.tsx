@@ -22,7 +22,7 @@ export function LoginForm() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, isLoading: authLoading } = useAuth();
+  const { login, user, isAuthenticated } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -34,11 +34,22 @@ export function LoginForm() {
     },
   });
 
+  // Redirect authenticated users
+  React.useEffect(() => {
+    if (isAuthenticated && user) {
+      console.log('User authenticated, redirecting...', user.role);
+      const from = location.state?.from || (user.role === 'patient' ? '/paciente' : '/');
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, user, navigate, location.state]);
+
   const onSubmit = async (data: LoginFormValues) => {
+    if (isLoading) return;
+    
     setIsLoading(true);
+    console.log('Submitting login for:', data.email);
     
     try {
-      console.log('Submitting login form for:', data.email);
       const { error } = await login(data.email, data.password);
       
       if (error) {
@@ -61,13 +72,12 @@ export function LoginForm() {
         });
         setIsLoading(false);
       } else {
-        console.log('Login successful');
+        console.log('Login successful, waiting for auth state update...');
         toast({
           title: "Login realizado com sucesso!",
           description: "Bem-vindo ao Fisio Smart Care",
         });
-        
-        // The auth context will handle navigation when session is established
+        // Don't set loading to false here, let the auth context handle it
       }
     } catch (error) {
       console.error('Unexpected login error:', error);
@@ -130,8 +140,8 @@ export function LoginForm() {
           )}
         />
 
-        <Button type="submit" className="w-full" disabled={isLoading || authLoading}>
-          {isLoading || authLoading ? "Entrando..." : "Entrar"}
+        <Button type="submit" className="w-full" disabled={isLoading}>
+          {isLoading ? "Entrando..." : "Entrar"}
         </Button>
       </form>
     </Form>
