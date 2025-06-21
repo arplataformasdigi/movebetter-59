@@ -32,7 +32,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
-  const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
+  const createDefaultProfile = (authUser: User): UserProfile => {
+    return {
+      id: authUser.id,
+      name: authUser.user_metadata?.name || authUser.email || 'Usuário',
+      email: authUser.email || '',
+      role: 'admin' as UserRole,
+      crefito: authUser.user_metadata?.crefito,
+      phone: authUser.user_metadata?.phone,
+      cpf_cnpj: authUser.user_metadata?.cpf,
+    };
+  };
+
+  const fetchUserProfile = async (userId: string): Promise<UserProfile> => {
     try {
       console.log('Fetching profile for user:', userId);
       const { data: profile, error } = await supabase
@@ -41,20 +53,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq('id', userId)
         .single();
       
-      if (error) {
+      if (error && error.code !== 'PGRST116') {
         console.error('Error fetching profile:', error);
-        
-        // If profile doesn't exist, return null but don't treat as error
-        if (error.code === 'PGRST116') {
-          console.log('Profile not found, will create default profile');
-          return null;
-        }
-        
-        return null;
+        throw error;
       }
 
       if (profile) {
-        console.log('Profile loaded successfully:', profile);
+        console.log('Profile found:', profile);
         return {
           id: profile.id,
           name: profile.name,
@@ -66,104 +71,74 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
       }
       
+      // Se não encontrou o profile, retorna null para criar um padrão
+      console.log('Profile not found, will use default');
       return null;
     } catch (error) {
-      console.error('Unexpected error fetching profile:', error);
+      console.error('Error in fetchUserProfile:', error);
       return null;
     }
   };
   
   useEffect(() => {
-    let mounted = true;
-
-    const initializeAuth = async () => {
-      try {
-        console.log('Initializing auth...');
+    console.log('Initializing auth...');
+    
+    // Configure auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email || 'no session');
         
-        // Set up auth state listener
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          async (event, session) => {
-            console.log('Auth state changed:', event, session?.user?.email || 'no session');
+        setSession(session);
+        
+        if (session?.user) {
+          try {
+            console.log('User authenticated, processing profile...');
             
-            if (!mounted) return;
-
-            setSession(session);
+            // Try to fetch existing profile
+            const profile = await fetchUserProfile(session.user.id);
             
-            if (session?.user) {
-              console.log('User authenticated, fetching profile...');
-              
-              try {
-                const profile = await fetchUserProfile(session.user.id);
-                
-                if (mounted) {
-                  if (profile) {
-                    setUser(profile);
-                  } else {
-                    // Create default user profile if none exists
-                    console.log('Creating default profile for user');
-                    const defaultProfile: UserProfile = {
-                      id: session.user.id,
-                      name: session.user.user_metadata?.name || session.user.email || 'Usuário',
-                      email: session.user.email || '',
-                      role: 'admin', // Default role
-                    };
-                    setUser(defaultProfile);
-                  }
-                  setIsLoading(false);
-                }
-              } catch (profileError) {
-                console.error('Error in profile fetch:', profileError);
-                if (mounted) {
-                  // Even if profile fetch fails, create a basic user object
-                  const basicProfile: UserProfile = {
-                    id: session.user.id,
-                    name: session.user.user_metadata?.name || session.user.email || 'Usuário',
-                    email: session.user.email || '',
-                    role: 'admin',
-                  };
-                  setUser(basicProfile);
-                  setIsLoading(false);
-                }
-              }
+            if (profile) {
+              setUser(profile);
             } else {
-              console.log('No user session, clearing state');
-              if (mounted) {
-                setUser(null);
-                setIsLoading(false);
-              }
+              // Create default profile if none exists
+              const defaultProfile = createDefaultProfile(session.user);
+              setUser(defaultProfile);
+              console.log('Using default profile:', defaultProfile);
             }
+          } catch (error) {
+            console.error('Error processing user profile:', error);
+            // Even on error, create a basic profile so user can continue
+            const defaultProfile = createDefaultProfile(session.user);
+            setUser(defaultProfile);
+          } finally {
+            setIsLoading(false);
           }
-        );
-
-        // Check for existing session
-        const { data: { session: existingSession } } = await supabase.auth.getSession();
-        console.log('Existing session check:', existingSession?.user?.email || 'none');
-        
-        if (!existingSession?.user && mounted) {
-          // No existing session, stop loading
-          setIsLoading(false);
-        }
-
-        return () => {
-          subscription.unsubscribe();
-        };
-      } catch (error) {
-        console.error('Auth initialization error:', error);
-        if (mounted) {
+        } else {
+          console.log('No user session, clearing state');
+          setUser(null);
           setIsLoading(false);
         }
       }
-    };
+    );
 
-    initializeAuth();
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
+      console.log('Initial session check:', existingSession?.user?.email || 'none');
+      
+      // If no existing session, stop loading immediately
+      if (!existingSession) {
+        setIsLoading(false);
+      }
+    });
 
     return () => {
-      mounted = false;
+      subscription.unsubscribe();
     };
   }, []);
 
   const login = async (email: string, password: string) => {
     console.log('Login attempt for:', email);
+    setIsLoading(true);
     
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -172,6 +147,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     if (error) {
       console.error('Login error:', error);
+      setIsLoading(false);
     } else {
       console.log('Login successful');
     }
@@ -206,7 +182,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     console.log('Logging out user');
     setIsLoading(true);
+    setUser(null);
+    setSession(null);
     await supabase.auth.signOut();
+    setIsLoading(false);
   };
 
   const contextValue = {
