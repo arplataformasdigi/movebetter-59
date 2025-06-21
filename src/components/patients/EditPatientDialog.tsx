@@ -32,7 +32,7 @@ const formSchema = z.object({
   email: z.string().email({ message: "E-mail inválido" }).optional().or(z.literal("")),
   phone: z.string().min(10, { message: "Telefone deve ter pelo menos 10 dígitos" }).optional().or(z.literal("")),
   cpf: z.string().optional(),
-  status: z.enum(["active", "inactive", "completed"]),
+  status: z.enum(["active", "inactive"]),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -52,7 +52,7 @@ export function EditPatientDialog({ patient }: EditPatientDialogProps) {
       email: patient.email || "",
       phone: patient.phone || "",
       cpf: patient.cpf || "",
-      status: patient.status,
+      status: patient.status === "completed" ? "active" : patient.status, // Map completed to active
     },
   });
 
@@ -156,7 +156,6 @@ export function EditPatientDialog({ patient }: EditPatientDialogProps) {
                     <SelectContent>
                       <SelectItem value="active">Ativo</SelectItem>
                       <SelectItem value="inactive">Inativo</SelectItem>
-                      <SelectItem value="completed">Concluído</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

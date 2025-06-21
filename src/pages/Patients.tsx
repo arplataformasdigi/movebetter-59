@@ -139,7 +139,7 @@ export function Patients() {
             <RefreshCw className="mr-2 h-4 w-4" />
             Atualizar
           </Button>
-          <AddPatientDialog onPatientAdded={fetchPatients} />
+          <AddPatientDialog />
         </div>
       </div>
 
@@ -255,7 +255,7 @@ export function Patients() {
                               <Power className="h-4 w-4 text-green-600" />
                             )}
                           </Button>
-                          <EditPatientDialog patient={patient} onPatientUpdated={handleUpdatePatient} />
+                          <EditPatientDialog patient={patient} />
                           <DeletePatientDialog 
                             patientName={patient.name}
                             onConfirm={() => handleDeletePatient(patient.id)}

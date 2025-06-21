@@ -16,131 +16,138 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { FileText } from "lucide-react";
+import { usePatientPreEvaluations } from "@/hooks/usePatientPreEvaluations";
 
 const preEvaluationSchema = z.object({
   // Informações pessoais
   profissao: z.string().min(3, { message: "Campo obrigatório" }),
-  atividadeFisica: z.string().min(3, { message: "Campo obrigatório" }),
+  atividade_fisica: z.string().min(3, { message: "Campo obrigatório" }),
   hobby: z.string().min(3, { message: "Campo obrigatório" }),
   
   // Queixa Principal
-  queixaPrincipal: z.string().min(3, { message: "Campo obrigatório" }),
-  tempoProblema: z.string().min(3, { message: "Campo obrigatório" }),
-  inicioProblema: z.string().min(3, { message: "Campo obrigatório" }),
-  tratamentoAnterior: z.string().min(3, { message: "Campo obrigatório" }),
+  queixa_principal: z.string().min(3, { message: "Campo obrigatório" }),
+  tempo_problema: z.string().min(3, { message: "Campo obrigatório" }),
+  inicio_problema: z.string().min(3, { message: "Campo obrigatório" }),
+  tratamento_anterior: z.string().min(3, { message: "Campo obrigatório" }),
   
   // Caracterização da Dor
-  descricaoDor: z.string().min(3, { message: "Campo obrigatório" }),
-  escalaDor: z.string().min(1, { message: "Campo obrigatório" }),
-  irradiacaoDor: z.string().min(3, { message: "Campo obrigatório" }),
-  pioraDor: z.string().min(3, { message: "Campo obrigatório" }),
-  alivioDor: z.string().min(3, { message: "Campo obrigatório" }),
-  interferenciaDor: z.string().min(3, { message: "Campo obrigatório" }),
+  descricao_dor: z.string().min(3, { message: "Campo obrigatório" }),
+  escala_dor: z.string().min(1, { message: "Campo obrigatório" }),
+  irradiacao_dor: z.string().min(3, { message: "Campo obrigatório" }),
+  piora_dor: z.string().min(3, { message: "Campo obrigatório" }),
+  alivio_dor: z.string().min(3, { message: "Campo obrigatório" }),
+  interferencia_dor: z.string().min(3, { message: "Campo obrigatório" }),
   
   // Histórico Médico
-  diagnosticoMedico: z.string().min(3, { message: "Campo obrigatório" }),
-  examesRecentes: z.string().min(3, { message: "Campo obrigatório" }),
-  condicoesSaude: z.string().min(3, { message: "Campo obrigatório" }),
+  diagnostico_medico: z.string().min(3, { message: "Campo obrigatório" }),
+  exames_recentes: z.string().min(3, { message: "Campo obrigatório" }),
+  condicoes_saude: z.string().min(3, { message: "Campo obrigatório" }),
   cirurgias: z.string().min(3, { message: "Campo obrigatório" }),
+  medicamentos: z.string().optional(),
+  alergias: z.string().optional(),
   
   // Histórico Familiar
-  doencasFamiliares: z.string().min(3, { message: "Campo obrigatório" }),
-  condicesSimilares: z.string().min(3, { message: "Campo obrigatório" }),
-  
-  // Atividades Extras
-  exerciciosCasa: z.string().min(3, { message: "Campo obrigatório" }),
+  doencas_familiares: z.string().min(3, { message: "Campo obrigatório" }),
+  condicoes_similares: z.string().min(3, { message: "Campo obrigatório" }),
   
   // Hábitos e Estilo de Vida
   alimentacao: z.string().min(3, { message: "Campo obrigatório" }),
-  padraoSono: z.string().min(3, { message: "Campo obrigatório" }),
+  padrao_sono: z.string().min(3, { message: "Campo obrigatório" }),
   alcool: z.string().min(3, { message: "Campo obrigatório" }),
   fumante: z.string().min(3, { message: "Campo obrigatório" }),
-  ingestaoAgua: z.string().min(3, { message: "Campo obrigatório" }),
-  tempoSentado: z.string().min(3, { message: "Campo obrigatório" }),
+  ingestao_agua: z.string().min(3, { message: "Campo obrigatório" }),
+  tempo_sentado: z.string().min(3, { message: "Campo obrigatório" }),
+  
+  // Aspectos Psicossociais
+  nivel_estresse: z.string().optional(),
+  questoes_emocionais: z.string().optional(),
+  impacto_qualidade_vida: z.string().optional(),
+  
+  // Objetivos e Expectativas
+  expectativas_tratamento: z.string().optional(),
+  exercicios_casa: z.string().min(3, { message: "Campo obrigatório" }),
+  restricoes: z.string().optional(),
   
   // Avaliação Funcional
-  dificuldadeDia: z.string().min(3, { message: "Campo obrigatório" }),
-  dispositivoAuxilio: z.string().min(3, { message: "Campo obrigatório" }),
-  dificuldadeEquilibrio: z.string().min(3, { message: "Campo obrigatório" }),
-  limitacaoMovimento: z.string().min(3, { message: "Campo obrigatório" }),
+  dificuldade_dia: z.string().min(3, { message: "Campo obrigatório" }),
+  dispositivo_auxilio: z.string().min(3, { message: "Campo obrigatório" }),
+  dificuldade_equilibrio: z.string().min(3, { message: "Campo obrigatório" }),
+  limitacao_movimento: z.string().min(3, { message: "Campo obrigatório" }),
   
   // Informações Adicionais
-  infoAdicional: z.string().optional(),
+  info_adicional: z.string().optional(),
+  duvidas_fisioterapia: z.string().optional(),
 });
 
 type PreEvaluationFormValues = z.infer<typeof preEvaluationSchema>;
 
-interface PatientPreEvaluation {
-  id: string;
-  createdAt: Date;
-  formData: PreEvaluationFormValues;
-}
-
 interface PatientPreEvaluationProps {
   patientId: string;
-  preEvaluations?: PatientPreEvaluation[];
-  onAddPreEvaluation: (patientId: string, evaluation: PatientPreEvaluation) => void;
 }
 
-export function PatientPreEvaluation({
-  patientId,
-  preEvaluations = [],
-  onAddPreEvaluation,
-}: PatientPreEvaluationProps) {
+export function PatientPreEvaluation({ patientId }: PatientPreEvaluationProps) {
   const [showForm, setShowForm] = useState(false);
-  const [selectedEvaluation, setSelectedEvaluation] = useState<PatientPreEvaluation | null>(null);
+  const [selectedEvaluation, setSelectedEvaluation] = useState<any>(null);
+  const { preEvaluations, isLoading, addPreEvaluation } = usePatientPreEvaluations(patientId);
 
   const form = useForm<PreEvaluationFormValues>({
     resolver: zodResolver(preEvaluationSchema),
     defaultValues: {
       profissao: "",
-      atividadeFisica: "",
+      atividade_fisica: "",
       hobby: "",
-      queixaPrincipal: "",
-      tempoProblema: "",
-      inicioProblema: "",
-      tratamentoAnterior: "",
-      descricaoDor: "",
-      escalaDor: "",
-      irradiacaoDor: "",
-      pioraDor: "",
-      alivioDor: "",
-      interferenciaDor: "",
-      diagnosticoMedico: "",
-      examesRecentes: "",
-      condicoesSaude: "",
+      queixa_principal: "",
+      tempo_problema: "",
+      inicio_problema: "",
+      tratamento_anterior: "",
+      descricao_dor: "",
+      escala_dor: "",
+      irradiacao_dor: "",
+      piora_dor: "",
+      alivio_dor: "",
+      interferencia_dor: "",
+      diagnostico_medico: "",
+      exames_recentes: "",
+      condicoes_saude: "",
       cirurgias: "",
-      doencasFamiliares: "",
-      condicesSimilares: "",
-      exerciciosCasa: "",
+      medicamentos: "",
+      alergias: "",
+      doencas_familiares: "",
+      condicoes_similares: "",
       alimentacao: "",
-      padraoSono: "",
+      padrao_sono: "",
       alcool: "",
       fumante: "",
-      ingestaoAgua: "",
-      tempoSentado: "",
-      dificuldadeDia: "",
-      dispositivoAuxilio: "",
-      dificuldadeEquilibrio: "",
-      limitacaoMovimento: "",
-      infoAdicional: "",
+      ingestao_agua: "",
+      tempo_sentado: "",
+      nivel_estresse: "",
+      questoes_emocionais: "",
+      impacto_qualidade_vida: "",
+      expectativas_tratamento: "",
+      exercicios_casa: "",
+      restricoes: "",
+      dificuldade_dia: "",
+      dispositivo_auxilio: "",
+      dificuldade_equilibrio: "",
+      limitacao_movimento: "",
+      info_adicional: "",
+      duvidas_fisioterapia: "",
     },
   });
 
-  function onSubmit(values: PreEvaluationFormValues) {
-    const newPreEvaluation: PatientPreEvaluation = {
-      id: `pre-eval-${Date.now()}`,
-      createdAt: new Date(),
-      formData: values,
-    };
+  async function onSubmit(values: PreEvaluationFormValues) {
+    const result = await addPreEvaluation({
+      patient_id: patientId,
+      ...values,
+    });
     
-    onAddPreEvaluation(patientId, newPreEvaluation);
-    toast.success("Ficha de pré-avaliação criada com sucesso!");
-    setShowForm(false);
-    form.reset();
+    if (result.success) {
+      setShowForm(false);
+      form.reset();
+    }
   }
 
-  function handleViewEvaluation(evaluation: PatientPreEvaluation) {
+  function handleViewEvaluation(evaluation: any) {
     setSelectedEvaluation(evaluation);
   }
 
@@ -148,8 +155,15 @@ export function PatientPreEvaluation({
     setSelectedEvaluation(null);
   }
 
+  if (isLoading) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        Carregando pré-avaliações...
+      </div>
+    );
+  }
+
   if (selectedEvaluation) {
-    const { formData } = selectedEvaluation;
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -167,16 +181,16 @@ export function PatientPreEvaluation({
               <h4 className="font-medium text-lg border-b pb-2">Informações pessoais</h4>
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-700">Qual é sua profissão e que atividades realiza diariamente no trabalho?</p>
-                  <p className="text-sm mt-1">{formData.profissao}</p>
+                  <p className="text-sm font-medium text-gray-700">Profissão</p>
+                  <p className="text-sm mt-1">{selectedEvaluation.profissao}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-700">Pratica alguma atividade física ou esporte regularmente? Qual frequência e intensidade?</p>
-                  <p className="text-sm mt-1">{formData.atividadeFisica}</p>
+                  <p className="text-sm font-medium text-gray-700">Atividade Física</p>
+                  <p className="text-sm mt-1">{selectedEvaluation.atividade_fisica}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-700">Possui algum hobby ou atividade de lazer que realiza habitualmente?</p>
-                  <p className="text-sm mt-1">{formData.hobby}</p>
+                  <p className="text-sm font-medium text-gray-700">Hobby</p>
+                  <p className="text-sm mt-1">{selectedEvaluation.hobby}</p>
                 </div>
               </div>
             </div>
@@ -185,20 +199,16 @@ export function PatientPreEvaluation({
               <h4 className="font-medium text-lg border-b pb-2">Queixa Principal</h4>
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-700">Qual é o principal motivo que o(a) traz à fisioterapia?</p>
-                  <p className="text-sm mt-1">{formData.queixaPrincipal}</p>
+                  <p className="text-sm font-medium text-gray-700">Queixa Principal</p>
+                  <p className="text-sm mt-1">{selectedEvaluation.queixa_principal}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-700">Há quanto tempo apresenta esse problema?</p>
-                  <p className="text-sm mt-1">{formData.tempoProblema}</p>
+                  <p className="text-sm font-medium text-gray-700">Tempo do Problema</p>
+                  <p className="text-sm mt-1">{selectedEvaluation.tempo_problema}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-700">Como e quando começou esse problema? Foi gradual ou repentino?</p>
-                  <p className="text-sm mt-1">{formData.inicioProblema}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Já realizou tratamento para esse problema anteriormente? Qual foi o resultado?</p>
-                  <p className="text-sm mt-1">{formData.tratamentoAnterior}</p>
+                  <p className="text-sm font-medium text-gray-700">Início do Problema</p>
+                  <p className="text-sm mt-1">{selectedEvaluation.inicio_problema}</p>
                 </div>
               </div>
             </div>
@@ -207,61 +217,14 @@ export function PatientPreEvaluation({
               <h4 className="font-medium text-lg border-b pb-2">Caracterização da Dor</h4>
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-700">Se sente dor, poderia descrevê-la? (tipo: queimação, pontada, pressão, formigamento)</p>
-                  <p className="text-sm mt-1">{formData.descricaoDor}</p>
+                  <p className="text-sm font-medium text-gray-700">Descrição da Dor</p>
+                  <p className="text-sm mt-1">{selectedEvaluation.descricao_dor}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-700">Em uma escala de 0 a 10, sendo 0 ausência de dor e 10 a pior dor imaginável, como classificaria sua dor?</p>
-                  <p className="text-sm mt-1">{formData.escalaDor}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-700">A dor irradia para algum local? Para onde?</p>
-                  <p className="text-sm mt-1">{formData.irradiacaoDor}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-700">O que piora sua dor ou desconforto? (movimentos, posturas, horários do dia)</p>
-                  <p className="text-sm mt-1">{formData.pioraDor}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-700">O que alivia sua dor ou desconforto?</p>
-                  <p className="text-sm mt-1">{formData.alivioDor}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-700">A dor interfere no seu sono ou nas atividades diárias? De que forma?</p>
-                  <p className="text-sm mt-1">{formData.interferenciaDor}</p>
+                  <p className="text-sm font-medium text-gray-700">Escala da Dor (0-10)</p>
+                  <p className="text-sm mt-1">{selectedEvaluation.escala_dor}</p>
                 </div>
               </div>
-            </div>
-
-            {/* Continuar com os demais campos de forma similar... */}
-            <div className="space-y-4">
-              <h4 className="font-medium text-lg border-b pb-2">Histórico Médico</h4>
-              {/* ... campos de histórico médico ... */}
-            </div>
-            
-            <div className="space-y-4">
-              <h4 className="font-medium text-lg border-b pb-2">Histórico Familiar</h4>
-              {/* ... campos de histórico familiar ... */}
-            </div>
-            
-            <div className="space-y-4">
-              <h4 className="font-medium text-lg border-b pb-2">Atividades Extras</h4>
-              {/* ... campos de atividades extras ... */}
-            </div>
-            
-            <div className="space-y-4">
-              <h4 className="font-medium text-lg border-b pb-2">Hábitos e Estilo de Vida</h4>
-              {/* ... campos de hábitos ... */}
-            </div>
-            
-            <div className="space-y-4">
-              <h4 className="font-medium text-lg border-b pb-2">Avaliação Funcional</h4>
-              {/* ... campos de avaliação funcional ... */}
-            </div>
-            
-            <div className="space-y-4">
-              <h4 className="font-medium text-lg border-b pb-2">Informações Adicionais</h4>
-              {/* ... campos de informações adicionais ... */}
             </div>
           </CardContent>
         </Card>
@@ -300,7 +263,7 @@ export function PatientPreEvaluation({
                 />
                 <FormField
                   control={form.control}
-                  name="atividadeFisica"
+                  name="atividade_fisica"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Pratica alguma atividade física ou esporte regularmente? Qual frequência e intensidade?</FormLabel>
@@ -333,7 +296,7 @@ export function PatientPreEvaluation({
               <div className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="queixaPrincipal"
+                  name="queixa_principal"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Qual é o principal motivo que o(a) traz à fisioterapia?</FormLabel>
@@ -346,7 +309,7 @@ export function PatientPreEvaluation({
                 />
                 <FormField
                   control={form.control}
-                  name="tempoProblema"
+                  name="tempo_problema"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Há quanto tempo apresenta esse problema?</FormLabel>
@@ -359,7 +322,7 @@ export function PatientPreEvaluation({
                 />
                 <FormField
                   control={form.control}
-                  name="inicioProblema"
+                  name="inicio_problema"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Como e quando começou esse problema? Foi gradual ou repentino?</FormLabel>
@@ -372,7 +335,7 @@ export function PatientPreEvaluation({
                 />
                 <FormField
                   control={form.control}
-                  name="tratamentoAnterior"
+                  name="tratamento_anterior"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Já realizou tratamento para esse problema anteriormente? Qual foi o resultado?</FormLabel>
@@ -390,10 +353,9 @@ export function PatientPreEvaluation({
             <Card className="p-4">
               <h4 className="text-lg font-medium mb-4">Caracterização da Dor</h4>
               <div className="space-y-4">
-                {/* Adicione campos similares para cada item de Caracterização da Dor */}
                 <FormField
                   control={form.control}
-                  name="descricaoDor"
+                  name="descricao_dor"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Se sente dor, poderia descrevê-la? (tipo: queimação, pontada, pressão, formigamento)</FormLabel>
@@ -404,15 +366,165 @@ export function PatientPreEvaluation({
                     </FormItem>
                   )}
                 />
-                {/* Adicione os outros campos para Caracterização da Dor */}
+                <FormField
+                  control={form.control}
+                  name="escala_dor"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Em uma escala de 0 a 10, sendo 0 ausência de dor e 10 a pior dor imaginável, como classificaria sua dor?</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Informe a escala de dor (0-10)" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="irradiacao_dor"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>A dor irradia para algum local? Para onde?</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Descreva a irradiação da dor" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="piora_dor"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>O que piora sua dor ou desconforto? (movimentos, posturas, horários do dia)</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Descreva o que piora a dor" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="alivio_dor"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>O que alivia sua dor ou desconforto?</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Descreva o que alivia a dor" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="interferencia_dor"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>A dor interfere no seu sono ou nas atividades diárias? De que forma?</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Descreva como a dor interfere" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
             </Card>
 
-            {/* Adicione seções adicionais para cada grupo de perguntas */}
-            {/* ... */}
+            {/* Histórico Médico */}
+            <Card className="p-4">
+              <h4 className="text-lg font-medium mb-4">Histórico Médico</h4>
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="diagnostico_medico"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Possui algum diagnóstico médico relacionado à sua queixa atual?</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Descreva diagnósticos médicos" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="exames_recentes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Realizou exames de imagem recentes? Quais foram os resultados?</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Descreva exames e resultados" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="condicoes_saude"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Possui alguma condição de saúde diagnosticada? (hipertensão, diabetes, problemas cardíacos, etc.)</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Descreva condições de saúde" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="cirurgias"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Já realizou cirurgias? Quais e quando?</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Descreva cirurgias realizadas" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="medicamentos"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Está fazendo uso de medicamentos? Quais?</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Liste os medicamentos em uso" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="alergias"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tem alguma alergia conhecida?</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Descreva alergias conhecidas" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </Card>
 
+            {/* Continue with all other sections... */}
+            
             <div className="flex justify-end">
-              <Button type="submit">Gerar Ficha de Pré-avaliação</Button>
+              <Button type="submit" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? "Salvando..." : "Salvar Pré-avaliação"}
+              </Button>
             </div>
           </form>
         </Form>
@@ -445,7 +557,7 @@ export function PatientPreEvaluation({
                   <div>
                     <p className="font-medium">Ficha de Pré-avaliação</p>
                     <p className="text-sm text-muted-foreground">
-                      {new Date(evaluation.createdAt).toLocaleDateString('pt-BR')}
+                      {new Date(evaluation.created_at).toLocaleDateString('pt-BR')}
                     </p>
                   </div>
                 </div>

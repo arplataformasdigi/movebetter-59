@@ -14,6 +14,8 @@ export interface Package {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  // Add missing property for compatibility
+  validity: number;
 }
 
 export function usePackagesData() {
@@ -35,7 +37,13 @@ export function usePackagesData() {
         return;
       }
 
-      setPackages(data || []);
+      // Map the data to include the validity property for compatibility
+      const mappedPackages = (data || []).map(pkg => ({
+        ...pkg,
+        validity: pkg.validity_days // Add compatibility mapping
+      }));
+
+      setPackages(mappedPackages);
     } catch (error) {
       console.error('Error in fetchPackages:', error);
       toast.error("Erro inesperado ao carregar pacotes");
