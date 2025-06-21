@@ -15,18 +15,6 @@ export interface UserProfile {
   cpf_cnpj?: string;
 }
 
-interface ExtendedProfile {
-  id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-  crefito?: string;
-  phone?: string;
-  cpf_cnpj?: string;
-  created_at: string;
-  updated_at: string;
-}
-
 interface AuthContextType {
   user: UserProfile | null;
   session: Session | null;
@@ -43,7 +31,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [initializing, setInitializing] = useState(true);
   
   const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
     try {
@@ -54,22 +41,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq('id', userId)
         .single();
       
-      if (profile && !error) {
-        console.log('Profile loaded successfully:', profile);
-        const extendedProfile = profile as ExtendedProfile;
-        return {
-          id: extendedProfile.id,
-          name: extendedProfile.name,
-          email: extendedProfile.email,
-          role: extendedProfile.role as UserRole,
-          crefito: extendedProfile.crefito || undefined,
-          phone: extendedProfile.phone || undefined,
-          cpf_cnpj: extendedProfile.cpf_cnpj || undefined,
-        };
-      } else {
+      if (error) {
         console.error('Error fetching profile:', error);
+        
+        // If profile doesn't exist, return null but don't treat as error
+        if (error.code === 'PGRST116') {
+          console.log('Profile not found, will create default profile');
+          return null;
+        }
+        
         return null;
       }
+
+      if (profile) {
+        console.log('Profile loaded successfully:', profile);
+        return {
+          id: profile.id,
+          name: profile.name,
+          email: profile.email,
+          role: profile.role as UserRole,
+          crefito: profile.crefito || undefined,
+          phone: profile.phone || undefined,
+          cpf_cnpj: profile.cpf_cnpj || undefined,
+        };
+      }
+      
+      return null;
     } catch (error) {
       console.error('Unexpected error fetching profile:', error);
       return null;
@@ -86,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Set up auth state listener
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           async (event, session) => {
-            console.log('Auth state changed:', event, session?.user?.email);
+            console.log('Auth state changed:', event, session?.user?.email || 'no session');
             
             if (!mounted) return;
 
@@ -94,15 +91,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             
             if (session?.user) {
               console.log('User authenticated, fetching profile...');
-              const profile = await fetchUserProfile(session.user.id);
-              if (mounted) {
-                setUser(profile || {
-                  id: session.user.id,
-                  name: session.user.user_metadata?.name || session.user.email || '',
-                  email: session.user.email || '',
-                  role: 'admin', // Default role
-                });
-                setIsLoading(false);
+              
+              try {
+                const profile = await fetchUserProfile(session.user.id);
+                
+                if (mounted) {
+                  if (profile) {
+                    setUser(profile);
+                  } else {
+                    // Create default user profile if none exists
+                    console.log('Creating default profile for user');
+                    const defaultProfile: UserProfile = {
+                      id: session.user.id,
+                      name: session.user.user_metadata?.name || session.user.email || 'Usuário',
+                      email: session.user.email || '',
+                      role: 'admin', // Default role
+                    };
+                    setUser(defaultProfile);
+                  }
+                  setIsLoading(false);
+                }
+              } catch (profileError) {
+                console.error('Error in profile fetch:', profileError);
+                if (mounted) {
+                  // Even if profile fetch fails, create a basic user object
+                  const basicProfile: UserProfile = {
+                    id: session.user.id,
+                    name: session.user.user_metadata?.name || session.user.email || 'Usuário',
+                    email: session.user.email || '',
+                    role: 'admin',
+                  };
+                  setUser(basicProfile);
+                  setIsLoading(false);
+                }
               }
             } else {
               console.log('No user session, clearing state');
@@ -114,26 +135,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         );
 
-        // Check for existing session only if initializing
-        if (initializing) {
-          const { data: { session: existingSession } } = await supabase.auth.getSession();
-          console.log('Existing session check:', existingSession?.user?.email || 'none');
-          
-          if (existingSession?.user && mounted) {
-            const profile = await fetchUserProfile(existingSession.user.id);
-            setSession(existingSession);
-            setUser(profile || {
-              id: existingSession.user.id,
-              name: existingSession.user.user_metadata?.name || existingSession.user.email || '',
-              email: existingSession.user.email || '',
-              role: 'admin',
-            });
-          }
-          
-          if (mounted) {
-            setIsLoading(false);
-            setInitializing(false);
-          }
+        // Check for existing session
+        const { data: { session: existingSession } } = await supabase.auth.getSession();
+        console.log('Existing session check:', existingSession?.user?.email || 'none');
+        
+        if (!existingSession?.user && mounted) {
+          // No existing session, stop loading
+          setIsLoading(false);
         }
 
         return () => {
@@ -143,7 +151,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('Auth initialization error:', error);
         if (mounted) {
           setIsLoading(false);
-          setInitializing(false);
         }
       }
     };
@@ -153,7 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       mounted = false;
     };
-  }, [initializing]);
+  }, []);
 
   const login = async (email: string, password: string) => {
     console.log('Login attempt for:', email);
@@ -166,7 +173,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) {
       console.error('Login error:', error);
     } else {
-      console.log('Login successful, auth state will be updated automatically');
+      console.log('Login successful');
     }
     
     return { error };
