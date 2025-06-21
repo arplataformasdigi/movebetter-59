@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import {
   Form,
@@ -14,139 +13,109 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ArrowUp, ArrowDown, Eye, Edit, Trash2 } from "lucide-react";
+import { ArrowUp, ArrowDown, Eye, Edit, Trash2, XCircle } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { usePatientMedicalRecords } from "@/hooks/usePatientMedicalRecords";
+import { usePatientEvolutions, Evolution } from "@/hooks/usePatientEvolutions";
 
 const evolutionSchema = z.object({
-  medicalRecordId: z.string().min(1, { message: "Prontuário é obrigatório" }),
-  queixasRelatos: z.string().min(10, { message: "Campo deve ter pelo menos 10 caracteres" }),
-  condutaAtendimento: z.string().min(10, { message: "Campo deve ter pelo menos 10 caracteres" }),
+  medical_record_id: z.string().min(1, { message: "Prontuário é obrigatório" }),
+  queixas_relatos: z.string().min(10, { message: "Campo deve ter pelo menos 10 caracteres" }),
+  conduta_atendimento: z.string().min(10, { message: "Campo deve ter pelo menos 10 caracteres" }),
   observacoes: z.string().optional(),
-  progressScore: z.coerce.number().min(0).max(10),
+  progress_score: z.coerce.number().min(0).max(10),
 });
 
 type EvolutionFormValues = z.infer<typeof evolutionSchema>;
 
-interface MedicalRecord {
-  id: string;
-  date: Date;
-  visitReason: string;
-  currentCondition: string;
-}
-
-interface PatientEvolution {
-  id: string;
-  date: Date;
-  medicalRecordId: string;
-  queixasRelatos: string;
-  condutaAtendimento: string;
-  observacoes?: string;
-  progressScore: number;
-  previousScore?: number;
-}
-
 interface PatientEvolutionProps {
   patientId: string;
-  evolutions: PatientEvolution[];
-  medicalRecords: MedicalRecord[];
-  onAddEvolution: (patientId: string, evolution: PatientEvolution) => void;
-  onUpdateEvolution: (patientId: string, evolution: PatientEvolution) => void;
-  onDeleteEvolution: (patientId: string, evolutionId: string) => void;
 }
 
-export function PatientEvolution({
-  patientId,
-  evolutions = [],
-  medicalRecords = [],
-  onAddEvolution,
-  onUpdateEvolution,
-  onDeleteEvolution,
-}: PatientEvolutionProps) {
+export function PatientEvolution({ patientId }: PatientEvolutionProps) {
   const [open, setOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
-  const [editingEvolution, setEditingEvolution] = useState<PatientEvolution | null>(null);
-  const [viewingEvolution, setViewingEvolution] = useState<PatientEvolution | null>(null);
+  const [editingEvolution, setEditingEvolution] = useState<Evolution | null>(null);
+  const [viewingEvolution, setViewingEvolution] = useState<Evolution | null>(null);
+  
+  const { medicalRecords, isLoading: recordsLoading } = usePatientMedicalRecords(patientId);
+  const { evolutions, isLoading, addEvolution, updateEvolution, closeEvolution } = usePatientEvolutions(patientId);
   
   const form = useForm<EvolutionFormValues>({
     resolver: zodResolver(evolutionSchema),
     defaultValues: {
-      medicalRecordId: "",
-      queixasRelatos: "",
-      condutaAtendimento: "",
+      medical_record_id: "",
+      queixas_relatos: "",
+      conduta_atendimento: "",
       observacoes: "",
-      progressScore: 5,
+      progress_score: 5,
     },
   });
 
   function onSubmit(values: EvolutionFormValues) {
-    const lastEvolution = evolutions.length > 0 ? evolutions[evolutions.length - 1] : undefined;
+    const lastEvolution = evolutions.length > 0 ? evolutions[0] : undefined;
     
     if (editingEvolution) {
-      const updatedEvolution: PatientEvolution = {
-        ...editingEvolution,
-        medicalRecordId: values.medicalRecordId,
-        queixasRelatos: values.queixasRelatos,
-        condutaAtendimento: values.condutaAtendimento,
+      const updatedEvolution = {
+        medical_record_id: values.medical_record_id,
+        queixas_relatos: values.queixas_relatos,
+        conduta_atendimento: values.conduta_atendimento,
         observacoes: values.observacoes,
-        progressScore: values.progressScore,
+        progress_score: values.progress_score,
       };
       
-      onUpdateEvolution(patientId, updatedEvolution);
-      toast.success("Evolução atualizada com sucesso");
+      updateEvolution(editingEvolution.id, updatedEvolution);
       setEditingEvolution(null);
     } else {
-      const newEvolution: PatientEvolution = {
-        id: `evolution-${Date.now()}`,
-        date: new Date(),
-        medicalRecordId: values.medicalRecordId,
-        queixasRelatos: values.queixasRelatos,
-        condutaAtendimento: values.condutaAtendimento,
+      const evolutionData = {
+        patient_id: patientId,
+        medical_record_id: values.medical_record_id,
+        queixas_relatos: values.queixas_relatos,
+        conduta_atendimento: values.conduta_atendimento,
         observacoes: values.observacoes,
-        progressScore: values.progressScore,
-        previousScore: lastEvolution?.progressScore,
+        progress_score: values.progress_score,
+        previous_score: lastEvolution?.progress_score,
+        is_active: true,
       };
       
-      onAddEvolution(patientId, newEvolution);
-      toast.success("Evolução adicionada com sucesso");
+      addEvolution(evolutionData);
     }
     
     form.reset();
     setOpen(false);
   }
 
-  const handleEdit = (evolution: PatientEvolution) => {
+  const handleEdit = (evolution: Evolution) => {
     setEditingEvolution(evolution);
     form.reset({
-      medicalRecordId: evolution.medicalRecordId,
-      queixasRelatos: evolution.queixasRelatos,
-      condutaAtendimento: evolution.condutaAtendimento,
+      medical_record_id: evolution.medical_record_id,
+      queixas_relatos: evolution.queixas_relatos,
+      conduta_atendimento: evolution.conduta_atendimento,
       observacoes: evolution.observacoes || "",
-      progressScore: evolution.progressScore,
+      progress_score: evolution.progress_score,
     });
     setOpen(true);
   };
 
-  const handleView = (evolution: PatientEvolution) => {
+  const handleView = (evolution: Evolution) => {
     setViewingEvolution(evolution);
     setViewOpen(true);
   };
 
-  const handleDelete = (evolutionId: string) => {
-    if (confirm("Tem certeza que deseja excluir esta evolução?")) {
-      onDeleteEvolution(patientId, evolutionId);
-      toast.success("Evolução excluída com sucesso");
+  const handleCloseEvolution = (evolutionId: string) => {
+    if (confirm("Tem certeza que deseja encerrar esta evolução?")) {
+      closeEvolution(evolutionId);
     }
   };
 
@@ -158,15 +127,9 @@ export function PatientEvolution({
 
   const getMedicalRecordInfo = (recordId: string) => {
     const record = medicalRecords.find(r => r.id === recordId);
-    return record ? `${record.visitReason} - ${format(new Date(record.date), "dd/MM/yyyy", {locale: ptBR})}` : "Prontuário não encontrado";
+    return record ? `${record.visit_reason} - ${format(new Date(record.created_at), "dd/MM/yyyy", {locale: ptBR})}` : "Prontuário não encontrado";
   };
 
-  // Ordenar os registros do mais recente para o mais antigo
-  const sortedEvolutions = [...evolutions].sort((a, b) => 
-    new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
-
-  // Formatação da diferença de progresso
   const renderProgressDifference = (current: number, previous?: number) => {
     if (previous === undefined) return null;
     
@@ -186,6 +149,10 @@ export function PatientEvolution({
       </Badge>
     );
   };
+
+  if (isLoading || recordsLoading) {
+    return <div>Carregando evoluções...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -209,7 +176,7 @@ export function PatientEvolution({
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="medicalRecordId"
+                  name="medical_record_id"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Prontuário</FormLabel>
@@ -222,7 +189,7 @@ export function PatientEvolution({
                         <SelectContent>
                           {medicalRecords.map((record) => (
                             <SelectItem key={record.id} value={record.id}>
-                              {record.visitReason} - {format(new Date(record.date), "dd/MM/yyyy", {locale: ptBR})}
+                              {record.visit_reason} - {format(new Date(record.created_at), "dd/MM/yyyy", {locale: ptBR})}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -233,7 +200,7 @@ export function PatientEvolution({
                 />
                 <FormField
                   control={form.control}
-                  name="queixasRelatos"
+                  name="queixas_relatos"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Queixas e relatos</FormLabel>
@@ -246,7 +213,7 @@ export function PatientEvolution({
                 />
                 <FormField
                   control={form.control}
-                  name="condutaAtendimento"
+                  name="conduta_atendimento"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Conduta no atendimento</FormLabel>
@@ -272,7 +239,7 @@ export function PatientEvolution({
                 />
                 <FormField
                   control={form.control}
-                  name="progressScore"
+                  name="progress_score"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Score de Progresso (0-10)</FormLabel>
@@ -292,7 +259,7 @@ export function PatientEvolution({
         </Dialog>
       </div>
 
-      {sortedEvolutions.length === 0 ? (
+      {evolutions.length === 0 ? (
         <Card>
           <CardContent className="p-6 text-center text-muted-foreground">
             Nenhum registro de evolução encontrado para este paciente.
@@ -300,24 +267,32 @@ export function PatientEvolution({
         </Card>
       ) : (
         <div className="space-y-4">
-          {sortedEvolutions.map((evolution) => (
+          {evolutions.map((evolution) => (
             <Card key={evolution.id}>
               <CardContent className="p-4">
                 <div className="flex justify-between items-start mb-3">
                   <div>
                     <h4 className="font-medium">
-                      Evolução de {format(new Date(evolution.date), "dd 'de' MMMM 'de' yyyy", {locale: ptBR})}
+                      Evolução de {format(new Date(evolution.created_at), "dd 'de' MMMM 'de' yyyy", {locale: ptBR})}
                     </h4>
-                    <p className="text-xs text-muted-foreground">{format(new Date(evolution.date), "HH:mm", {locale: ptBR})}</p>
+                    <p className="text-xs text-muted-foreground">{format(new Date(evolution.created_at), "HH:mm", {locale: ptBR})}</p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      <strong>Prontuário:</strong> {getMedicalRecordInfo(evolution.medicalRecordId)}
+                      <strong>Prontuário:</strong> {getMedicalRecordInfo(evolution.medical_record_id)}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className={getProgressColor(evolution.progressScore)}>
-                      Score: {evolution.progressScore}/10
+                    <Badge variant="outline" className={getProgressColor(evolution.progress_score)}>
+                      Score: {evolution.progress_score}/10
                     </Badge>
-                    {renderProgressDifference(evolution.progressScore, evolution.previousScore)}
+                    {renderProgressDifference(evolution.progress_score, evolution.previous_score)}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleCloseEvolution(evolution.id)}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <XCircle className="h-4 w-4" />
+                    </Button>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm">
@@ -333,10 +308,6 @@ export function PatientEvolution({
                           <Edit className="h-4 w-4 mr-2" />
                           Editar
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDelete(evolution.id)} className="text-red-600">
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Excluir
-                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
@@ -345,11 +316,11 @@ export function PatientEvolution({
                 <div className="space-y-2">
                   <div>
                     <h5 className="text-sm font-medium text-gray-700">Queixas e relatos</h5>
-                    <p className="text-sm text-muted-foreground line-clamp-2">{evolution.queixasRelatos}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-2">{evolution.queixas_relatos}</p>
                   </div>
                   <div>
                     <h5 className="text-sm font-medium text-gray-700">Conduta no atendimento</h5>
-                    <p className="text-sm text-muted-foreground line-clamp-2">{evolution.condutaAtendimento}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-2">{evolution.conduta_atendimento}</p>
                   </div>
                 </div>
               </CardContent>
@@ -368,27 +339,27 @@ export function PatientEvolution({
             <div className="space-y-4">
               <div>
                 <h4 className="font-medium mb-2">
-                  Evolução de {format(new Date(viewingEvolution.date), "dd 'de' MMMM 'de' yyyy", {locale: ptBR})}
+                  Evolução de {format(new Date(viewingEvolution.created_at), "dd 'de' MMMM 'de' yyyy", {locale: ptBR})}
                 </h4>
                 <p className="text-sm text-muted-foreground">
-                  <strong>Prontuário:</strong> {getMedicalRecordInfo(viewingEvolution.medicalRecordId)}
+                  <strong>Prontuário:</strong> {getMedicalRecordInfo(viewingEvolution.medical_record_id)}
                 </p>
                 <div className="flex items-center gap-2 mt-2">
-                  <Badge variant="outline" className={getProgressColor(viewingEvolution.progressScore)}>
-                    Score: {viewingEvolution.progressScore}/10
+                  <Badge variant="outline" className={getProgressColor(viewingEvolution.progress_score)}>
+                    Score: {viewingEvolution.progress_score}/10
                   </Badge>
-                  {renderProgressDifference(viewingEvolution.progressScore, viewingEvolution.previousScore)}
+                  {renderProgressDifference(viewingEvolution.progress_score, viewingEvolution.previous_score)}
                 </div>
               </div>
 
               <div className="space-y-3">
                 <div>
                   <h5 className="text-sm font-medium text-gray-700">Queixas e relatos</h5>
-                  <p className="text-sm text-muted-foreground">{viewingEvolution.queixasRelatos}</p>
+                  <p className="text-sm text-muted-foreground">{viewingEvolution.queixas_relatos}</p>
                 </div>
                 <div>
                   <h5 className="text-sm font-medium text-gray-700">Conduta no atendimento</h5>
-                  <p className="text-sm text-muted-foreground">{viewingEvolution.condutaAtendimento}</p>
+                  <p className="text-sm text-muted-foreground">{viewingEvolution.conduta_atendimento}</p>
                 </div>
                 {viewingEvolution.observacoes && (
                   <div>

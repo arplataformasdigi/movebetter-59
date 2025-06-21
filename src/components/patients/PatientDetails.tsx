@@ -15,52 +15,7 @@ import { PatientMedicalRecord } from "./PatientMedicalRecord";
 import { PatientPreEvaluation } from "./PatientPreEvaluation";
 import { PatientEvolution } from "./PatientEvolution";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-interface MedicalRecord {
-  id: string;
-  date: Date;
-  age: number;
-  gender: string;
-  weight: number;
-  height: number;
-  birthDate: string;
-  profession: string;
-  maritalStatus: string;
-  visitReason: string;
-  currentCondition: string;
-  medicalHistory: string;
-  treatmentPlan: string;
-  evaluation?: string;
-}
-
-interface PreEvaluation {
-  id: string;
-  createdAt: Date;
-  formData: any;
-}
-
-interface Evolution {
-  id: string;
-  date: Date;
-  medicalRecordId: string;
-  queixasRelatos: string;
-  condutaAtendimento: string;
-  observacoes?: string;
-  progressScore: number;
-  previousScore?: number;
-}
-
-interface Patient {
-  id: string;
-  name: string;
-  avatar?: string;
-  email: string;
-  phone: string;
-  status: "active" | "inactive";
-  medicalRecords?: MedicalRecord[];
-  preEvaluations?: PreEvaluation[];
-  evolutions?: Evolution[];
-}
+import { Patient } from "@/hooks/usePatients";
 
 interface PatientDetailsProps {
   patient: Patient;
@@ -90,48 +45,6 @@ export function PatientDetails({ patient, onUpdatePatient }: PatientDetailsProps
     }
   };
 
-  const handleAddMedicalRecord = (patientId: string, record: MedicalRecord) => {
-    const updatedPatient = {
-      ...patient,
-      medicalRecords: [...(patient.medicalRecords || []), record],
-    };
-    onUpdatePatient(updatedPatient);
-  };
-
-  const handleAddPreEvaluation = (patientId: string, evaluation: PreEvaluation) => {
-    const updatedPatient = {
-      ...patient,
-      preEvaluations: [...(patient.preEvaluations || []), evaluation],
-    };
-    onUpdatePatient(updatedPatient);
-  };
-
-  const handleAddEvolution = (patientId: string, evolution: Evolution) => {
-    const updatedPatient = {
-      ...patient,
-      evolutions: [...(patient.evolutions || []), evolution],
-    };
-    onUpdatePatient(updatedPatient);
-  };
-
-  const handleUpdateEvolution = (patientId: string, evolution: Evolution) => {
-    const updatedPatient = {
-      ...patient,
-      evolutions: (patient.evolutions || []).map(e => 
-        e.id === evolution.id ? evolution : e
-      ),
-    };
-    onUpdatePatient(updatedPatient);
-  };
-
-  const handleDeleteEvolution = (patientId: string, evolutionId: string) => {
-    const updatedPatient = {
-      ...patient,
-      evolutions: (patient.evolutions || []).filter(e => e.id !== evolutionId),
-    };
-    onUpdatePatient(updatedPatient);
-  };
-
   const status = getStatusDetails(patient.status);
 
   return (
@@ -152,7 +65,7 @@ export function PatientDetails({ patient, onUpdatePatient }: PatientDetailsProps
         <div className="space-y-6">
           <div className="flex items-center space-x-4">
             <Avatar className="h-20 w-20">
-              <AvatarImage src={patient.avatar} alt={patient.name} />
+              <AvatarImage src={undefined} alt={patient.name} />
               <AvatarFallback className="text-xl bg-movebetter-primary text-white">
                 {patient.name.charAt(0)}
               </AvatarFallback>
@@ -170,11 +83,11 @@ export function PatientDetails({ patient, onUpdatePatient }: PatientDetailsProps
           <div className="grid grid-cols-2 gap-4">
             <div>
               <h4 className="text-sm font-medium text-gray-500">E-mail</h4>
-              <p>{patient.email}</p>
+              <p>{patient.email || "Email não informado"}</p>
             </div>
             <div>
               <h4 className="text-sm font-medium text-gray-500">Telefone</h4>
-              <p>{patient.phone}</p>
+              <p>{patient.phone || "Telefone não informado"}</p>
             </div>
           </div>
 
@@ -185,28 +98,13 @@ export function PatientDetails({ patient, onUpdatePatient }: PatientDetailsProps
               <TabsTrigger value="evolution">Evolução do Paciente</TabsTrigger>
             </TabsList>
             <TabsContent value="pre-evaluation" className="pt-4">
-              <PatientPreEvaluation 
-                patientId={patient.id} 
-                preEvaluations={patient.preEvaluations || []} 
-                onAddPreEvaluation={handleAddPreEvaluation} 
-              />
+              <PatientPreEvaluation patientId={patient.id} />
             </TabsContent>
             <TabsContent value="records" className="pt-4">
-              <PatientMedicalRecord 
-                patientId={patient.id} 
-                medicalRecords={patient.medicalRecords || []} 
-                onAddRecord={handleAddMedicalRecord} 
-              />
+              <PatientMedicalRecord patientId={patient.id} />
             </TabsContent>
             <TabsContent value="evolution" className="pt-4">
-              <PatientEvolution 
-                patientId={patient.id} 
-                evolutions={patient.evolutions || []} 
-                medicalRecords={patient.medicalRecords || []}
-                onAddEvolution={handleAddEvolution}
-                onUpdateEvolution={handleUpdateEvolution}
-                onDeleteEvolution={handleDeleteEvolution}
-              />
+              <PatientEvolution patientId={patient.id} />
             </TabsContent>
           </Tabs>
         </div>

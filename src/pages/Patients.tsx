@@ -26,46 +26,7 @@ import { PatientDetails } from "@/components/patients/PatientDetails";
 import { DeletePatientDialog } from "@/components/patients/DeletePatientDialog";
 import { AssignPackageDialog } from "@/components/patients/AssignPackageDialog";
 import { usePatients, Patient } from "@/hooks/usePatients";
-
-interface MedicalRecord {
-  id: string;
-  date: Date;
-  age: number;
-  gender: string;
-  weight: number;
-  height: number;
-  birthDate: string;
-  profession: string;
-  maritalStatus: string;
-  visitReason: string;
-  currentCondition: string;
-  medicalHistory: string;
-  treatmentPlan: string;
-  evaluation?: string;
-}
-
-interface Evolution {
-  id: string;
-  date: Date;
-  medicalRecordId: string;
-  queixasRelatos: string;
-  condutaAtendimento: string;
-  observacoes?: string;
-  progressScore: number;
-  previousScore?: number;
-}
-
-// Interface for PatientDetails component (compatible with the component's expected type)
-interface PatientDetailsType {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  avatar?: string;
-  status: "active" | "inactive";
-  medicalRecords?: MedicalRecord[];
-  evolutions?: Evolution[];
-}
+import { usePackagesData } from "@/hooks/usePackagesData";
 
 const getStatusDetails = (status: Patient["status"]) => {
   switch (status) {
@@ -79,11 +40,6 @@ const getStatusDetails = (status: Patient["status"]) => {
         label: "Inativo", 
         color: "bg-red-100 text-red-800 border-red-200" 
       };
-    case "completed":
-      return { 
-        label: "Concluído", 
-        color: "bg-blue-100 text-blue-800 border-blue-200" 
-      };
     default:
       return { 
         label: "Desconhecido", 
@@ -92,29 +48,12 @@ const getStatusDetails = (status: Patient["status"]) => {
   }
 };
 
-const mockPackages = [
-  {
-    id: "1",
-    name: "Combo Fisioterapia Mensal",
-    price: 280.00,
-    services: ["4x Sessões", "1x Avaliação"],
-    validity: 1,
-  },
-  {
-    id: "2",
-    name: "Pacote Reabilitação",
-    price: 450.00,
-    services: ["8x Sessões", "2x Avaliações"],
-    validity: 2,
-  },
-];
-
 export function Patients() {
   const { patients, isLoading, updatePatient, deletePatient, fetchPatients } = usePatients();
+  const { packages, isLoading: packagesLoading } = usePackagesData();
   const [searchQuery, setSearchQuery] = useState("");
   const [packageAssignments, setPackageAssignments] = useState<any[]>([]);
 
-  // Debug: Log patients data
   useEffect(() => {
     console.log('Current patients state:', patients);
     console.log('Is loading:', isLoading);
@@ -125,28 +64,24 @@ export function Patients() {
       name: updatedPatient.name,
       email: updatedPatient.email || undefined,
       phone: updatedPatient.phone || undefined,
-      status: updatedPatient.status === "inactive" ? "inactive" as const : "active" as const,
+      status: updatedPatient.status,
     };
     updatePatient(updatedPatient.id, patientData);
+    fetchPatients(); // Refresh list immediately
   };
 
   const handleToggleStatus = async (patientId: string) => {
     const patient = patients.find(p => p.id === patientId);
     if (patient) {
-      let newStatus: Patient["status"];
-      if (patient.status === "active") {
-        newStatus = "inactive";
-      } else if (patient.status === "inactive") {
-        newStatus = "completed";
-      } else {
-        newStatus = "active";
-      }
+      const newStatus: Patient["status"] = patient.status === "active" ? "inactive" : "active";
       await updatePatient(patientId, { status: newStatus });
+      fetchPatients(); // Refresh list immediately
     }
   };
 
   const handleDeletePatient = async (patientId: string) => {
     await deletePatient(patientId);
+    fetchPatients(); // Refresh list immediately
   };
 
   const handleAssignPackage = (assignment: any) => {
@@ -158,11 +93,14 @@ export function Patients() {
     fetchPatients();
   };
 
-  const filteredPatients = patients.filter(patient => 
-    patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (patient.email && patient.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    (patient.phone && patient.phone.includes(searchQuery))
-  );
+  // Filter out inactive patients from search results
+  const filteredPatients = patients
+    .filter(patient => patient.status === "active") // Only show active patients
+    .filter(patient => 
+      patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (patient.email && patient.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (patient.phone && patient.phone.includes(searchQuery))
+    );
 
   const getPatientPackage = (patientId: string) => {
     return packageAssignments.find(assignment => assignment.patientId === patientId);
@@ -201,7 +139,7 @@ export function Patients() {
             <RefreshCw className="mr-2 h-4 w-4" />
             Atualizar
           </Button>
-          <AddPatientDialog />
+          <AddPatientDialog onPatientAdded={fetchPatients} />
         </div>
       </div>
 
@@ -211,7 +149,7 @@ export function Patients() {
             <div>
               <CardTitle>Lista de Pacientes</CardTitle>
               <CardDescription>
-                Gerencie todos os pacientes registrados ({patients.length} pacientes encontrados)
+                Gerencie todos os pacientes registrados ({filteredPatients.length} pacientes ativos)
               </CardDescription>
             </div>
             <div className="flex items-center space-x-2">
@@ -229,7 +167,7 @@ export function Patients() {
             <div className="text-center py-8 text-muted-foreground">
               <Users className="mx-auto h-12 w-12 text-muted-foreground/50" />
               <h3 className="mt-2 text-sm font-medium">
-                {searchQuery ? "Nenhum paciente encontrado" : "Nenhum paciente cadastrado"}
+                {searchQuery ? "Nenhum paciente encontrado" : "Nenhum paciente ativo cadastrado"}
               </h3>
               <p className="mt-1 text-sm">
                 {searchQuery 
@@ -237,11 +175,6 @@ export function Patients() {
                   : "Comece cadastrando seu primeiro paciente."
                 }
               </p>
-              {patients.length > 0 && (
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Total de pacientes no banco: {patients.length}
-                </p>
-              )}
             </div>
           ) : (
             <Table>
@@ -302,8 +235,9 @@ export function Patients() {
                           <AssignPackageDialog
                             patientId={patient.id}
                             patientName={patient.name}
-                            packages={mockPackages}
+                            packages={packages}
                             onAssignPackage={handleAssignPackage}
+                            isLoading={packagesLoading}
                           />
                         )}
                       </TableCell>
@@ -321,22 +255,13 @@ export function Patients() {
                               <Power className="h-4 w-4 text-green-600" />
                             )}
                           </Button>
-                          <EditPatientDialog patient={patient} />
+                          <EditPatientDialog patient={patient} onPatientUpdated={handleUpdatePatient} />
                           <DeletePatientDialog 
                             patientName={patient.name}
                             onConfirm={() => handleDeletePatient(patient.id)}
                           />
                           <PatientDetails 
-                            patient={{
-                              id: patient.id,
-                              name: patient.name,
-                              email: patient.email || "",
-                              phone: patient.phone || "",
-                              avatar: undefined,
-                              status: patient.status === "completed" ? "active" : patient.status,
-                              medicalRecords: [],
-                              evolutions: []
-                            }}
+                            patient={patient}
                             onUpdatePatient={handleUpdatePatient}
                           />
                         </div>

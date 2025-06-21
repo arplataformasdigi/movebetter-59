@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -34,55 +33,34 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { XCircle } from "lucide-react";
+import { usePatientMedicalRecords, MedicalRecord } from "@/hooks/usePatientMedicalRecords";
 
 const formSchema = z.object({
   age: z.coerce.number().min(1, { message: "Idade é obrigatória" }),
   gender: z.string().min(1, { message: "Sexo é obrigatório" }),
   weight: z.coerce.number().min(1, { message: "Peso é obrigatório" }),
   height: z.coerce.number().min(1, { message: "Altura é obrigatória" }),
-  birthDate: z.string().min(1, { message: "Data de nascimento é obrigatória" }),
+  birth_date: z.string().min(1, { message: "Data de nascimento é obrigatória" }),
   profession: z.string().min(2, { message: "Profissão deve ter pelo menos 2 caracteres" }),
-  maritalStatus: z.string().min(1, { message: "Situação é obrigatória" }),
-  visitReason: z.string().min(10, { message: "Razão da visita deve ter pelo menos 10 caracteres" }),
-  currentCondition: z.string().min(10, { message: "Condição atual deve ter pelo menos 10 caracteres" }),
-  medicalHistory: z.string().min(10, { message: "Histórico deve ter pelo menos 10 caracteres" }),
-  treatmentPlan: z.string().min(10, { message: "Plano de tratamento deve ter pelo menos 10 caracteres" }),
+  marital_status: z.string().min(1, { message: "Situação é obrigatória" }),
+  visit_reason: z.string().min(10, { message: "Razão da visita deve ter pelo menos 10 caracteres" }),
+  current_condition: z.string().min(10, { message: "Condição atual deve ter pelo menos 10 caracteres" }),
+  medical_history: z.string().min(10, { message: "Histórico deve ter pelo menos 10 caracteres" }),
+  treatment_plan: z.string().min(10, { message: "Plano de tratamento deve ter pelo menos 10 caracteres" }),
   evaluation: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
-interface MedicalRecord {
-  id: string;
-  date: Date;
-  age: number;
-  gender: string;
-  weight: number;
-  height: number;
-  birthDate: string;
-  profession: string;
-  maritalStatus: string;
-  visitReason: string;
-  currentCondition: string;
-  medicalHistory: string;
-  treatmentPlan: string;
-  evaluation?: string;
-}
-
 interface PatientMedicalRecordProps {
   patientId: string;
-  medicalRecords: MedicalRecord[];
-  onAddRecord: (patientId: string, record: MedicalRecord) => void;
 }
 
-export function PatientMedicalRecord({
-  patientId,
-  medicalRecords = [],
-  onAddRecord,
-}: PatientMedicalRecordProps) {
+export function PatientMedicalRecord({ patientId }: PatientMedicalRecordProps) {
   const [open, setOpen] = React.useState(false);
+  const { medicalRecords, isLoading, addMedicalRecord, closeMedicalRecord } = usePatientMedicalRecords(patientId);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -91,39 +69,48 @@ export function PatientMedicalRecord({
       gender: "",
       weight: 0,
       height: 0,
-      birthDate: "",
+      birth_date: "",
       profession: "",
-      maritalStatus: "",
-      visitReason: "",
-      currentCondition: "",
-      medicalHistory: "",
-      treatmentPlan: "",
+      marital_status: "",
+      visit_reason: "",
+      current_condition: "",
+      medical_history: "",
+      treatment_plan: "",
       evaluation: "",
     },
   });
 
   function onSubmit(values: FormValues) {
-    const newRecord: MedicalRecord = {
-      id: `record-${Date.now()}`,
-      date: new Date(),
+    const recordData = {
+      patient_id: patientId,
       age: values.age,
       gender: values.gender,
       weight: values.weight,
       height: values.height,
-      birthDate: values.birthDate,
+      birth_date: values.birth_date,
       profession: values.profession,
-      maritalStatus: values.maritalStatus,
-      visitReason: values.visitReason,
-      currentCondition: values.currentCondition,
-      medicalHistory: values.medicalHistory,
-      treatmentPlan: values.treatmentPlan,
+      marital_status: values.marital_status,
+      visit_reason: values.visit_reason,
+      current_condition: values.current_condition,
+      medical_history: values.medical_history,
+      treatment_plan: values.treatment_plan,
       evaluation: values.evaluation,
+      is_active: true,
     };
     
-    onAddRecord(patientId, newRecord);
-    toast.success("Prontuário adicionado com sucesso");
+    addMedicalRecord(recordData);
     form.reset();
     setOpen(false);
+  }
+
+  const handleCloseRecord = (recordId: string) => {
+    if (confirm("Tem certeza que deseja encerrar este prontuário?")) {
+      closeMedicalRecord(recordId);
+    }
+  };
+
+  if (isLoading) {
+    return <div>Carregando prontuários...</div>;
   }
 
   return (
@@ -211,7 +198,7 @@ export function PatientMedicalRecord({
 
                 <FormField
                   control={form.control}
-                  name="birthDate"
+                  name="birth_date"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Data de Nascimento</FormLabel>
@@ -239,7 +226,7 @@ export function PatientMedicalRecord({
                   />
                   <FormField
                     control={form.control}
-                    name="maritalStatus"
+                    name="marital_status"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Situação</FormLabel>
@@ -263,7 +250,7 @@ export function PatientMedicalRecord({
 
                 <FormField
                   control={form.control}
-                  name="visitReason"
+                  name="visit_reason"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Motivo da Consulta</FormLabel>
@@ -276,7 +263,7 @@ export function PatientMedicalRecord({
                 />
                 <FormField
                   control={form.control}
-                  name="currentCondition"
+                  name="current_condition"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>História da Moléstia Atual</FormLabel>
@@ -289,7 +276,7 @@ export function PatientMedicalRecord({
                 />
                 <FormField
                   control={form.control}
-                  name="medicalHistory"
+                  name="medical_history"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Histórico Progressivo</FormLabel>
@@ -302,7 +289,7 @@ export function PatientMedicalRecord({
                 />
                 <FormField
                   control={form.control}
-                  name="treatmentPlan"
+                  name="treatment_plan"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Plano de Tratamento</FormLabel>
@@ -349,12 +336,21 @@ export function PatientMedicalRecord({
                 <div className="flex justify-between items-center">
                   <div>
                     <CardTitle className="text-base">
-                      Consulta de {format(new Date(record.date), "dd 'de' MMMM 'de' yyyy", {locale: ptBR})}
+                      Consulta de {format(new Date(record.created_at), "dd 'de' MMMM 'de' yyyy", {locale: ptBR})}
                     </CardTitle>
                     <CardDescription>
-                      {format(new Date(record.date), "HH:mm", {locale: ptBR})}
+                      {format(new Date(record.created_at), "HH:mm", {locale: ptBR})}
                     </CardDescription>
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleCloseRecord(record.id)}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <XCircle className="h-4 w-4" />
+                    Encerrar
+                  </Button>
                 </div>
               </CardHeader>
               <CardContent className="pb-2 space-y-2">
@@ -375,26 +371,26 @@ export function PatientMedicalRecord({
                     <span className="font-medium text-gray-700">Profissão:</span> {record.profession}
                   </div>
                   <div>
-                    <span className="font-medium text-gray-700">Situação:</span> {record.maritalStatus}
+                    <span className="font-medium text-gray-700">Situação:</span> {record.marital_status}
                   </div>
                 </div>
                 
                 <div className="space-y-2">
                   <div>
                     <h4 className="text-sm font-medium text-gray-700">Motivo da Consulta</h4>
-                    <p className="text-sm text-muted-foreground">{record.visitReason}</p>
+                    <p className="text-sm text-muted-foreground">{record.visit_reason}</p>
                   </div>
                   <div>
                     <h4 className="text-sm font-medium text-gray-700">História da Moléstia Atual</h4>
-                    <p className="text-sm text-muted-foreground">{record.currentCondition}</p>
+                    <p className="text-sm text-muted-foreground">{record.current_condition}</p>
                   </div>
                   <div>
                     <h4 className="text-sm font-medium text-gray-700">Histórico Progressivo</h4>
-                    <p className="text-sm text-muted-foreground">{record.medicalHistory}</p>
+                    <p className="text-sm text-muted-foreground">{record.medical_history}</p>
                   </div>
                   <div>
                     <h4 className="text-sm font-medium text-gray-700">Plano de Tratamento</h4>
-                    <p className="text-sm text-muted-foreground">{record.treatmentPlan}</p>
+                    <p className="text-sm text-muted-foreground">{record.treatment_plan}</p>
                   </div>
                   {record.evaluation && (
                     <div>

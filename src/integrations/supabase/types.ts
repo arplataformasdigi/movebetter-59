@@ -422,6 +422,131 @@ export type Database = {
         }
         Relationships: []
       }
+      patient_evolutions: {
+        Row: {
+          conduta_atendimento: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          medical_record_id: string
+          observacoes: string | null
+          patient_id: string
+          previous_score: number | null
+          progress_score: number
+          queixas_relatos: string
+          updated_at: string | null
+        }
+        Insert: {
+          conduta_atendimento: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          medical_record_id: string
+          observacoes?: string | null
+          patient_id: string
+          previous_score?: number | null
+          progress_score: number
+          queixas_relatos: string
+          updated_at?: string | null
+        }
+        Update: {
+          conduta_atendimento?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          medical_record_id?: string
+          observacoes?: string | null
+          patient_id?: string
+          previous_score?: number | null
+          progress_score?: number
+          queixas_relatos?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_evolutions_medical_record_id_fkey"
+            columns: ["medical_record_id"]
+            isOneToOne: false
+            referencedRelation: "patient_medical_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_evolutions_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patient_medical_records: {
+        Row: {
+          age: number
+          birth_date: string
+          created_at: string | null
+          current_condition: string
+          evaluation: string | null
+          gender: string
+          height: number
+          id: string
+          is_active: boolean | null
+          marital_status: string
+          medical_history: string
+          patient_id: string
+          profession: string
+          treatment_plan: string
+          updated_at: string | null
+          visit_reason: string
+          weight: number
+        }
+        Insert: {
+          age: number
+          birth_date: string
+          created_at?: string | null
+          current_condition: string
+          evaluation?: string | null
+          gender: string
+          height: number
+          id?: string
+          is_active?: boolean | null
+          marital_status: string
+          medical_history: string
+          patient_id: string
+          profession: string
+          treatment_plan: string
+          updated_at?: string | null
+          visit_reason: string
+          weight: number
+        }
+        Update: {
+          age?: number
+          birth_date?: string
+          created_at?: string | null
+          current_condition?: string
+          evaluation?: string | null
+          gender?: string
+          height?: number
+          id?: string
+          is_active?: boolean | null
+          marital_status?: string
+          medical_history?: string
+          patient_id?: string
+          profession?: string
+          treatment_plan?: string
+          updated_at?: string | null
+          visit_reason?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_medical_records_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patient_packages: {
         Row: {
           assigned_date: string | null
@@ -466,6 +591,152 @@ export type Database = {
           },
           {
             foreignKeyName: "patient_packages_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patient_pre_evaluations: {
+        Row: {
+          alcool: string
+          alergias: string | null
+          alimentacao: string
+          alivio_dor: string
+          atividade_fisica: string
+          cirurgias: string
+          condicoes_saude: string
+          condicoes_similares: string
+          created_at: string | null
+          descricao_dor: string
+          diagnostico_medico: string
+          dificuldade_dia: string
+          dificuldade_equilibrio: string
+          dispositivo_auxilio: string
+          doencas_familiares: string
+          duvidas_fisioterapia: string | null
+          escala_dor: string
+          exames_recentes: string
+          exercicios_casa: string
+          expectativas_tratamento: string | null
+          fumante: string
+          hobby: string
+          id: string
+          impacto_qualidade_vida: string | null
+          info_adicional: string | null
+          ingestao_agua: string
+          inicio_problema: string
+          interferencia_dor: string
+          irradiacao_dor: string
+          limitacao_movimento: string
+          medicamentos: string | null
+          nivel_estresse: string | null
+          padrao_sono: string
+          patient_id: string
+          piora_dor: string
+          profissao: string
+          queixa_principal: string
+          questoes_emocionais: string | null
+          restricoes: string | null
+          tempo_problema: string
+          tempo_sentado: string
+          tratamento_anterior: string
+          updated_at: string | null
+        }
+        Insert: {
+          alcool: string
+          alergias?: string | null
+          alimentacao: string
+          alivio_dor: string
+          atividade_fisica: string
+          cirurgias: string
+          condicoes_saude: string
+          condicoes_similares: string
+          created_at?: string | null
+          descricao_dor: string
+          diagnostico_medico: string
+          dificuldade_dia: string
+          dificuldade_equilibrio: string
+          dispositivo_auxilio: string
+          doencas_familiares: string
+          duvidas_fisioterapia?: string | null
+          escala_dor: string
+          exames_recentes: string
+          exercicios_casa: string
+          expectativas_tratamento?: string | null
+          fumante: string
+          hobby: string
+          id?: string
+          impacto_qualidade_vida?: string | null
+          info_adicional?: string | null
+          ingestao_agua: string
+          inicio_problema: string
+          interferencia_dor: string
+          irradiacao_dor: string
+          limitacao_movimento: string
+          medicamentos?: string | null
+          nivel_estresse?: string | null
+          padrao_sono: string
+          patient_id: string
+          piora_dor: string
+          profissao: string
+          queixa_principal: string
+          questoes_emocionais?: string | null
+          restricoes?: string | null
+          tempo_problema: string
+          tempo_sentado: string
+          tratamento_anterior: string
+          updated_at?: string | null
+        }
+        Update: {
+          alcool?: string
+          alergias?: string | null
+          alimentacao?: string
+          alivio_dor?: string
+          atividade_fisica?: string
+          cirurgias?: string
+          condicoes_saude?: string
+          condicoes_similares?: string
+          created_at?: string | null
+          descricao_dor?: string
+          diagnostico_medico?: string
+          dificuldade_dia?: string
+          dificuldade_equilibrio?: string
+          dispositivo_auxilio?: string
+          doencas_familiares?: string
+          duvidas_fisioterapia?: string | null
+          escala_dor?: string
+          exames_recentes?: string
+          exercicios_casa?: string
+          expectativas_tratamento?: string | null
+          fumante?: string
+          hobby?: string
+          id?: string
+          impacto_qualidade_vida?: string | null
+          info_adicional?: string | null
+          ingestao_agua?: string
+          inicio_problema?: string
+          interferencia_dor?: string
+          irradiacao_dor?: string
+          limitacao_movimento?: string
+          medicamentos?: string | null
+          nivel_estresse?: string | null
+          padrao_sono?: string
+          patient_id?: string
+          piora_dor?: string
+          profissao?: string
+          queixa_principal?: string
+          questoes_emocionais?: string | null
+          restricoes?: string | null
+          tempo_problema?: string
+          tempo_sentado?: string
+          tratamento_anterior?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_pre_evaluations_patient_id_fkey"
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "patients"
