@@ -22,7 +22,7 @@ export function LoginForm() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
+  const { login, isLoading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -61,14 +61,13 @@ export function LoginForm() {
         });
         setIsLoading(false);
       } else {
-        console.log('Login successful, waiting for auth state...');
+        console.log('Login successful');
         toast({
           title: "Login realizado com sucesso!",
           description: "Bem-vindo ao Fisio Smart Care",
         });
         
-        // Don't navigate immediately, let the auth context handle it
-        // The auth context will redirect when the session is established
+        // The auth context will handle navigation when session is established
       }
     } catch (error) {
       console.error('Unexpected login error:', error);
@@ -131,8 +130,8 @@ export function LoginForm() {
           )}
         />
 
-        <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? "Entrando..." : "Entrar"}
+        <Button type="submit" className="w-full" disabled={isLoading || authLoading}>
+          {isLoading || authLoading ? "Entrando..." : "Entrar"}
         </Button>
       </form>
     </Form>
