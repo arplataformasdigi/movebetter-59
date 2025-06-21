@@ -20,63 +20,63 @@ import { usePatientPreEvaluations } from "@/hooks/usePatientPreEvaluations";
 
 const preEvaluationSchema = z.object({
   // Informações pessoais
-  profissao: z.string().min(3, { message: "Campo obrigatório" }),
-  atividade_fisica: z.string().min(3, { message: "Campo obrigatório" }),
-  hobby: z.string().min(3, { message: "Campo obrigatório" }),
+  profissao: z.string().min(1, { message: "Campo obrigatório" }),
+  atividade_fisica: z.string().min(1, { message: "Campo obrigatório" }),
+  hobby: z.string().min(1, { message: "Campo obrigatório" }),
   
   // Queixa Principal
-  queixa_principal: z.string().min(3, { message: "Campo obrigatório" }),
-  tempo_problema: z.string().min(3, { message: "Campo obrigatório" }),
-  inicio_problema: z.string().min(3, { message: "Campo obrigatório" }),
-  tratamento_anterior: z.string().min(3, { message: "Campo obrigatório" }),
+  queixa_principal: z.string().min(1, { message: "Campo obrigatório" }),
+  tempo_problema: z.string().min(1, { message: "Campo obrigatório" }),
+  inicio_problema: z.string().min(1, { message: "Campo obrigatório" }),
+  tratamento_anterior: z.string().min(1, { message: "Campo obrigatório" }),
   
   // Caracterização da Dor
-  descricao_dor: z.string().min(3, { message: "Campo obrigatório" }),
+  descricao_dor: z.string().min(1, { message: "Campo obrigatório" }),
   escala_dor: z.string().min(1, { message: "Campo obrigatório" }),
-  irradiacao_dor: z.string().min(3, { message: "Campo obrigatório" }),
-  piora_dor: z.string().min(3, { message: "Campo obrigatório" }),
-  alivio_dor: z.string().min(3, { message: "Campo obrigatório" }),
-  interferencia_dor: z.string().min(3, { message: "Campo obrigatório" }),
+  irradiacao_dor: z.string().min(1, { message: "Campo obrigatório" }),
+  piora_dor: z.string().min(1, { message: "Campo obrigatório" }),
+  alivio_dor: z.string().min(1, { message: "Campo obrigatório" }),
+  interferencia_dor: z.string().min(1, { message: "Campo obrigatório" }),
   
   // Histórico Médico
-  diagnostico_medico: z.string().min(3, { message: "Campo obrigatório" }),
-  exames_recentes: z.string().min(3, { message: "Campo obrigatório" }),
-  condicoes_saude: z.string().min(3, { message: "Campo obrigatório" }),
-  cirurgias: z.string().min(3, { message: "Campo obrigatório" }),
-  medicamentos: z.string().optional(),
-  alergias: z.string().optional(),
+  diagnostico_medico: z.string().min(1, { message: "Campo obrigatório" }),
+  exames_recentes: z.string().min(1, { message: "Campo obrigatório" }),
+  condicoes_saude: z.string().min(1, { message: "Campo obrigatório" }),
+  cirurgias: z.string().min(1, { message: "Campo obrigatório" }),
+  medicamentos: z.string().default(""),
+  alergias: z.string().default(""),
   
   // Histórico Familiar
-  doencas_familiares: z.string().min(3, { message: "Campo obrigatório" }),
-  condicoes_similares: z.string().min(3, { message: "Campo obrigatório" }),
+  doencas_familiares: z.string().min(1, { message: "Campo obrigatório" }),
+  condicoes_similares: z.string().min(1, { message: "Campo obrigatório" }),
   
   // Hábitos e Estilo de Vida
-  alimentacao: z.string().min(3, { message: "Campo obrigatório" }),
-  padrao_sono: z.string().min(3, { message: "Campo obrigatório" }),
-  alcool: z.string().min(3, { message: "Campo obrigatório" }),
-  fumante: z.string().min(3, { message: "Campo obrigatório" }),
-  ingestao_agua: z.string().min(3, { message: "Campo obrigatório" }),
-  tempo_sentado: z.string().min(3, { message: "Campo obrigatório" }),
+  alimentacao: z.string().min(1, { message: "Campo obrigatório" }),
+  padrao_sono: z.string().min(1, { message: "Campo obrigatório" }),
+  alcool: z.string().min(1, { message: "Campo obrigatório" }),
+  fumante: z.string().min(1, { message: "Campo obrigatório" }),
+  ingestao_agua: z.string().min(1, { message: "Campo obrigatório" }),
+  tempo_sentado: z.string().min(1, { message: "Campo obrigatório" }),
   
   // Aspectos Psicossociais
-  nivel_estresse: z.string().optional(),
-  questoes_emocionais: z.string().optional(),
-  impacto_qualidade_vida: z.string().optional(),
+  nivel_estresse: z.string().default(""),
+  questoes_emocionais: z.string().default(""),
+  impacto_qualidade_vida: z.string().default(""),
   
   // Objetivos e Expectativas
-  expectativas_tratamento: z.string().optional(),
-  exercicios_casa: z.string().min(3, { message: "Campo obrigatório" }),
-  restricoes: z.string().optional(),
+  expectativas_tratamento: z.string().default(""),
+  exercicios_casa: z.string().min(1, { message: "Campo obrigatório" }),
+  restricoes: z.string().default(""),
   
   // Avaliação Funcional
-  dificuldade_dia: z.string().min(3, { message: "Campo obrigatório" }),
-  dispositivo_auxilio: z.string().min(3, { message: "Campo obrigatório" }),
-  dificuldade_equilibrio: z.string().min(3, { message: "Campo obrigatório" }),
-  limitacao_movimento: z.string().min(3, { message: "Campo obrigatório" }),
+  dificuldade_dia: z.string().min(1, { message: "Campo obrigatório" }),
+  dispositivo_auxilio: z.string().min(1, { message: "Campo obrigatório" }),
+  dificuldade_equilibrio: z.string().min(1, { message: "Campo obrigatório" }),
+  limitacao_movimento: z.string().min(1, { message: "Campo obrigatório" }),
   
   // Informações Adicionais
-  info_adicional: z.string().optional(),
-  duvidas_fisioterapia: z.string().optional(),
+  info_adicional: z.string().default(""),
+  duvidas_fisioterapia: z.string().default(""),
 });
 
 type PreEvaluationFormValues = z.infer<typeof preEvaluationSchema>;
@@ -136,10 +136,51 @@ export function PatientPreEvaluation({ patientId }: PatientPreEvaluationProps) {
   });
 
   async function onSubmit(values: PreEvaluationFormValues) {
-    const result = await addPreEvaluation({
+    // Ensure all required fields have values, provide defaults for optional ones
+    const evaluationData = {
       patient_id: patientId,
-      ...values,
-    });
+      profissao: values.profissao,
+      atividade_fisica: values.atividade_fisica,
+      hobby: values.hobby,
+      queixa_principal: values.queixa_principal,
+      tempo_problema: values.tempo_problema,
+      inicio_problema: values.inicio_problema,
+      tratamento_anterior: values.tratamento_anterior,
+      descricao_dor: values.descricao_dor,
+      escala_dor: values.escala_dor,
+      irradiacao_dor: values.irradiacao_dor,
+      piora_dor: values.piora_dor,
+      alivio_dor: values.alivio_dor,
+      interferencia_dor: values.interferencia_dor,
+      diagnostico_medico: values.diagnostico_medico,
+      exames_recentes: values.exames_recentes,
+      condicoes_saude: values.condicoes_saude,
+      cirurgias: values.cirurgias,
+      medicamentos: values.medicamentos || "",
+      alergias: values.alergias || "",
+      doencas_familiares: values.doencas_familiares,
+      condicoes_similares: values.condicoes_similares,
+      alimentacao: values.alimentacao,
+      padrao_sono: values.padrao_sono,
+      alcool: values.alcool,
+      fumante: values.fumante,
+      ingestao_agua: values.ingestao_agua,
+      tempo_sentado: values.tempo_sentado,
+      nivel_estresse: values.nivel_estresse || "",
+      questoes_emocionais: values.questoes_emocionais || "",
+      impacto_qualidade_vida: values.impacto_qualidade_vida || "",
+      expectativas_tratamento: values.expectativas_tratamento || "",
+      exercicios_casa: values.exercicios_casa,
+      restricoes: values.restricoes || "",
+      dificuldade_dia: values.dificuldade_dia,
+      dispositivo_auxilio: values.dispositivo_auxilio,
+      dificuldade_equilibrio: values.dificuldade_equilibrio,
+      limitacao_movimento: values.limitacao_movimento,
+      info_adicional: values.info_adicional || "",
+      duvidas_fisioterapia: values.duvidas_fisioterapia || "",
+    };
+    
+    const result = await addPreEvaluation(evaluationData);
     
     if (result.success) {
       setShowForm(false);
@@ -170,7 +211,7 @@ export function PatientPreEvaluation({ patientId }: PatientPreEvaluationProps) {
           <h3 className="text-xl font-semibold">
             Ficha de Pré-avaliação
           </h3>
-          <Button variant="outline" onClick={handleBackToList}>
+          <Button variant="outline" onClick={() => setSelectedEvaluation(null)}>
             Voltar à lista
           </Button>
         </div>
@@ -548,7 +589,7 @@ export function PatientPreEvaluation({ patientId }: PatientPreEvaluationProps) {
       ) : (
         <div className="space-y-4">
           {preEvaluations.map((evaluation) => (
-            <Card key={evaluation.id} className="p-4 cursor-pointer hover:bg-gray-50" onClick={() => handleViewEvaluation(evaluation)}>
+            <Card key={evaluation.id} className="p-4 cursor-pointer hover:bg-gray-50" onClick={() => setSelectedEvaluation(evaluation)}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <div className="bg-movebetter-light p-2 rounded-md mr-3">

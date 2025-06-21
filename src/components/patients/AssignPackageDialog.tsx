@@ -32,9 +32,16 @@ interface AssignPackageDialogProps {
   patientName: string;
   packages: Package[];
   onAssignPackage: (assignment: any) => void;
+  isLoading?: boolean;
 }
 
-export function AssignPackageDialog({ patientId, patientName, packages, onAssignPackage }: AssignPackageDialogProps) {
+export function AssignPackageDialog({ 
+  patientId, 
+  patientName, 
+  packages, 
+  onAssignPackage, 
+  isLoading = false 
+}: AssignPackageDialogProps) {
   const [open, setOpen] = useState(false);
   const [packageId, setPackageId] = useState("");
 
@@ -66,6 +73,15 @@ export function AssignPackageDialog({ patientId, patientName, packages, onAssign
     setOpen(false);
     setPackageId("");
   };
+
+  if (isLoading) {
+    return (
+      <Button variant="outline" size="sm" disabled>
+        <Plus className="mr-1 h-3 w-3" />
+        Carregando...
+      </Button>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
