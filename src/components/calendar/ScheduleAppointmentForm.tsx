@@ -47,9 +47,11 @@ export function ScheduleAppointmentForm({ isOpen, onClose, selectedDate, patient
 
   React.useEffect(() => {
     if (selectedDate) {
+      // Adjust for timezone to prevent date shifting
+      const localDate = new Date(selectedDate.getTime() - selectedDate.getTimezoneOffset() * 60000);
       setFormData(prev => ({
         ...prev,
-        date: selectedDate.toISOString().split('T')[0]
+        date: localDate.toISOString().split('T')[0]
       }));
     }
   }, [selectedDate]);

@@ -1,13 +1,16 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Eye, Edit, Trash, RefreshCw, Target, User, Calendar } from "lucide-react";
+import { Plus, Eye, Edit, Trash, Target, User, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { AddTreatmentPlanDialog } from "@/components/plans/AddTreatmentPlanDialog";
 import { EditTreatmentPlanDialog } from "@/components/plans/EditTreatmentPlanDialog";
 import { ViewTreatmentPlanDialog } from "@/components/plans/ViewTreatmentPlanDialog";
+import { AddExercisesToPlanDialog } from "@/components/plans/AddExercisesToPlanDialog";
 import { useTreatmentPlans } from "@/hooks/useTreatmentPlans";
+import { usePlanExercises } from "@/hooks/usePlanExercises";
+import { useExercises } from "@/hooks/useExercises";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,10 +27,12 @@ export default function Trilhas() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isAddExercisesDialogOpen, setIsAddExercisesDialogOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [planToDelete, setPlanToDelete] = useState(null);
 
-  const { treatmentPlans, isLoading, fetchTreatmentPlans, deleteTreatmentPlan } = useTreatmentPlans();
+  const { treatmentPlans, isLoading, deleteTreatmentPlan } = useTreatmentPlans();
+  const { exercises } = useExercises();
 
   console.log('Treatment plans in component:', treatmentPlans);
 
@@ -46,17 +51,17 @@ export default function Trilhas() {
     setIsDeleteDialogOpen(true);
   };
 
+  const handleAddExercises = (plan) => {
+    setSelectedPlan(plan);
+    setIsAddExercisesDialogOpen(true);
+  };
+
   const handleConfirmDelete = async () => {
     if (planToDelete) {
       await deleteTreatmentPlan(planToDelete.id);
       setIsDeleteDialogOpen(false);
       setPlanToDelete(null);
     }
-  };
-
-  const handleRefresh = () => {
-    console.log('Refreshing treatment plans...');
-    fetchTreatmentPlans();
   };
 
   if (isLoading) {
@@ -79,10 +84,6 @@ export default function Trilhas() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleRefresh}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Atualizar
-          </Button>
           <Button onClick={() => setIsAddDialogOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
             Nova Trilha
@@ -146,31 +147,43 @@ export default function Trilhas() {
                     </div>
                   </div>
 
-                  <div className="flex justify-between pt-2">
+                  <div className="flex justify-between pt-2 gap-1">
                     <div className="flex gap-1">
                       <Button 
                         variant="outline" 
                         size="sm" 
                         onClick={() => handleView(plan)}
+                        className="text-xs px-2"
                       >
-                        <Eye className="h-4 w-4 mr-1" /> Ver
+                        <Eye className="h-3 w-3 mr-1" /> Ver
                       </Button>
                       <Button 
                         variant="outline" 
                         size="sm" 
                         onClick={() => handleEdit(plan)}
+                        className="text-xs px-2"
                       >
-                        <Edit className="h-4 w-4 mr-1" /> Editar
+                        <Edit className="h-3 w-3 mr-1" /> Editar
                       </Button>
                     </div>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="text-red-600 border-red-200 hover:bg-red-50"
-                      onClick={() => handleDeleteClick(plan)}
-                    >
-                      <Trash className="h-4 w-4" />
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => handleAddExercises(plan)}
+                        className="text-xs px-2"
+                      >
+                        <Plus className="h-3 w-3 mr-1" /> Exercícios
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="text-red-600 border-red-200 hover:bg-red-50 text-xs px-2"
+                        onClick={() => handleDeleteClick(plan)}
+                      >
+                        <Trash className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -194,6 +207,13 @@ export default function Trilhas() {
         plan={selectedPlan}
         open={isViewDialogOpen}
         onOpenChange={setIsViewDialogOpen}
+      />
+
+      <AddExercisesToPlanDialog
+        plan={selectedPlan}
+        exercises={exercises}
+        open={isAddExercisesDialogOpen}
+        onOpenChange={setIsAddExercisesDialogOpen}
       />
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

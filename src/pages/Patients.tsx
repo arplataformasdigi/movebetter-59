@@ -19,7 +19,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Users, Power, PowerOff, RefreshCw } from "lucide-react";
+import { Users, Power, PowerOff } from "lucide-react";
 import { AddPatientDialog } from "@/components/patients/AddPatientDialog";
 import { EditPatientDialog } from "@/components/patients/EditPatientDialog";
 import { PatientDetails } from "@/components/patients/PatientDetails";
@@ -67,7 +67,6 @@ export function Patients() {
       status: updatedPatient.status,
     };
     updatePatient(updatedPatient.id, patientData);
-    fetchPatients(); // Refresh list immediately
   };
 
   const handleToggleStatus = async (patientId: string) => {
@@ -75,27 +74,19 @@ export function Patients() {
     if (patient) {
       const newStatus: Patient["status"] = patient.status === "active" ? "inactive" : "active";
       await updatePatient(patientId, { status: newStatus });
-      fetchPatients(); // Refresh list immediately
     }
   };
 
   const handleDeletePatient = async (patientId: string) => {
     await deletePatient(patientId);
-    fetchPatients(); // Refresh list immediately
   };
 
   const handleAssignPackage = (assignment: any) => {
     setPackageAssignments([...packageAssignments, assignment]);
   };
 
-  const handleRefresh = () => {
-    console.log('Refreshing patients list...');
-    fetchPatients();
-  };
-
-  // Filter out inactive patients from search results
+  // Show all patients regardless of status
   const filteredPatients = patients
-    .filter(patient => patient.status === "active") // Only show active patients
     .filter(patient => 
       patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (patient.email && patient.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
@@ -131,14 +122,6 @@ export function Patients() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={handleRefresh}
-            disabled={isLoading}
-          >
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Atualizar
-          </Button>
           <AddPatientDialog />
         </div>
       </div>
@@ -149,7 +132,7 @@ export function Patients() {
             <div>
               <CardTitle>Lista de Pacientes</CardTitle>
               <CardDescription>
-                Gerencie todos os pacientes registrados ({filteredPatients.length} pacientes ativos)
+                Gerencie todos os pacientes registrados ({filteredPatients.length} pacientes encontrados)
               </CardDescription>
             </div>
             <div className="flex items-center space-x-2">
@@ -167,7 +150,7 @@ export function Patients() {
             <div className="text-center py-8 text-muted-foreground">
               <Users className="mx-auto h-12 w-12 text-muted-foreground/50" />
               <h3 className="mt-2 text-sm font-medium">
-                {searchQuery ? "Nenhum paciente encontrado" : "Nenhum paciente ativo cadastrado"}
+                {searchQuery ? "Nenhum paciente encontrado" : "Nenhum paciente cadastrado"}
               </h3>
               <p className="mt-1 text-sm">
                 {searchQuery 
@@ -237,7 +220,6 @@ export function Patients() {
                             patientName={patient.name}
                             packages={packages}
                             onAssignPackage={handleAssignPackage}
-                            isLoading={packagesLoading}
                           />
                         )}
                       </TableCell>
@@ -248,6 +230,7 @@ export function Patients() {
                             size="sm"
                             onClick={() => handleToggleStatus(patient.id)}
                             className="h-8 w-8 p-0"
+                            title={patient.status === "active" ? "Desativar paciente" : "Ativar paciente"}
                           >
                             {patient.status === "active" ? (
                               <PowerOff className="h-4 w-4 text-red-600" />
@@ -255,7 +238,10 @@ export function Patients() {
                               <Power className="h-4 w-4 text-green-600" />
                             )}
                           </Button>
-                          <EditPatientDialog patient={patient} />
+                          <EditPatientDialog 
+                            patient={patient} 
+                            onPatientUpdated={handleUpdatePatient}
+                          />
                           <DeletePatientDialog 
                             patientName={patient.name}
                             onConfirm={() => handleDeletePatient(patient.id)}

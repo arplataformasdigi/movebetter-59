@@ -59,16 +59,16 @@ export function LoginForm() {
           description: errorMessage,
           variant: "destructive",
         });
+        setIsLoading(false);
       } else {
-        console.log('Login successful, redirecting...');
+        console.log('Login successful, waiting for auth state...');
         toast({
           title: "Login realizado com sucesso!",
           description: "Bem-vindo ao Fisio Smart Care",
         });
         
-        // Redirecionar para dashboard após login bem-sucedido
-        const from = location.state?.from || "/";
-        navigate(from, { replace: true });
+        // Don't navigate immediately, let the auth context handle it
+        // The auth context will redirect when the session is established
       }
     } catch (error) {
       console.error('Unexpected login error:', error);
@@ -77,7 +77,6 @@ export function LoginForm() {
         description: "Ocorreu um erro inesperado. Tente novamente.",
         variant: "destructive",
       });
-    } finally {
       setIsLoading(false);
     }
   };

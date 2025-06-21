@@ -14,7 +14,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { toast } from "sonner";
 import { FileText } from "lucide-react";
 import { usePatientPreEvaluations } from "@/hooks/usePatientPreEvaluations";
 
@@ -136,46 +135,45 @@ export function PatientPreEvaluation({ patientId }: PatientPreEvaluationProps) {
   });
 
   async function onSubmit(values: PreEvaluationFormValues) {
-    // Ensure all required fields have values, provide defaults for optional ones
     const evaluationData = {
       patient_id: patientId,
-      profissao: values.profissao,
-      atividade_fisica: values.atividade_fisica,
-      hobby: values.hobby,
-      queixa_principal: values.queixa_principal,
-      tempo_problema: values.tempo_problema,
-      inicio_problema: values.inicio_problema,
-      tratamento_anterior: values.tratamento_anterior,
-      descricao_dor: values.descricao_dor,
-      escala_dor: values.escala_dor,
-      irradiacao_dor: values.irradiacao_dor,
-      piora_dor: values.piora_dor,
-      alivio_dor: values.alivio_dor,
-      interferencia_dor: values.interferencia_dor,
-      diagnostico_medico: values.diagnostico_medico,
-      exames_recentes: values.exames_recentes,
-      condicoes_saude: values.condicoes_saude,
-      cirurgias: values.cirurgias,
+      profissao: values.profissao || "",
+      atividade_fisica: values.atividade_fisica || "",
+      hobby: values.hobby || "",
+      queixa_principal: values.queixa_principal || "",
+      tempo_problema: values.tempo_problema || "",
+      inicio_problema: values.inicio_problema || "",
+      tratamento_anterior: values.tratamento_anterior || "",
+      descricao_dor: values.descricao_dor || "",
+      escala_dor: values.escala_dor || "",
+      irradiacao_dor: values.irradiacao_dor || "",
+      piora_dor: values.piora_dor || "",
+      alivio_dor: values.alivio_dor || "",
+      interferencia_dor: values.interferencia_dor || "",
+      diagnostico_medico: values.diagnostico_medico || "",
+      exames_recentes: values.exames_recentes || "",
+      condicoes_saude: values.condicoes_saude || "",
+      cirurgias: values.cirurgias || "",
       medicamentos: values.medicamentos || "",
       alergias: values.alergias || "",
-      doencas_familiares: values.doencas_familiares,
-      condicoes_similares: values.condicoes_similares,
-      alimentacao: values.alimentacao,
-      padrao_sono: values.padrao_sono,
-      alcool: values.alcool,
-      fumante: values.fumante,
-      ingestao_agua: values.ingestao_agua,
-      tempo_sentado: values.tempo_sentado,
+      doencas_familiares: values.doencas_familiares || "",
+      condicoes_similares: values.condicoes_similares || "",
+      alimentacao: values.alimentacao || "",
+      padrao_sono: values.padrao_sono || "",
+      alcool: values.alcool || "",
+      fumante: values.fumante || "",
+      ingestao_agua: values.ingestao_agua || "",
+      tempo_sentado: values.tempo_sentado || "",
       nivel_estresse: values.nivel_estresse || "",
       questoes_emocionais: values.questoes_emocionais || "",
       impacto_qualidade_vida: values.impacto_qualidade_vida || "",
       expectativas_tratamento: values.expectativas_tratamento || "",
-      exercicios_casa: values.exercicios_casa,
+      exercicios_casa: values.exercicios_casa || "",
       restricoes: values.restricoes || "",
-      dificuldade_dia: values.dificuldade_dia,
-      dispositivo_auxilio: values.dispositivo_auxilio,
-      dificuldade_equilibrio: values.dificuldade_equilibrio,
-      limitacao_movimento: values.limitacao_movimento,
+      dificuldade_dia: values.dificuldade_dia || "",
+      dispositivo_auxilio: values.dispositivo_auxilio || "",
+      dificuldade_equilibrio: values.dificuldade_equilibrio || "",
+      limitacao_movimento: values.limitacao_movimento || "",
       info_adicional: values.info_adicional || "",
       duvidas_fisioterapia: values.duvidas_fisioterapia || "",
     };
@@ -186,14 +184,6 @@ export function PatientPreEvaluation({ patientId }: PatientPreEvaluationProps) {
       setShowForm(false);
       form.reset();
     }
-  }
-
-  function handleViewEvaluation(evaluation: any) {
-    setSelectedEvaluation(evaluation);
-  }
-
-  function handleBackToList() {
-    setSelectedEvaluation(null);
   }
 
   if (isLoading) {
@@ -218,6 +208,7 @@ export function PatientPreEvaluation({ patientId }: PatientPreEvaluationProps) {
 
         <Card className="p-4">
           <CardContent className="p-4 space-y-6">
+            {/* All sections display */}
             <div className="space-y-4">
               <h4 className="font-medium text-lg border-b pb-2">Informações pessoais</h4>
               <div className="grid grid-cols-1 gap-4">
@@ -255,15 +246,37 @@ export function PatientPreEvaluation({ patientId }: PatientPreEvaluationProps) {
             </div>
 
             <div className="space-y-4">
-              <h4 className="font-medium text-lg border-b pb-2">Caracterização da Dor</h4>
+              <h4 className="font-medium text-lg border-b pb-2">Histórico Familiar</h4>
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-700">Descrição da Dor</p>
-                  <p className="text-sm mt-1">{selectedEvaluation.descricao_dor}</p>
+                  <p className="text-sm font-medium text-gray-700">Doenças Familiares</p>
+                  <p className="text-sm mt-1">{selectedEvaluation.doencas_familiares}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-700">Escala da Dor (0-10)</p>
-                  <p className="text-sm mt-1">{selectedEvaluation.escala_dor}</p>
+                  <p className="text-sm font-medium text-gray-700">Condições Similares</p>
+                  <p className="text-sm mt-1">{selectedEvaluation.condicoes_similares}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="font-medium text-lg border-b pb-2">Hábitos e Estilo de Vida</h4>
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-700">Alimentação</p>
+                  <p className="text-sm mt-1">{selectedEvaluation.alimentacao}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-700">Padrão de Sono</p>
+                  <p className="text-sm mt-1">{selectedEvaluation.padrao_sono}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-700">Consumo de Álcool</p>
+                  <p className="text-sm mt-1">{selectedEvaluation.alcool}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-700">Fumante</p>
+                  <p className="text-sm mt-1">{selectedEvaluation.fumante}</p>
                 </div>
               </div>
             </div>
@@ -560,7 +573,307 @@ export function PatientPreEvaluation({ patientId }: PatientPreEvaluationProps) {
               </div>
             </Card>
 
-            {/* Continue with all other sections... */}
+            {/* Histórico Familiar */}
+            <Card className="p-4">
+              <h4 className="text-lg font-medium mb-4">Histórico Familiar</h4>
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="doencas_familiares"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Há casos de doenças reumáticas, osteoarticulares ou musculoesqueléticas na família?</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Descreva o histórico familiar de doenças" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="condicoes_similares"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Algum familiar possui condições similares ao seu problema atual?</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Descreva condições similares na família" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </Card>
+
+            {/* Hábitos e Estilo de Vida */}
+            <Card className="p-4">
+              <h4 className="text-lg font-medium mb-4">Hábitos e Estilo de Vida</h4>
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="alimentacao"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Como descreveria sua alimentação diária?</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Descreva seus hábitos alimentares" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="padrao_sono"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Como é seu padrão de sono? Quantas horas dorme por noite?</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Descreva seu padrão de sono" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="alcool"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Consome álcool? Com que frequência?</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Descreva o consumo de álcool" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="fumante"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>É fumante ou já foi? Por quanto tempo?</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Descreva seu histórico com tabagismo" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="ingestao_agua"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Como é sua ingestão diária de água?</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Descreva sua hidratação diária" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="tempo_sentado"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Passa muito tempo sentado(a) ou em alguma posição específica durante o dia?</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Descreva suas posturas durante o dia" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </Card>
+
+            {/* Aspectos Psicossociais */}
+            <Card className="p-4">
+              <h4 className="text-lg font-medium mb-4">Aspectos Psicossociais</h4>
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="nivel_estresse"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Como você avalia seu nível de estresse no dia a dia?</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Descreva seu nível de estresse" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="questoes_emocionais"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Sente que questões emocionais influenciam seu problema físico atual?</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Descreva a influência emocional" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="impacto_qualidade_vida"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Qual o impacto desta condição na sua qualidade de vida e bem-estar?</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Descreva o impacto na qualidade de vida" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </Card>
+
+            {/* Objetivos e Expectativas */}
+            <Card className="p-4">
+              <h4 className="text-lg font-medium mb-4">Objetivos e Expectativas</h4>
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="expectativas_tratamento"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Quais são suas expectativas em relação ao tratamento fisioterapêutico?</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Descreva suas expectativas" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="exercicios_casa"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tem disponibilidade para realizar exercícios em casa, se recomendado?</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Descreva sua disponibilidade para exercícios" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="restricoes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Existem restrições de tempo ou financeiras que possam interferir no tratamento?</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Descreva possíveis restrições" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </Card>
+
+            {/* Avaliação Funcional */}
+            <Card className="p-4">
+              <h4 className="text-lg font-medium mb-4">Avaliação Funcional</h4>
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="dificuldade_dia"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Há alguma atividade do dia a dia que está com dificuldade de realizar devido ao seu problema?</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Descreva dificuldades nas atividades diárias" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="dispositivo_auxilio"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Usa algum dispositivo de auxílio para locomoção ou atividades diárias?</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Descreva dispositivos de auxílio utilizados" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="dificuldade_equilibrio"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Sente dificuldades com equilíbrio ou coordenação?</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Descreva dificuldades de equilíbrio" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="limitacao_movimento"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Percebe alguma limitação de movimento ou rigidez em alguma articulação?</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Descreva limitações de movimento" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </Card>
+
+            {/* Informações Adicionais */}
+            <Card className="p-4">
+              <h4 className="text-lg font-medium mb-4">Informações Adicionais</h4>
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="info_adicional"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Existe alguma informação adicional sobre sua saúde ou condição que considere importante mencionar?</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Informações adicionais importantes" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="duvidas_fisioterapia"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tem alguma dúvida sobre o processo de fisioterapia que gostaria de esclarecer?</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Dúvidas sobre fisioterapia" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </Card>
             
             <div className="flex justify-end">
               <Button type="submit" disabled={form.formState.isSubmitting}>
