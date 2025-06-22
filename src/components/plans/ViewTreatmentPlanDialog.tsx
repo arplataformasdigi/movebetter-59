@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +13,30 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { TreatmentPlan } from "@/hooks/useTreatmentPlans";
 import { usePlanExercises } from "@/hooks/usePlanExercises";
-import { Eye, User, Calendar, Target, Clock, Dumbbell } from "lucide-react";
+import { EditPlanExerciseDialog } from "./EditPlanExerciseDialog";
+import { 
+  Eye, 
+  User, 
+  Calendar, 
+  Target, 
+  Clock, 
+  Dumbbell, 
+  CheckCircle, 
+  Circle, 
+  Edit, 
+  Trash, 
+  Plus 
+} from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface ViewTreatmentPlanDialogProps {
   plan: TreatmentPlan | null;
@@ -23,16 +46,61 @@ interface ViewTreatmentPlanDialogProps {
 
 export function ViewTreatmentPlanDialog({ plan, open, onOpenChange }: ViewTreatmentPlanDialogProps) {
   const [internalOpen, setInternalOpen] = React.useState(false);
-  const { planExercises, isLoading } = usePlanExercises(plan?.id);
+  const [editExerciseOpen, setEditExerciseOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedExercise, setSelectedExercise] = useState(null);
+  const [exerciseToDelete, setExerciseToDelete] = useState(null);
+  
+  const { 
+    planExercises, 
+    isLoading, 
+    toggleExerciseCompletion, 
+    updatePlanExercise, 
+    removePlanExercise 
+  } = usePlanExercises(plan?.id);
   
   const isControlled = open !== undefined && onOpenChange !== undefined;
   const isOpen = isControlled ? open : internalOpen;
   const setIsOpen = isControlled ? onOpenChange : setInternalOpen;
 
+  const handleEditExercise = (exercise) => {
+    setSelectedExercise(exercise);
+    setEditExerciseOpen(true);
+  };
+
+  const handleDeleteExercise = (exercise) => {
+    setExerciseToDelete(exercise);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteExercise = async () => {
+    if (exerciseToDelete) {
+      await removePlanExercise(exerciseToDelete.id);
+      setDeleteDialogOpen(false);
+      setExerciseToDelete(null);
+    }
+  };
+
+  const handleToggleCompletion = async (exerciseId: string, isCompleted: boolean) => {
+    await toggleExerciseCompletion(exerciseId, !isCompleted);
+  };
+
+  // Agrupar exercícios por dia
+  const exercisesByDay = planExercises.reduce((acc, exercise) => {
+    const day = exercise.day_number;
+    if (!acc[day]) {
+      acc[day] = [];
+    }
+    acc[day].push(exercise);
+    return acc;
+  }, {} as Record<number, typeof planExercises>);
+
+  const sortedDays = Object.keys(exercisesByDay).sort((a, b) => parseInt(a) - parseInt(b));
+
   if (!plan) return null;
 
   const DialogComponent = (
-    <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
+    <DialogContent className="sm:max-w-[900px] max-h-[80vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle className="flex items-center gap-2">
           <Target className="h-5 w-5" />
@@ -107,10 +175,12 @@ export function ViewTreatmentPlanDialog({ plan, open, onOpenChange }: ViewTreatm
 
         {/* Exercises */}
         <div>
-          <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
-            <Dumbbell className="h-4 w-4" />
-            Exercícios do Plano
-          </h4>
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm font-medium flex items-center gap-2">
+              <Dumbbell className="h-4 w-4" />
+              Exercícios do Plano ({planExercises.length})
+            </h4>
+          </div>
           
           {isLoading ? (
             <div className="text-sm text-muted-foreground">Carregando exercícios...</div>
@@ -124,70 +194,151 @@ export function ViewTreatmentPlanDialog({ plan, open, onOpenChange }: ViewTreatm
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-3">
-              {planExercises.map((planEx) => (
-                <Card key={planEx.id} className="border-l-4 border-l-blue-500">
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm">
-                        Dia {planEx.day_number} - {planEx.exercises?.name}
-                      </CardTitle>
-                      <Badge variant={planEx.is_completed ? "default" : "secondary"}>
-                        {planEx.is_completed ? "Concluído" : "Pendente"}
-                      </Badge>
-                    </div>
-                    {planEx.exercises?.description && (
-                      <CardDescription className="text-xs">
-                        {planEx.exercises.description}
-                      </CardDescription>
-                    )}
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-                      {planEx.repetitions && (
-                        <div className="flex items-center gap-1">
-                          <span className="font-medium">Repetições:</span>
-                          <span>{planEx.repetitions}</span>
-                        </div>
-                      )}
-                      {planEx.sets && (
-                        <div className="flex items-center gap-1">
-                          <span className="font-medium">Séries:</span>
-                          <span>{planEx.sets}</span>
-                        </div>
-                      )}
-                      {planEx.duration_minutes && (
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          <span>{planEx.duration_minutes}min</span>
-                        </div>
-                      )}
-                      {planEx.completed_at && (
-                        <div className="flex items-center gap-1">
-                          <span className="font-medium">Concluído:</span>
-                          <span>{new Date(planEx.completed_at).toLocaleDateString('pt-BR')}</span>
-                        </div>
-                      )}
-                    </div>
-                    {planEx.notes && (
-                      <div className="mt-2 p-2 bg-gray-50 rounded text-xs">
-                        <span className="font-medium">Observações: </span>
-                        {planEx.notes}
+            <div className="space-y-4">
+              {sortedDays.map((dayStr) => {
+                const day = parseInt(dayStr);
+                const dayExercises = exercisesByDay[day];
+                const completedCount = dayExercises.filter(ex => ex.is_completed).length;
+                
+                return (
+                  <Card key={day} className="border-l-4 border-l-blue-500">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-base">
+                          Dia {day}
+                        </CardTitle>
+                        <Badge variant="outline">
+                          {completedCount}/{dayExercises.length} concluídos
+                        </Badge>
                       </div>
-                    )}
-                    {planEx.exercises?.instructions && (
-                      <div className="mt-2 p-2 bg-blue-50 rounded text-xs">
-                        <span className="font-medium">Instruções: </span>
-                        {planEx.exercises.instructions}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {dayExercises.map((planEx) => (
+                        <div key={planEx.id} className="p-3 bg-gray-50 rounded-lg">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 w-6 p-0"
+                                onClick={() => handleToggleCompletion(planEx.id, planEx.is_completed)}
+                              >
+                                {planEx.is_completed ? (
+                                  <CheckCircle className="h-4 w-4 text-green-600" />
+                                ) : (
+                                  <Circle className="h-4 w-4 text-gray-400" />
+                                )}
+                              </Button>
+                              <span className={`font-medium ${planEx.is_completed ? 'line-through text-gray-500' : ''}`}>
+                                {planEx.exercises?.name}
+                              </span>
+                              <Badge variant={planEx.is_completed ? "default" : "secondary"} className="ml-2">
+                                {planEx.is_completed ? "Concluído" : "Pendente"}
+                              </Badge>
+                            </div>
+                            <div className="flex gap-1">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleEditExercise(planEx)}
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-red-600 border-red-200 hover:bg-red-50"
+                                onClick={() => handleDeleteExercise(planEx)}
+                              >
+                                <Trash className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          {planEx.exercises?.description && (
+                            <p className="text-xs text-muted-foreground mb-2">
+                              {planEx.exercises.description}
+                            </p>
+                          )}
+                          
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                            {planEx.repetitions && (
+                              <div className="flex items-center gap-1">
+                                <span className="font-medium">Repetições:</span>
+                                <span>{planEx.repetitions}</span>
+                              </div>
+                            )}
+                            {planEx.sets && (
+                              <div className="flex items-center gap-1">
+                                <span className="font-medium">Séries:</span>
+                                <span>{planEx.sets}</span>
+                              </div>
+                            )}
+                            {planEx.duration_minutes && (
+                              <div className="flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                <span>{planEx.duration_minutes}min</span>
+                              </div>
+                            )}
+                            {planEx.completed_at && (
+                              <div className="flex items-center gap-1">
+                                <span className="font-medium">Concluído:</span>
+                                <span>{new Date(planEx.completed_at).toLocaleDateString('pt-BR')}</span>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {planEx.notes && (
+                            <div className="mt-2 p-2 bg-white rounded text-xs">
+                              <span className="font-medium">Observações: </span>
+                              {planEx.notes}
+                            </div>
+                          )}
+                          
+                          {planEx.exercises?.instructions && (
+                            <div className="mt-2 p-2 bg-blue-50 rounded text-xs">
+                              <span className="font-medium">Instruções: </span>
+                              {planEx.exercises.instructions}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </div>
       </div>
+
+      <EditPlanExerciseDialog
+        planExercise={selectedExercise}
+        open={editExerciseOpen}
+        onOpenChange={setEditExerciseOpen}
+        onUpdate={updatePlanExercise}
+      />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o exercício "{exerciseToDelete?.exercises?.name}" da trilha? 
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDeleteExercise}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DialogContent>
   );
 

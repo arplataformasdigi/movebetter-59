@@ -95,10 +95,112 @@ export function usePlanExercises(planId?: string) {
     }
   };
 
+  const removePlanExercise = async (exerciseId: string) => {
+    try {
+      console.log('Removing plan exercise:', exerciseId);
+      
+      const { error } = await supabase
+        .from('plan_exercises')
+        .delete()
+        .eq('id', exerciseId);
+
+      if (error) {
+        console.error('Error removing plan exercise:', error);
+        toast.error("Erro ao remover exercício: " + error.message);
+        return { success: false, error };
+      }
+
+      console.log('Plan exercise removed successfully');
+      setPlanExercises(prev => prev.filter(ex => ex.id !== exerciseId));
+      toast.success("Exercício removido com sucesso");
+      return { success: true };
+    } catch (error) {
+      console.error('Error in removePlanExercise:', error);
+      toast.error("Erro inesperado ao remover exercício");
+      return { success: false, error };
+    }
+  };
+
+  const toggleExerciseCompletion = async (exerciseId: string, isCompleted: boolean) => {
+    try {
+      console.log('Toggling exercise completion:', exerciseId, isCompleted);
+      
+      const updateData = {
+        is_completed: isCompleted,
+        completed_at: isCompleted ? new Date().toISOString() : null,
+      };
+
+      const { data, error } = await supabase
+        .from('plan_exercises')
+        .update(updateData)
+        .eq('id', exerciseId)
+        .select(`
+          *,
+          exercises (name, description, instructions)
+        `)
+        .single();
+
+      if (error) {
+        console.error('Error updating exercise completion:', error);
+        toast.error("Erro ao atualizar exercício: " + error.message);
+        return { success: false, error };
+      }
+
+      console.log('Exercise completion updated successfully');
+      setPlanExercises(prev => prev.map(ex => 
+        ex.id === exerciseId ? data : ex
+      ));
+      
+      toast.success(isCompleted ? "Exercício marcado como concluído" : "Exercício marcado como pendente");
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error in toggleExerciseCompletion:', error);
+      toast.error("Erro inesperado ao atualizar exercício");
+      return { success: false, error };
+    }
+  };
+
+  const updatePlanExercise = async (exerciseId: string, updates: Partial<PlanExercise>) => {
+    try {
+      console.log('Updating plan exercise:', exerciseId, updates);
+      
+      const { data, error } = await supabase
+        .from('plan_exercises')
+        .update(updates)
+        .eq('id', exerciseId)
+        .select(`
+          *,
+          exercises (name, description, instructions)
+        `)
+        .single();
+
+      if (error) {
+        console.error('Error updating plan exercise:', error);
+        toast.error("Erro ao atualizar exercício: " + error.message);
+        return { success: false, error };
+      }
+
+      console.log('Plan exercise updated successfully');
+      setPlanExercises(prev => prev.map(ex => 
+        ex.id === exerciseId ? data : ex
+      ));
+      
+      toast.success("Exercício atualizado com sucesso");
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error in updatePlanExercise:', error);
+      toast.error("Erro inesperado ao atualizar exercício");
+      return { success: false, error };
+    }
+  };
+
   return {
     planExercises,
     isLoading,
     fetchPlanExercises,
     addPlanExercise,
+    removePlanExercise,
+    toggleExerciseCompletion,
+    updatePlanExercise,
   };
 }
