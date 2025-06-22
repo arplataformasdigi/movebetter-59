@@ -29,6 +29,7 @@ interface Transaction {
   amount: number;
   transaction_date: string;
   category_id: string;
+  notes?: string;
   financial_categories?: {
     name: string;
     color?: string;
@@ -55,15 +56,17 @@ export function TransactionFormDialog({ isOpen, onClose, transaction }: Transact
 
   useEffect(() => {
     if (transaction) {
+      console.log('Editing transaction:', transaction);
       setFormData({
         type: transaction.type,
         description: transaction.description,
         amount: transaction.amount.toString(),
         transaction_date: transaction.transaction_date,
         category_id: transaction.category_id,
-        notes: "",
+        notes: transaction.notes || "",
       });
     } else {
+      console.log('Creating new transaction');
       setFormData({
         type: "expense",
         description: "",
@@ -77,6 +80,8 @@ export function TransactionFormDialog({ isOpen, onClose, transaction }: Transact
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log('Submitting form data:', formData);
     
     if (!formData.description.trim() || !formData.amount || !formData.category_id) {
       toast.error("Preencha todos os campos obrigatórios");
@@ -101,6 +106,8 @@ export function TransactionFormDialog({ isOpen, onClose, transaction }: Transact
       notes: formData.notes.trim() || null,
     };
 
+    console.log('Transaction data to save:', transactionData);
+
     try {
       let result;
       if (transaction) {
@@ -114,8 +121,8 @@ export function TransactionFormDialog({ isOpen, onClose, transaction }: Transact
         onClose();
       }
     } catch (error) {
-      toast.error("Erro ao salvar transação");
       console.error("Error saving transaction:", error);
+      toast.error("Erro ao salvar transação");
     } finally {
       setIsSubmitting(false);
     }
@@ -124,6 +131,9 @@ export function TransactionFormDialog({ isOpen, onClose, transaction }: Transact
   const filteredCategories = categories.filter(cat => 
     cat.type === formData.type && cat.is_active
   );
+
+  console.log('Available categories:', filteredCategories);
+  console.log('Selected category_id:', formData.category_id);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -141,6 +151,7 @@ export function TransactionFormDialog({ isOpen, onClose, transaction }: Transact
               <Select 
                 value={formData.type} 
                 onValueChange={(value) => {
+                  console.log('Type changed to:', value);
                   setFormData(prev => ({ 
                     ...prev, 
                     type: value as "income" | "expense",
@@ -162,7 +173,10 @@ export function TransactionFormDialog({ isOpen, onClose, transaction }: Transact
               <Label htmlFor="category">Categoria *</Label>
               <Select
                 value={formData.category_id}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, category_id: value }))}
+                onValueChange={(value) => {
+                  console.log('Category changed to:', value);
+                  setFormData(prev => ({ ...prev, category_id: value }));
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione uma categoria" />
@@ -182,7 +196,7 @@ export function TransactionFormDialog({ isOpen, onClose, transaction }: Transact
                     ))
                   ) : (
                     <SelectItem value="" disabled>
-                      Nenhuma categoria disponível
+                      Nenhuma categoria disponível para {formData.type === 'income' ? 'receitas' : 'despesas'}
                     </SelectItem>
                   )}
                 </SelectContent>

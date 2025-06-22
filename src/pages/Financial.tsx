@@ -24,18 +24,25 @@ export default function Financial() {
     deleteCategory 
   } = useFinancialTransactions();
 
+  console.log('Financial page - transactions:', transactions);
+  console.log('Financial page - categories:', categories);
+
   const handleEditTransaction = (transaction: any) => {
+    console.log('Editing transaction in Financial page:', transaction);
+    
     // Create a properly formatted transaction object for editing
     const formattedTransaction = {
       id: transaction.id,
       type: transaction.type,
       description: transaction.description,
       amount: transaction.amount,
-      transaction_date: transaction.date || transaction.transaction_date,
+      transaction_date: transaction.transaction_date || transaction.date,
       category_id: transaction.category_id || '',
+      notes: transaction.notes || '',
       financial_categories: transaction.financial_categories
     };
     
+    console.log('Formatted transaction for editing:', formattedTransaction);
     setEditingTransaction(formattedTransaction);
     setIsDialogOpen(true);
   };
@@ -46,6 +53,7 @@ export default function Financial() {
   };
 
   const handleDeleteTransaction = async (id: string) => {
+    console.log('Deleting transaction:', id);
     const result = await deleteTransaction(id);
     if (result.success) {
       console.log("Transaction deleted successfully");
@@ -75,6 +83,8 @@ export default function Financial() {
     category: transaction.financial_categories?.name || 'Não categorizado',
     category_id: transaction.category_id
   }));
+
+  console.log('Transformed transactions:', transformedTransactions);
 
   return (
     <div className="space-y-6">

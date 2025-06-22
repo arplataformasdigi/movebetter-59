@@ -13,7 +13,6 @@ export interface FinancialTransaction {
   payment_date?: string;
   payment_status: 'pending' | 'paid' | 'overdue' | 'cancelled';
   category_id?: string;
-  patient_id?: string;
   notes?: string;
   created_by?: string;
   created_at: string;
@@ -21,9 +20,6 @@ export interface FinancialTransaction {
   financial_categories?: {
     name: string;
     color?: string;
-  };
-  patients?: {
-    name: string;
   };
 }
 
@@ -44,12 +40,12 @@ export function useFinancialTransactions() {
 
   const fetchTransactions = async () => {
     try {
+      console.log('Fetching transactions...');
       const { data, error } = await supabase
         .from('financial_transactions')
         .select(`
           *,
-          financial_categories (name, color),
-          patients (name)
+          financial_categories (name, color)
         `)
         .order('transaction_date', { ascending: false });
 
@@ -63,6 +59,7 @@ export function useFinancialTransactions() {
         return;
       }
 
+      console.log('Fetched transactions:', data);
       setTransactions(data || []);
     } catch (error) {
       console.error('Error in fetchTransactions:', error);
@@ -76,6 +73,7 @@ export function useFinancialTransactions() {
 
   const fetchCategories = async () => {
     try {
+      console.log('Fetching categories...');
       const { data, error } = await supabase
         .from('financial_categories')
         .select('*')
@@ -87,6 +85,7 @@ export function useFinancialTransactions() {
         return;
       }
 
+      console.log('Fetched categories:', data);
       setCategories(data || []);
     } catch (error) {
       console.error('Error in fetchCategories:', error);
@@ -103,15 +102,24 @@ export function useFinancialTransactions() {
     loadData();
   }, []);
 
-  const addTransaction = async (transactionData: Omit<FinancialTransaction, 'id' | 'created_at' | 'updated_at' | 'financial_categories' | 'patients'>) => {
+  const addTransaction = async (transactionData: Omit<FinancialTransaction, 'id' | 'created_at' | 'updated_at' | 'financial_categories'>) => {
     try {
+      console.log('Adding transaction:', transactionData);
+      
       const { data, error } = await supabase
         .from('financial_transactions')
-        .insert([transactionData])
+        .insert([{
+          type: transactionData.type,
+          description: transactionData.description,
+          amount: transactionData.amount,
+          transaction_date: transactionData.transaction_date,
+          payment_status: transactionData.payment_status,
+          category_id: transactionData.category_id,
+          notes: transactionData.notes
+        }])
         .select(`
           *,
-          financial_categories (name, color),
-          patients (name)
+          financial_categories (name, color)
         `)
         .single();
 
@@ -125,28 +133,46 @@ export function useFinancialTransactions() {
         return { success: false, error };
       }
 
-      setTransactions(prev => [data, ...prev]);
+      console.log('Transaction added successfully:', data);
+      
+      // Refresh the transactions list
+      await fetchTransactions();
+      
       toast({
-        title: "Transação adicionada",
-        description: "Transação foi adicionada com sucesso",
+        title: "Sucesso",
+        description: "Transação adicionada com sucesso",
       });
       return { success: true, data };
     } catch (error) {
       console.error('Error in addTransaction:', error);
+      toast({
+        title: "Erro inesperado",
+        description: "Ocorreu um erro ao adicionar a transação",
+        variant: "destructive",
+      });
       return { success: false, error };
     }
   };
 
   const updateTransaction = async (id: string, updates: Partial<FinancialTransaction>) => {
     try {
+      console.log('Updating transaction:', id, updates);
+      
       const { data, error } = await supabase
         .from('financial_transactions')
-        .update(updates)
+        .update({
+          type: updates.type,
+          description: updates.description,
+          amount: updates.amount,
+          transaction_date: updates.transaction_date,
+          payment_status: updates.payment_status,
+          category_id: updates.category_id,
+          notes: updates.notes
+        })
         .eq('id', id)
         .select(`
           *,
-          financial_categories (name, color),
-          patients (name)
+          financial_categories (name, color)
         `)
         .single();
 
@@ -160,10 +186,14 @@ export function useFinancialTransactions() {
         return { success: false, error };
       }
 
-      setTransactions(prev => prev.map(t => t.id === id ? data : t));
+      console.log('Transaction updated successfully:', data);
+      
+      // Refresh the transactions list
+      await fetchTransactions();
+      
       toast({
-        title: "Transação atualizada",
-        description: "Transação foi atualizada com sucesso",
+        title: "Sucesso",
+        description: "Transação atualizada com sucesso",
       });
       return { success: true, data };
     } catch (error) {
@@ -174,6 +204,8 @@ export function useFinancialTransactions() {
 
   const deleteTransaction = async (id: string) => {
     try {
+      console.log('Deleting transaction:', id);
+      
       const { error } = await supabase
         .from('financial_transactions')
         .delete()
@@ -189,10 +221,14 @@ export function useFinancialTransactions() {
         return { success: false, error };
       }
 
-      setTransactions(prev => prev.filter(t => t.id !== id));
+      console.log('Transaction deleted successfully');
+      
+      // Refresh the transactions list
+      await fetchTransactions();
+      
       toast({
-        title: "Transação removida",
-        description: "Transação foi removida com sucesso",
+        title: "Sucesso",
+        description: "Transação removida com sucesso",
       });
       return { success: true };
     } catch (error) {
@@ -219,7 +255,7 @@ export function useFinancialTransactions() {
         return { success: false, error };
       }
 
-      setCategories(prev => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)));
+      await fetchCategories();
       toast({
         title: "Categoria adicionada",
         description: "Categoria foi adicionada com sucesso",
@@ -274,7 +310,7 @@ export function useFinancialTransactions() {
         return { success: false, error };
       }
 
-      setCategories(prev => prev.filter(c => c.id !== id));
+      await fetchCategories();
       toast({
         title: "Categoria removida",
         description: "Categoria foi removida com sucesso",

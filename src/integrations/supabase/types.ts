@@ -175,7 +175,6 @@ export type Database = {
           due_date: string | null
           id: string
           notes: string | null
-          patient_id: string | null
           payment_date: string | null
           payment_status: Database["public"]["Enums"]["payment_status"] | null
           transaction_date: string | null
@@ -191,7 +190,6 @@ export type Database = {
           due_date?: string | null
           id?: string
           notes?: string | null
-          patient_id?: string | null
           payment_date?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"] | null
           transaction_date?: string | null
@@ -207,7 +205,6 @@ export type Database = {
           due_date?: string | null
           id?: string
           notes?: string | null
-          patient_id?: string | null
           payment_date?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"] | null
           transaction_date?: string | null
@@ -227,13 +224,6 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "financial_transactions_patient_id_fkey"
-            columns: ["patient_id"]
-            isOneToOne: false
-            referencedRelation: "patients"
             referencedColumns: ["id"]
           },
         ]
