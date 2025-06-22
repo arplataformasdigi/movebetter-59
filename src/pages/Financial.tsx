@@ -54,7 +54,7 @@ export default function Financial() {
     );
   }
 
-  // Transform transactions to match expected format
+  // Transform transactions to match expected format for display components
   const transformedTransactions = transactions.map(transaction => ({
     ...transaction,
     date: transaction.transaction_date || new Date().toISOString().split('T')[0],
@@ -91,8 +91,6 @@ export default function Financial() {
         <TabsContent value="reports" className="space-y-4">
           <FinancialReports 
             transactions={transformedTransactions}
-            startDate=""
-            endDate=""
           />
         </TabsContent>
 

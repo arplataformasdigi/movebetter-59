@@ -11,7 +11,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -19,11 +18,13 @@ interface Category {
   id: string;
   name: string;
   type: "income" | "expense";
+  color?: string;
+  is_active: boolean;
 }
 
 interface CategoryManagerProps {
   categories: Category[];
-  onAddCategory: (category: Category) => void;
+  onAddCategory: (category: Omit<Category, 'id'>) => void;
   onDeleteCategory: (categoryId: string) => void;
 }
 
@@ -34,25 +35,24 @@ export function CategoryManager({ categories, onAddCategory, onDeleteCategory }:
   const handleAddCategory = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!categoryName) {
+    if (!categoryName.trim()) {
       toast.error("Digite o nome da categoria");
       return;
     }
 
-    const newCategory: Category = {
-      id: Date.now().toString(),
-      name: categoryName,
+    const newCategory = {
+      name: categoryName.trim(),
       type: categoryType,
+      color: categoryType === "income" ? "#10B981" : "#EF4444",
+      is_active: true,
     };
 
     onAddCategory(newCategory);
-    toast.success("Categoria adicionada com sucesso!");
     setCategoryName("");
-    setCategoryType("income");
   };
 
-  const incomeCategories = categories.filter(cat => cat.type === "income");
-  const expenseCategories = categories.filter(cat => cat.type === "expense");
+  const incomeCategories = categories.filter(cat => cat.type === "income" && cat.is_active);
+  const expenseCategories = categories.filter(cat => cat.type === "expense" && cat.is_active);
 
   return (
     <div className="space-y-6">
@@ -102,7 +102,13 @@ export function CategoryManager({ categories, onAddCategory, onDeleteCategory }:
             <div className="space-y-2">
               {incomeCategories.map((category) => (
                 <div key={category.id} className="flex items-center justify-between p-2 border rounded">
-                  <span>{category.name}</span>
+                  <div className="flex items-center space-x-2">
+                    <div 
+                      className="w-4 h-4 rounded-full" 
+                      style={{ backgroundColor: category.color || "#10B981" }}
+                    />
+                    <span>{category.name}</span>
+                  </div>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -129,7 +135,13 @@ export function CategoryManager({ categories, onAddCategory, onDeleteCategory }:
             <div className="space-y-2">
               {expenseCategories.map((category) => (
                 <div key={category.id} className="flex items-center justify-between p-2 border rounded">
-                  <span>{category.name}</span>
+                  <div className="flex items-center space-x-2">
+                    <div 
+                      className="w-4 h-4 rounded-full" 
+                      style={{ backgroundColor: category.color || "#EF4444" }}
+                    />
+                    <span>{category.name}</span>
+                  </div>
                   <Button
                     variant="ghost"
                     size="sm"

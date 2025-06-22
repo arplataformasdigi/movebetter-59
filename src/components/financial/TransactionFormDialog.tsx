@@ -27,8 +27,12 @@ interface Transaction {
   type: "income" | "expense";
   description: string;
   amount: number;
-  date: string;
-  category: string;
+  transaction_date: string;
+  category_id: string;
+  financial_categories?: {
+    name: string;
+    color?: string;
+  };
 }
 
 interface TransactionFormDialogProps {
@@ -38,14 +42,21 @@ interface TransactionFormDialogProps {
 }
 
 export function TransactionFormDialog({ isOpen, onClose, transaction }: TransactionFormDialogProps) {
-  const { addTransaction, updateTransaction } = useFinancialTransactions();
+  const { addTransaction, updateTransaction, categories } = useFinancialTransactions();
   const [formData, setFormData] = useState({
     type: "income" as "income" | "expense",
     description: "",
     amount: "",
-    date: new Date().toISOString().split('T')[0],
-    category: "",
+    transaction_date: new Date().toISOString().split('T')[0], // Today: 2025-06-22
+    category_id: "",
+    notes: "",
   });
+
+  // Get current date in the correct format
+  const getCurrentDate = () => {
+    const today = new Date(2025, 5, 22); // June 22, 2025
+    return today.toISOString().split('T')[0];
+  };
 
   useEffect(() => {
     if (transaction) {
@@ -53,36 +64,44 @@ export function TransactionFormDialog({ isOpen, onClose, transaction }: Transact
         type: transaction.type,
         description: transaction.description,
         amount: transaction.amount.toString(),
-        date: transaction.date,
-        category: transaction.category,
+        transaction_date: transaction.transaction_date,
+        category_id: transaction.category_id,
+        notes: "",
       });
     } else {
       setFormData({
         type: "income",
         description: "",
         amount: "",
-        date: new Date().toISOString().split('T')[0],
-        category: "",
+        transaction_date: getCurrentDate(),
+        category_id: "",
+        notes: "",
       });
     }
-  }, [transaction]);
+  }, [transaction, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.description || !formData.amount || !formData.category) {
-      toast.error("Preencha todos os campos");
+    if (!formData.description.trim() || !formData.amount || !formData.category_id) {
+      toast.error("Preencha todos os campos obrigatórios");
+      return;
+    }
+
+    const amount = parseFloat(formData.amount);
+    if (isNaN(amount) || amount <= 0) {
+      toast.error("Digite um valor válido");
       return;
     }
 
     const transactionData = {
       type: formData.type,
-      description: formData.description,
-      amount: parseFloat(formData.amount),
-      transaction_date: formData.date,
-      category_id: null, // Will need to be mapped to actual category
-      notes: formData.category, // Temporary mapping
-      payment_status: "paid" as const, // Add required payment_status
+      description: formData.description.trim(),
+      amount: amount,
+      transaction_date: formData.transaction_date,
+      category_id: formData.category_id,
+      payment_status: "paid" as const,
+      notes: formData.notes.trim() || null,
     };
 
     let result;
@@ -93,10 +112,13 @@ export function TransactionFormDialog({ isOpen, onClose, transaction }: Transact
     }
     
     if (result.success) {
-      toast.success(transaction ? "Transação atualizada com sucesso!" : "Transação adicionada com sucesso!");
       onClose();
     }
   };
+
+  const filteredCategories = categories.filter(cat => 
+    cat.type === formData.type && cat.is_active
+  );
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -110,10 +132,16 @@ export function TransactionFormDialog({ isOpen, onClose, transaction }: Transact
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="type">Tipo</Label>
+              <Label htmlFor="type">Tipo *</Label>
               <Select 
                 value={formData.type} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, type: value as "income" | "expense" }))}
+                onValueChange={(value) => {
+                  setFormData(prev => ({ 
+                    ...prev, 
+                    type: value as "income" | "expense",
+                    category_id: "" // Reset category when type changes
+                  }));
+                }}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -126,18 +154,33 @@ export function TransactionFormDialog({ isOpen, onClose, transaction }: Transact
             </div>
 
             <div>
-              <Label htmlFor="category">Categoria</Label>
-              <Input
-                id="category"
-                value={formData.category}
-                onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                placeholder="Digite a categoria"
-              />
+              <Label htmlFor="category">Categoria *</Label>
+              <Select
+                value={formData.category_id}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, category_id: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredCategories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      <div className="flex items-center space-x-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: category.color || "#666" }}
+                        />
+                        <span>{category.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
           <div>
-            <Label htmlFor="description">Descrição</Label>
+            <Label htmlFor="description">Descrição *</Label>
             <Textarea
               id="description"
               value={formData.description}
@@ -148,26 +191,37 @@ export function TransactionFormDialog({ isOpen, onClose, transaction }: Transact
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="amount">Valor (R$)</Label>
+              <Label htmlFor="amount">Valor (R$) *</Label>
               <Input
                 id="amount"
                 type="number"
                 step="0.01"
+                min="0.01"
                 value={formData.amount}
                 onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
-                placeholder="0.00"
+                placeholder="0,00"
               />
             </div>
 
             <div>
-              <Label htmlFor="date">Data</Label>
+              <Label htmlFor="date">Data *</Label>
               <Input
                 id="date"
                 type="date"
-                value={formData.date}
-                onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                value={formData.transaction_date}
+                onChange={(e) => setFormData(prev => ({ ...prev, transaction_date: e.target.value }))}
               />
             </div>
+          </div>
+
+          <div>
+            <Label htmlFor="notes">Observações</Label>
+            <Textarea
+              id="notes"
+              value={formData.notes}
+              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+              placeholder="Observações adicionais (opcional)..."
+            />
           </div>
 
           <DialogFooter>

@@ -8,7 +8,7 @@ export interface FinancialTransaction {
   type: 'income' | 'expense';
   description: string;
   amount: number;
-  transaction_date?: string;
+  transaction_date: string;
   due_date?: string;
   payment_date?: string;
   payment_status: 'pending' | 'paid' | 'overdue' | 'cancelled';
@@ -44,7 +44,6 @@ export function useFinancialTransactions() {
 
   const fetchTransactions = async () => {
     try {
-      setIsLoading(true);
       const { data, error } = await supabase
         .from('financial_transactions')
         .select(`
@@ -72,8 +71,6 @@ export function useFinancialTransactions() {
         description: "Ocorreu um erro ao carregar as transações",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -97,8 +94,13 @@ export function useFinancialTransactions() {
   };
 
   useEffect(() => {
-    fetchTransactions();
-    fetchCategories();
+    const loadData = async () => {
+      setIsLoading(true);
+      await Promise.all([fetchTransactions(), fetchCategories()]);
+      setIsLoading(false);
+    };
+    
+    loadData();
   }, []);
 
   const addTransaction = async (transactionData: Omit<FinancialTransaction, 'id' | 'created_at' | 'updated_at' | 'financial_categories' | 'patients'>) => {
@@ -117,7 +119,7 @@ export function useFinancialTransactions() {
         console.error('Error adding transaction:', error);
         toast({
           title: "Erro ao adicionar transação",
-          description: "Não foi possível adicionar a transação",
+          description: error.message || "Não foi possível adicionar a transação",
           variant: "destructive",
         });
         return { success: false, error };
@@ -152,7 +154,7 @@ export function useFinancialTransactions() {
         console.error('Error updating transaction:', error);
         toast({
           title: "Erro ao atualizar transação",
-          description: "Não foi possível atualizar a transação",
+          description: error.message || "Não foi possível atualizar a transação",
           variant: "destructive",
         });
         return { success: false, error };
@@ -181,7 +183,7 @@ export function useFinancialTransactions() {
         console.error('Error deleting transaction:', error);
         toast({
           title: "Erro ao deletar transação",
-          description: "Não foi possível deletar a transação",
+          description: error.message || "Não foi possível deletar a transação",
           variant: "destructive",
         });
         return { success: false, error };
@@ -211,7 +213,7 @@ export function useFinancialTransactions() {
         console.error('Error adding category:', error);
         toast({
           title: "Erro ao adicionar categoria",
-          description: "Não foi possível adicionar a categoria",
+          description: error.message || "Não foi possível adicionar a categoria",
           variant: "destructive",
         });
         return { success: false, error };
@@ -231,6 +233,32 @@ export function useFinancialTransactions() {
 
   const deleteCategory = async (id: string) => {
     try {
+      // Check if category is being used in transactions
+      const { data: transactions, error: checkError } = await supabase
+        .from('financial_transactions')
+        .select('id')
+        .eq('category_id', id)
+        .limit(1);
+
+      if (checkError) {
+        console.error('Error checking category usage:', checkError);
+        toast({
+          title: "Erro ao verificar categoria",
+          description: "Não foi possível verificar se a categoria está sendo usada",
+          variant: "destructive",
+        });
+        return { success: false, error: checkError };
+      }
+
+      if (transactions && transactions.length > 0) {
+        toast({
+          title: "Categoria em uso",
+          description: "Esta categoria não pode ser removida pois está sendo usada em transações",
+          variant: "destructive",
+        });
+        return { success: false, error: new Error("Category in use") };
+      }
+
       const { error } = await supabase
         .from('financial_categories')
         .delete()
@@ -240,7 +268,7 @@ export function useFinancialTransactions() {
         console.error('Error deleting category:', error);
         toast({
           title: "Erro ao deletar categoria",
-          description: "Não foi possível deletar a categoria",
+          description: error.message || "Não foi possível deletar a categoria",
           variant: "destructive",
         });
         return { success: false, error };
