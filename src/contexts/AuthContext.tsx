@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   };
 
-  const fetchUserProfile = async (userId: string): Promise<UserProfile> => {
+  const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
     try {
       console.log('Fetching profile for user:', userId);
       const { data: profile, error } = await supabase
@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (error && error.code !== 'PGRST116') {
         console.error('Error fetching profile:', error);
-        throw error;
+        return null;
       }
 
       if (profile) {
@@ -71,7 +71,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
       }
       
-      // Se não encontrou o profile, retorna null para criar um padrão
       console.log('Profile not found, will use default');
       return null;
     } catch (error) {
@@ -83,10 +82,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     console.log('Initializing auth...');
     
+    // Failsafe: garantir que isLoading seja resolvido em no máximo 10 segundos
+    const failsafeTimeout = setTimeout(() => {
+      console.warn('Auth initialization timeout - forcing loading to false');
+      setIsLoading(false);
+    }, 10000);
+
     // Configure auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email || 'no session');
+        
+        // Limpar o failsafe timeout
+        clearTimeout(failsafeTimeout);
         
         setSession(session);
         
@@ -99,6 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             
             if (profile) {
               setUser(profile);
+              console.log('Profile loaded:', profile);
             } else {
               // Create default profile if none exists
               const defaultProfile = createDefaultProfile(session.user);
@@ -107,31 +116,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
           } catch (error) {
             console.error('Error processing user profile:', error);
-            // Even on error, create a basic profile so user can continue
+            // Create a basic profile even on error
             const defaultProfile = createDefaultProfile(session.user);
             setUser(defaultProfile);
-          } finally {
-            setIsLoading(false);
           }
         } else {
           console.log('No user session, clearing state');
           setUser(null);
-          setIsLoading(false);
         }
+        
+        // SEMPRE resolver o loading após processar o evento
+        setIsLoading(false);
       }
     );
 
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
-      console.log('Initial session check:', existingSession?.user?.email || 'none');
-      
-      // If no existing session, stop loading immediately
-      if (!existingSession) {
-        setIsLoading(false);
-      }
-    });
-
+    // Cleanup
     return () => {
+      clearTimeout(failsafeTimeout);
       subscription.unsubscribe();
     };
   }, []);
@@ -148,9 +149,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) {
       console.error('Login error:', error);
       setIsLoading(false);
-    } else {
-      console.log('Login successful');
     }
+    // Se não houver erro, o onAuthStateChange vai lidar com o loading
     
     return { error };
   };
