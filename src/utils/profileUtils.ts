@@ -29,7 +29,7 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile | nu
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
     
     console.log('📡 Supabase query completed', { 
       hasData: !!profile, 
@@ -37,7 +37,7 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile | nu
       errorCode: error?.code || 'none'
     });
     
-    if (error && error.code !== 'PGRST116') {
+    if (error) {
       console.error('❌ Profile fetch error:', error);
       console.timeEnd('⏱️ fetchUserProfile');
       return null;
@@ -64,7 +64,6 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile | nu
     return null;
   } catch (error) {
     console.error('💥 Exception in fetchUserProfile:', error);
-    console.trace('Stack trace:');
     console.timeEnd('⏱️ fetchUserProfile');
     return null;
   }
