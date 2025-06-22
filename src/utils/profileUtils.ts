@@ -25,18 +25,11 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile | nu
   try {
     console.log('📡 Making Supabase query to profiles table...');
     
-    // Add a timeout to prevent hanging
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Profile fetch timeout')), 5000);
-    });
-    
-    const queryPromise = supabase
+    const { data: profile, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .maybeSingle();
-    
-    const { data: profile, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
     
     console.log('📡 Supabase query completed', { 
       hasData: !!profile, 

@@ -14,6 +14,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [mounted, setMounted] = useState(true);
   
   console.log('🔄 AuthProvider: Initial state set', { 
     hasUser: !!user, 
@@ -25,8 +26,75 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     console.log('🚀 AUTH INITIALIZATION STARTED');
     console.time('⏱️ Auth Initialization');
     
-    let mounted = true;
+    let authInitialized = false;
     
+    const initializeAuth = async () => {
+      if (authInitialized) return;
+      authInitialized = true;
+      
+      try {
+        // Get initial session first
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
+        
+        console.log('📱 Initial session check:', {
+          hasSession: !!initialSession,
+          userId: initialSession?.user?.id || 'none'
+        });
+        
+        if (initialSession?.user) {
+          await processUserSession(initialSession);
+        } else {
+          console.log('🚪 No initial session found');
+          setSession(null);
+          setUser(null);
+          setIsLoading(false);
+          console.timeEnd('⏱️ Auth Initialization');
+          console.log('✅ AUTH INITIALIZATION COMPLETED');
+        }
+      } catch (error) {
+        console.error('💥 Error during auth initialization:', error);
+        setSession(null);
+        setUser(null);
+        setIsLoading(false);
+        console.timeEnd('⏱️ Auth Initialization');
+      }
+    };
+    
+    const processUserSession = async (session: Session) => {
+      if (!mounted) return;
+      
+      console.log('👤 Processing user session...');
+      setSession(session);
+      
+      try {
+        console.log('🔍 Fetching user profile...');
+        const profile = await fetchUserProfile(session.user.id);
+        
+        if (!mounted) return;
+        
+        if (profile) {
+          console.log('✅ Profile loaded from database:', profile);
+          setUser(profile);
+        } else {
+          console.log('⚠️ No profile found, creating default...');
+          const defaultProfile = createDefaultProfile(session.user);
+          setUser(defaultProfile);
+        }
+      } catch (error) {
+        console.error('💥 Error loading profile:', error);
+        const defaultProfile = createDefaultProfile(session.user);
+        setUser(defaultProfile);
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+          console.timeEnd('⏱️ Auth Initialization');
+          console.log('✅ AUTH INITIALIZATION COMPLETED');
+        }
+      }
+    };
+
     // Configure auth state listener
     console.log('📡 Setting up auth state change listener...');
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -34,94 +102,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!mounted) return;
         
         console.log('🔔 AUTH STATE CHANGE EVENT:', event);
-        console.log('📊 Session data:', {
-          hasSession: !!session,
-          userId: session?.user?.id || 'none',
-          userEmail: session?.user?.email || 'none',
-          tokenExpiry: session?.expires_at || 'none'
-        });
         
-        console.log('🔄 Setting session state...');
-        setSession(session);
-        
-        if (session?.user) {
-          console.log('👤 User authenticated, processing profile...');
-          
-          try {
-            console.log('🔍 Fetching user profile from database...');
-            
-            // Set a timeout for profile fetching to ensure loading state resolves
-            const profilePromise = fetchUserProfile(session.user.id);
-            const timeoutPromise = new Promise<UserProfile | null>((resolve) => {
-              setTimeout(() => {
-                console.warn('⚠️ Profile fetch timed out, using default profile');
-                resolve(null);
-              }, 8000);
-            });
-            
-            const profile = await Promise.race([profilePromise, timeoutPromise]);
-            
-            if (!mounted) return;
-            
-            if (profile) {
-              console.log('✅ Setting user profile from database:', profile);
-              setUser(profile);
-            } else {
-              console.log('⚠️ No profile found or timeout, creating default profile...');
-              const defaultProfile = createDefaultProfile(session.user);
-              console.log('🔄 Setting default profile:', defaultProfile);
-              setUser(defaultProfile);
-            }
-          } catch (error) {
-            if (!mounted) return;
-            
-            console.error('💥 Error processing user profile:', error);
-            const defaultProfile = createDefaultProfile(session.user);
-            console.log('🆘 Setting emergency default profile:', defaultProfile);
-            setUser(defaultProfile);
-          } finally {
-            if (mounted) {
-              console.log('🏁 Resolving loading state...');
-              setIsLoading(false);
-              console.timeEnd('⏱️ Auth Initialization');
-              console.log('✅ AUTH INITIALIZATION COMPLETED');
-            }
-          }
-        } else {
-          console.log('🚪 No user session, clearing user state');
+        if (event === 'SIGNED_IN' && session?.user) {
+          await processUserSession(session);
+        } else if (event === 'SIGNED_OUT') {
+          console.log('🚪 User signed out');
+          setSession(null);
           setUser(null);
           if (mounted) {
-            console.log('🏁 Resolving loading state...');
             setIsLoading(false);
-            console.timeEnd('⏱️ Auth Initialization');
-            console.log('✅ AUTH INITIALIZATION COMPLETED');
           }
         }
       }
     );
 
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!mounted) return;
-      
-      console.log('📱 Initial session check:', {
-        hasSession: !!session,
-        userId: session?.user?.id || 'none'
-      });
-      
-      // The onAuthStateChange will handle the session processing
-      if (!session) {
-        setIsLoading(false);
-        console.log('✅ No initial session, resolving loading state');
-      }
-    });
-
-    console.log('✅ Auth state listener configured');
+    // Initialize auth
+    initializeAuth();
 
     // Cleanup
     return () => {
       console.log('🧹 Cleaning up auth context...');
-      mounted = false;
+      setMounted(false);
       subscription.unsubscribe();
       console.log('✅ Auth context cleanup completed');
     };
