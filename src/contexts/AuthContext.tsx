@@ -49,7 +49,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           
           try {
             console.log('🔍 Fetching user profile from database...');
-            const profile = await fetchUserProfile(session.user.id);
+            
+            // Set a timeout for profile fetching to ensure loading state resolves
+            const profilePromise = fetchUserProfile(session.user.id);
+            const timeoutPromise = new Promise<UserProfile | null>((resolve) => {
+              setTimeout(() => {
+                console.warn('⚠️ Profile fetch timed out, using default profile');
+                resolve(null);
+              }, 8000);
+            });
+            
+            const profile = await Promise.race([profilePromise, timeoutPromise]);
             
             if (!mounted) return;
             
@@ -57,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               console.log('✅ Setting user profile from database:', profile);
               setUser(profile);
             } else {
-              console.log('⚠️ No profile found, creating default profile...');
+              console.log('⚠️ No profile found or timeout, creating default profile...');
               const defaultProfile = createDefaultProfile(session.user);
               console.log('🔄 Setting default profile:', defaultProfile);
               setUser(defaultProfile);
@@ -69,16 +79,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const defaultProfile = createDefaultProfile(session.user);
             console.log('🆘 Setting emergency default profile:', defaultProfile);
             setUser(defaultProfile);
+          } finally {
+            if (mounted) {
+              console.log('🏁 Resolving loading state...');
+              setIsLoading(false);
+              console.timeEnd('⏱️ Auth Initialization');
+              console.log('✅ AUTH INITIALIZATION COMPLETED');
+            }
           }
         } else {
           console.log('🚪 No user session, clearing user state');
           setUser(null);
+          if (mounted) {
+            console.log('🏁 Resolving loading state...');
+            setIsLoading(false);
+            console.timeEnd('⏱️ Auth Initialization');
+            console.log('✅ AUTH INITIALIZATION COMPLETED');
+          }
         }
-        
-        console.log('🏁 Resolving loading state...');
-        setIsLoading(false);
-        console.timeEnd('⏱️ Auth Initialization');
-        console.log('✅ AUTH INITIALIZATION COMPLETED');
       }
     );
 
@@ -94,6 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // The onAuthStateChange will handle the session processing
       if (!session) {
         setIsLoading(false);
+        console.log('✅ No initial session, resolving loading state');
       }
     });
 
