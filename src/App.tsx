@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -40,23 +41,13 @@ const App = () => {
           <BrowserRouter>
             <Routes>
               {/* Rota de autenticação */}
-              <Route path="/auth" element={
-                (() => {
-                  console.log('🔐 Rendering Auth route');
-                  return <Auth />;
-                })()
-              } />
+              <Route path="/auth" element={<Auth />} />
               
               {/* Rotas para administradores */}
               <Route path="/" element={
-                (() => {
-                  console.log('🏠 Rendering Dashboard route (admin only)');
-                  return (
-                    <ProtectedRoute allowedRoles={["admin"]}>
-                      <AppLayout><Dashboard /></AppLayout>
-                    </ProtectedRoute>
-                  );
-                })()
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <AppLayout><Dashboard /></AppLayout>
+                </ProtectedRoute>
               } />
 
               <Route path="/pacientes" element={
