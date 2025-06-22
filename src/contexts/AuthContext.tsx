@@ -1,29 +1,10 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { User, Session } from "@supabase/supabase-js";
-
-export type UserRole = "admin" | "patient";
-
-export interface UserProfile {
-  id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-  crefito?: string;
-  phone?: string;
-  cpf_cnpj?: string;
-}
-
-interface AuthContextType {
-  user: UserProfile | null;
-  session: Session | null;
-  login: (email: string, password: string) => Promise<{ error: any }>;
-  register: (email: string, password: string, name: string, cpf?: string) => Promise<{ error: any }>;
-  logout: () => Promise<void>;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-}
+import { Session } from "@supabase/supabase-js";
+import { AuthContextType, UserProfile } from "@/types/auth";
+import { createDefaultProfile, fetchUserProfile } from "@/utils/profileUtils";
+import { loginUser, registerUser, logoutUser } from "@/utils/authActions";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -39,74 +20,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     hasSession: !!session, 
     isLoading 
   });
-  
-  const createDefaultProfile = (authUser: User): UserProfile => {
-    console.log('👤 Creating default profile for user:', authUser.email);
-    const profile = {
-      id: authUser.id,
-      name: authUser.user_metadata?.name || authUser.email || 'Usuário',
-      email: authUser.email || '',
-      role: 'admin' as UserRole,
-      crefito: authUser.user_metadata?.crefito,
-      phone: authUser.user_metadata?.phone,
-      cpf_cnpj: authUser.user_metadata?.cpf,
-    };
-    console.log('✅ Default profile created:', profile);
-    return profile;
-  };
 
-  const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
-    console.time('⏱️ fetchUserProfile');
-    console.log('🔍 Starting profile fetch for userId:', userId);
-    
-    try {
-      console.log('📡 Making Supabase query to profiles table...');
-      
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-      
-      console.log('📡 Supabase query completed', { 
-        hasData: !!profile, 
-        error: error?.message || 'none',
-        errorCode: error?.code || 'none'
-      });
-      
-      if (error && error.code !== 'PGRST116') {
-        console.error('❌ Profile fetch error:', error);
-        console.timeEnd('⏱️ fetchUserProfile');
-        return null;
-      }
-
-      if (profile) {
-        console.log('✅ Profile found in database:', profile);
-        const userProfile = {
-          id: profile.id,
-          name: profile.name,
-          email: profile.email,
-          role: profile.role as UserRole,
-          crefito: profile.crefito || undefined,
-          phone: profile.phone || undefined,
-          cpf_cnpj: profile.cpf_cnpj || undefined,
-        };
-        console.log('🔄 Transformed profile:', userProfile);
-        console.timeEnd('⏱️ fetchUserProfile');
-        return userProfile;
-      }
-      
-      console.log('⚠️ No profile found in database');
-      console.timeEnd('⏱️ fetchUserProfile');
-      return null;
-    } catch (error) {
-      console.error('💥 Exception in fetchUserProfile:', error);
-      console.trace('Stack trace:');
-      console.timeEnd('⏱️ fetchUserProfile');
-      return null;
-    }
-  };
-  
   useEffect(() => {
     console.log('🚀 AUTH INITIALIZATION STARTED');
     console.time('⏱️ Auth Initialization');
@@ -190,63 +104,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    console.log('🔐 LOGIN ATTEMPT:', email);
-    console.time('⏱️ Login Process');
     setIsLoading(true);
-    
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    
-    if (error) {
-      console.error('❌ LOGIN ERROR:', error);
-      console.timeEnd('⏱️ Login Process');
+    const result = await loginUser(email, password);
+    if (result.error) {
       setIsLoading(false);
-    } else {
-      console.log('✅ LOGIN SUCCESS - waiting for auth state change');
-      console.timeEnd('⏱️ Login Process');
     }
-    
-    return { error };
+    return result;
   };
 
   const register = async (email: string, password: string, name: string, cpf?: string) => {
-    console.log('📝 REGISTRATION ATTEMPT:', email);
-    console.time('⏱️ Registration Process');
-    
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          name: name,
-          cpf: cpf,
-        },
-        emailRedirectTo: `${window.location.origin}/`,
-      },
-    });
-    
-    if (error) {
-      console.error('❌ REGISTRATION ERROR:', error);
-    } else {
-      console.log('✅ REGISTRATION SUCCESS');
-    }
-    
-    console.timeEnd('⏱️ Registration Process');
-    return { error };
+    return await registerUser(email, password, name, cpf);
   };
 
   const logout = async () => {
-    console.log('🚪 LOGOUT STARTED');
-    console.time('⏱️ Logout Process');
     setIsLoading(true);
     setUser(null);
     setSession(null);
-    await supabase.auth.signOut();
+    await logoutUser();
     setIsLoading(false);
-    console.timeEnd('⏱️ Logout Process');
-    console.log('✅ LOGOUT COMPLETED');
   };
 
   const contextValue = {
@@ -283,3 +158,6 @@ export const useAuth = () => {
   }
   return context;
 };
+
+// Re-export types for backward compatibility
+export type { UserRole, UserProfile } from "@/types/auth";
