@@ -44,19 +44,14 @@ interface TransactionFormDialogProps {
 export function TransactionFormDialog({ isOpen, onClose, transaction }: TransactionFormDialogProps) {
   const { addTransaction, updateTransaction, categories } = useFinancialTransactions();
   const [formData, setFormData] = useState({
-    type: "income" as "income" | "expense",
+    type: "expense" as "income" | "expense",
     description: "",
     amount: "",
-    transaction_date: new Date().toISOString().split('T')[0], // Today: 2025-06-22
+    transaction_date: "2025-06-22",
     category_id: "",
     notes: "",
   });
-
-  // Get current date in the correct format
-  const getCurrentDate = () => {
-    const today = new Date(2025, 5, 22); // June 22, 2025
-    return today.toISOString().split('T')[0];
-  };
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (transaction) {
@@ -70,10 +65,10 @@ export function TransactionFormDialog({ isOpen, onClose, transaction }: Transact
       });
     } else {
       setFormData({
-        type: "income",
+        type: "expense",
         description: "",
         amount: "",
-        transaction_date: getCurrentDate(),
+        transaction_date: "2025-06-22",
         category_id: "",
         notes: "",
       });
@@ -94,6 +89,8 @@ export function TransactionFormDialog({ isOpen, onClose, transaction }: Transact
       return;
     }
 
+    setIsSubmitting(true);
+
     const transactionData = {
       type: formData.type,
       description: formData.description.trim(),
@@ -104,15 +101,23 @@ export function TransactionFormDialog({ isOpen, onClose, transaction }: Transact
       notes: formData.notes.trim() || null,
     };
 
-    let result;
-    if (transaction) {
-      result = await updateTransaction(transaction.id, transactionData);
-    } else {
-      result = await addTransaction(transactionData);
-    }
-    
-    if (result.success) {
-      onClose();
+    try {
+      let result;
+      if (transaction) {
+        result = await updateTransaction(transaction.id, transactionData);
+      } else {
+        result = await addTransaction(transactionData);
+      }
+      
+      if (result.success) {
+        toast.success(transaction ? "Transação atualizada com sucesso!" : "Transação criada com sucesso!");
+        onClose();
+      }
+    } catch (error) {
+      toast.error("Erro ao salvar transação");
+      console.error("Error saving transaction:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -122,7 +127,7 @@ export function TransactionFormDialog({ isOpen, onClose, transaction }: Transact
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>{transaction ? "Editar Transação" : "Adicionar Transação"}</DialogTitle>
           <DialogDescription>
@@ -130,7 +135,7 @@ export function TransactionFormDialog({ isOpen, onClose, transaction }: Transact
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="type">Tipo *</Label>
               <Select 
@@ -139,7 +144,7 @@ export function TransactionFormDialog({ isOpen, onClose, transaction }: Transact
                   setFormData(prev => ({ 
                     ...prev, 
                     type: value as "income" | "expense",
-                    category_id: "" // Reset category when type changes
+                    category_id: ""
                   }));
                 }}
               >
@@ -163,17 +168,23 @@ export function TransactionFormDialog({ isOpen, onClose, transaction }: Transact
                   <SelectValue placeholder="Selecione uma categoria" />
                 </SelectTrigger>
                 <SelectContent>
-                  {filteredCategories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      <div className="flex items-center space-x-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: category.color || "#666" }}
-                        />
-                        <span>{category.name}</span>
-                      </div>
+                  {filteredCategories.length > 0 ? (
+                    filteredCategories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        <div className="flex items-center space-x-2">
+                          <div 
+                            className="w-3 h-3 rounded-full" 
+                            style={{ backgroundColor: category.color || "#666" }}
+                          />
+                          <span>{category.name}</span>
+                        </div>
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="" disabled>
+                      Nenhuma categoria disponível
                     </SelectItem>
-                  ))}
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -186,10 +197,11 @@ export function TransactionFormDialog({ isOpen, onClose, transaction }: Transact
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               placeholder="Descreva a transação..."
+              rows={3}
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="amount">Valor (R$) *</Label>
               <Input
@@ -221,15 +233,16 @@ export function TransactionFormDialog({ isOpen, onClose, transaction }: Transact
               value={formData.notes}
               onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
               placeholder="Observações adicionais (opcional)..."
+              rows={2}
             />
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
               Cancelar
             </Button>
-            <Button type="submit">
-              {transaction ? "Atualizar" : "Adicionar"} Transação
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Salvando..." : (transaction ? "Atualizar" : "Adicionar")} Transação
             </Button>
           </DialogFooter>
         </form>

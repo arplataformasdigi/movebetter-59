@@ -4,6 +4,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Trash2, Edit } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface Transaction {
   id: string;
@@ -12,6 +23,11 @@ interface Transaction {
   amount: number;
   date: string;
   category: string;
+  category_id?: string;
+  financial_categories?: {
+    name: string;
+    color?: string;
+  };
 }
 
 interface TransactionListProps {
@@ -21,6 +37,12 @@ interface TransactionListProps {
 }
 
 export function TransactionList({ transactions, onEdit, onDeleteTransaction }: TransactionListProps) {
+  const handleDelete = (transactionId: string) => {
+    if (onDeleteTransaction) {
+      onDeleteTransaction(transactionId);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -35,21 +57,29 @@ export function TransactionList({ transactions, onEdit, onDeleteTransaction }: T
             </p>
           ) : (
             transactions.map((transaction) => (
-              <div key={transaction.id} className="flex items-center justify-between p-4 border rounded-lg">
+              <div key={transaction.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
                 <div className="flex items-center space-x-4">
                   <Badge className={transaction.type === "income" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
                     {transaction.type === "income" ? "Receita" : "Despesa"}
                   </Badge>
-                  <div>
-                    <p className="font-medium">{transaction.description}</p>
-                    <p className="text-sm text-gray-500">
-                      {transaction.category} • {new Date(transaction.date).toLocaleDateString('pt-BR')}
-                    </p>
+                  <div className="flex items-center space-x-2">
+                    {transaction.financial_categories?.color && (
+                      <div 
+                        className="w-3 h-3 rounded-full" 
+                        style={{ backgroundColor: transaction.financial_categories.color }}
+                      />
+                    )}
+                    <div>
+                      <p className="font-medium">{transaction.description}</p>
+                      <p className="text-sm text-gray-500">
+                        {transaction.category} • {new Date(transaction.date).toLocaleDateString('pt-BR')}
+                      </p>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-3">
                   <div className={`text-lg font-bold ${transaction.type === "income" ? "text-green-600" : "text-red-600"}`}>
-                    {transaction.type === "income" ? "+" : "-"}R$ {transaction.amount.toFixed(2)}
+                    {transaction.type === "income" ? "+" : "-"}R$ {transaction.amount.toFixed(2).replace('.', ',')}
                   </div>
                   <div className="flex space-x-1">
                     {onEdit && (
@@ -63,14 +93,34 @@ export function TransactionList({ transactions, onEdit, onDeleteTransaction }: T
                       </Button>
                     )}
                     {onDeleteTransaction && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onDeleteTransaction(transaction.id)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Tem certeza que deseja excluir esta transação? Esta ação não pode ser desfeita.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(transaction.id)}
+                              className="bg-red-600 hover:bg-red-700"
+                            >
+                              Excluir
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     )}
                   </div>
                 </div>

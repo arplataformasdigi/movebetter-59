@@ -25,7 +25,18 @@ export default function Financial() {
   } = useFinancialTransactions();
 
   const handleEditTransaction = (transaction: any) => {
-    setEditingTransaction(transaction);
+    // Create a properly formatted transaction object for editing
+    const formattedTransaction = {
+      id: transaction.id,
+      type: transaction.type,
+      description: transaction.description,
+      amount: transaction.amount,
+      transaction_date: transaction.date || transaction.transaction_date,
+      category_id: transaction.category_id || '',
+      financial_categories: transaction.financial_categories
+    };
+    
+    setEditingTransaction(formattedTransaction);
     setIsDialogOpen(true);
   };
 
@@ -35,7 +46,10 @@ export default function Financial() {
   };
 
   const handleDeleteTransaction = async (id: string) => {
-    await deleteTransaction(id);
+    const result = await deleteTransaction(id);
+    if (result.success) {
+      console.log("Transaction deleted successfully");
+    }
   };
 
   const handleAddCategory = async (categoryData: any) => {
@@ -58,7 +72,8 @@ export default function Financial() {
   const transformedTransactions = transactions.map(transaction => ({
     ...transaction,
     date: transaction.transaction_date || new Date().toISOString().split('T')[0],
-    category: transaction.financial_categories?.name || 'Não categorizado'
+    category: transaction.financial_categories?.name || 'Não categorizado',
+    category_id: transaction.category_id
   }));
 
   return (
