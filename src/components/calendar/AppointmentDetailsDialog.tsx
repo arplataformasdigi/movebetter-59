@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -7,10 +7,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CalendarDays, Clock, User, FileText, Stethoscope, MapPin } from "lucide-react";
-import { Appointment } from "@/hooks/useAppointments";
+import { CalendarDays, Clock, User, FileText, Stethoscope, Trash2 } from "lucide-react";
+import { Appointment, useAppointments } from "@/hooks/useAppointments";
+import { formatDateToBrazilian } from "@/utils/dateUtils";
 
 interface AppointmentDetailsDialogProps {
   appointment: Appointment | null;
@@ -19,6 +32,9 @@ interface AppointmentDetailsDialogProps {
 }
 
 export function AppointmentDetailsDialog({ appointment, open, onOpenChange }: AppointmentDetailsDialogProps) {
+  const { deleteAppointment } = useAppointments();
+  const [isDeleting, setIsDeleting] = useState(false);
+
   if (!appointment) return null;
 
   const getStatusColor = (status: string) => {
@@ -51,14 +67,62 @@ export function AppointmentDetailsDialog({ appointment, open, onOpenChange }: Ap
     }
   };
 
+  const handleDeleteAppointment = async () => {
+    setIsDeleting(true);
+    try {
+      const result = await deleteAppointment(appointment.id);
+      if (result.success) {
+        onOpenChange(false);
+      }
+    } catch (error) {
+      console.error('Error deleting appointment:', error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <CalendarDays className="h-5 w-5" />
-            Detalhes do Agendamento
-          </DialogTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CalendarDays className="h-5 w-5" />
+              <DialogTitle>Detalhes do Agendamento</DialogTitle>
+            </div>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50">
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Excluir
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Tem certeza que deseja excluir este agendamento? Esta ação não pode ser desfeita.
+                    <br /><br />
+                    <strong>Agendamento:</strong> {appointment.session_type}
+                    <br />
+                    <strong>Paciente:</strong> {appointment.patients?.name || 'Não informado'}
+                    <br />
+                    <strong>Data:</strong> {formatDateToBrazilian(appointment.appointment_date)} às {appointment.appointment_time}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={handleDeleteAppointment}
+                    disabled={isDeleting}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    {isDeleting ? 'Excluindo...' : 'Confirmar Exclusão'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
           <DialogDescription>
             Informações completas sobre o agendamento
           </DialogDescription>
@@ -101,7 +165,7 @@ export function AppointmentDetailsDialog({ appointment, open, onOpenChange }: Ap
               </CardHeader>
               <CardContent>
                 <p className="font-medium">
-                  {new Date(appointment.appointment_date).toLocaleDateString('pt-BR')}
+                  {formatDateToBrazilian(appointment.appointment_date)}
                 </p>
               </CardContent>
             </Card>
@@ -177,8 +241,8 @@ export function AppointmentDetailsDialog({ appointment, open, onOpenChange }: Ap
               <CardTitle className="text-sm">Informações do Sistema</CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-gray-500">
-              <p>Criado em: {new Date(appointment.created_at).toLocaleString('pt-BR')}</p>
-              <p>Última atualização: {new Date(appointment.updated_at).toLocaleString('pt-BR')}</p>
+              <p>Criado em: {formatDateToBrazilian(appointment.created_at)} às {new Date(appointment.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+              <p>Última atualização: {formatDateToBrazilian(appointment.updated_at)} às {new Date(appointment.updated_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
             </CardContent>
           </Card>
         </div>

@@ -21,6 +21,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useAppointments } from "@/hooks/useAppointments";
+import { getCurrentDate, formatDateToInput, normalizeDate } from "@/utils/dateUtils";
 
 interface Patient {
   id: string;
@@ -39,7 +40,7 @@ export function ScheduleAppointmentForm({ isOpen, onClose, selectedDate, patient
   const [formData, setFormData] = useState({
     patientId: "",
     sessionType: "",
-    date: selectedDate ? selectedDate.toISOString().split('T')[0] : "",
+    date: selectedDate ? formatDateToInput(selectedDate) : getCurrentDate(),
     time: "",
     duration: 60,
     observations: "",
@@ -47,11 +48,11 @@ export function ScheduleAppointmentForm({ isOpen, onClose, selectedDate, patient
 
   React.useEffect(() => {
     if (selectedDate) {
-      // Adjust for timezone to prevent date shifting
-      const localDate = new Date(selectedDate.getTime() - selectedDate.getTimezoneOffset() * 60000);
+      // Use the utility function to format the date correctly for input
+      const formattedDate = formatDateToInput(selectedDate);
       setFormData(prev => ({
         ...prev,
-        date: localDate.toISOString().split('T')[0]
+        date: formattedDate
       }));
     }
   }, [selectedDate]);
@@ -64,15 +65,20 @@ export function ScheduleAppointmentForm({ isOpen, onClose, selectedDate, patient
       return;
     }
 
+    // Normalize the date to ensure it's in the correct format
+    const normalizedDate = normalizeDate(formData.date);
+
     const appointmentData = {
       patient_id: formData.patientId,
-      appointment_date: formData.date,
+      appointment_date: normalizedDate, // Use normalized date
       appointment_time: formData.time,
       session_type: formData.sessionType,
       duration_minutes: formData.duration,
       observations: formData.observations,
       status: 'scheduled' as const,
     };
+
+    console.log('Appointment data being sent:', appointmentData);
 
     const result = await addAppointment(appointmentData);
     
@@ -82,7 +88,7 @@ export function ScheduleAppointmentForm({ isOpen, onClose, selectedDate, patient
       setFormData({
         patientId: "",
         sessionType: "",
-        date: "",
+        date: getCurrentDate(),
         time: "",
         duration: 60,
         observations: "",

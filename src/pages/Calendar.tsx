@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
@@ -9,6 +10,7 @@ import { ScheduleAppointmentForm } from "@/components/calendar/ScheduleAppointme
 import { AppointmentDetailsDialog } from "@/components/calendar/AppointmentDetailsDialog";
 import { useAppointments } from "@/hooks/useAppointments";
 import { usePatients } from "@/hooks/usePatients";
+import { formatDateToBrazilian } from "@/utils/dateUtils";
 
 const locales = {
   "pt-BR": ptBR,
@@ -71,7 +73,8 @@ export default function CalendarPage() {
 
   // Converter appointments para eventos do calendar
   const events = appointments.map(appointment => {
-    const appointmentDate = new Date(appointment.appointment_date);
+    // Create a proper date object from the appointment date string
+    const appointmentDate = new Date(appointment.appointment_date + 'T00:00:00');
     const [hours, minutes] = appointment.appointment_time.split(':').map(Number);
     
     const start = new Date(appointmentDate);

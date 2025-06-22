@@ -15,8 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { formatDateToBrazilian } from "@/utils/dateUtils";
 
 interface Appointment {
   id: string;
@@ -104,7 +103,7 @@ export default function PatientAppointments() {
     
     toast({
       title: "Agendamento cancelado",
-      description: `Seu agendamento para ${format(selectedAppointment.date, 'dd/MM/yyyy')} às ${selectedAppointment.time} foi cancelado.`,
+      description: `Seu agendamento para ${formatDateToBrazilian(selectedAppointment.date)} às ${selectedAppointment.time} foi cancelado.`,
     });
     
     setCancelDialogOpen(false);
@@ -115,11 +114,6 @@ export default function PatientAppointments() {
   const prepareCancel = (appointment: Appointment) => {
     setSelectedAppointment(appointment);
     setCancelDialogOpen(true);
-  };
-
-  // Função para formatar a data
-  const formatDate = (date: Date) => {
-    return format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
   };
 
   return (
@@ -165,7 +159,7 @@ export default function PatientAppointments() {
                           </p>
                           <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
                             <CalendarIcon className="h-3.5 w-3.5" />
-                            <span>{formatDate(appointment.date)}</span>
+                            <span>{formatDateToBrazilian(appointment.date)}</span>
                             <Clock className="h-3.5 w-3.5 ml-2" />
                             <span>{appointment.time}</span>
                           </div>
@@ -206,7 +200,7 @@ export default function PatientAppointments() {
                           </p>
                           <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
                             <CalendarIcon className="h-3.5 w-3.5" />
-                            <span>{formatDate(appointment.date)}</span>
+                            <span>{formatDateToBrazilian(appointment.date)}</span>
                             <Clock className="h-3.5 w-3.5 ml-2" />
                             <span>{appointment.time}</span>
                           </div>
@@ -244,13 +238,13 @@ export default function PatientAppointments() {
                           </p>
                           <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
                             <CalendarIcon className="h-3.5 w-3.5" />
-                            <span>{formatDate(appointment.date)}</span>
+                            <span>{formatDateToBrazilian(appointment.date)}</span>
                             <Clock className="h-3.5 w-3.5 ml-2" />
                             <span>{appointment.time}</span>
                           </div>
                           {appointment.canceledAt && (
                             <div className="text-xs text-red-600 mt-1">
-                              Cancelado em: {format(appointment.canceledAt, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                              Cancelado em: {formatDateToBrazilian(appointment.canceledAt)} às {appointment.canceledAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                             </div>
                           )}
                         </div>
@@ -284,7 +278,7 @@ export default function PatientAppointments() {
             
             <div className="space-y-4">
               <h4 className="font-medium text-sm border-b pb-2">
-                {date ? formatDate(date) : "Nenhuma data selecionada"}
+                {date ? formatDateToBrazilian(date) : "Nenhuma data selecionada"}
               </h4>
               
               {appointmentsOnSelectedDate.length > 0 ? (
@@ -305,7 +299,7 @@ export default function PatientAppointments() {
                         <p className="text-sm text-muted-foreground">{appointment.time}</p>
                         {appointment.status === 'canceled' && appointment.canceledAt && (
                           <p className="text-xs text-red-600">
-                            Cancelado: {format(appointment.canceledAt, "HH:mm", { locale: ptBR })}
+                            Cancelado: {appointment.canceledAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                           </p>
                         )}
                       </div>
@@ -354,7 +348,7 @@ export default function PatientAppointments() {
                 </div>
                 <div className="flex justify-between">
                   <span className="font-medium">Data:</span>
-                  <span>{formatDate(selectedAppointment.date)}</span>
+                  <span>{formatDateToBrazilian(selectedAppointment.date)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="font-medium">Horário:</span>
