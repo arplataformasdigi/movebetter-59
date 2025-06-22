@@ -13,81 +13,89 @@ interface Activity {
 export function useRecentActivities() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchRecentActivities = async () => {
     try {
+      console.log('🔄 Fetching recent activities...');
       setIsLoading(true);
+      setError(null);
 
-      // Fetch appointments without JOIN
-      const { data: appointments } = await supabase
-        .from('appointments')
-        .select('id, created_at, session_type, patient_id')
-        .order('created_at', { ascending: false })
-        .limit(5);
+      // Create timeout promise
+      const timeoutPromise = (ms: number) => new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Query timeout')), ms)
+      );
 
-      // Fetch patients
-      const { data: patients } = await supabase
-        .from('patients')
-        .select('id, name, created_at')
-        .order('created_at', { ascending: false })
-        .limit(3);
+      // Fetch data with timeouts
+      const queries = [
+        Promise.race([
+          supabase.from('appointments').select('id, created_at, session_type, patient_id').order('created_at', { ascending: false }).limit(5),
+          timeoutPromise(3000)
+        ]),
+        Promise.race([
+          supabase.from('patients').select('id, name, created_at').order('created_at', { ascending: false }).limit(3),
+          timeoutPromise(3000)
+        ]),
+        Promise.race([
+          supabase.from('treatment_plans').select('id, name, created_at, patient_id').order('created_at', { ascending: false }).limit(3),
+          timeoutPromise(3000)
+        ])
+      ];
 
-      // Fetch treatment plans without JOIN
-      const { data: plans } = await supabase
-        .from('treatment_plans')
-        .select('id, name, created_at, patient_id')
-        .order('created_at', { ascending: false })
-        .limit(3);
+      const results = await Promise.allSettled(queries);
+
+      // Process results safely
+      const appointments = results[0].status === 'fulfilled' && results[0].value && !results[0].value.error ? results[0].value.data || [] : [];
+      const patients = results[1].status === 'fulfilled' && results[1].value && !results[1].value.error ? results[1].value.data || [] : [];
+      const plans = results[2].status === 'fulfilled' && results[2].value && !results[2].value.error ? results[2].value.data || [] : [];
+
+      console.log('📊 Activities data:', { 
+        appointmentsCount: appointments.length, 
+        patientsCount: patients.length, 
+        plansCount: plans.length 
+      });
 
       // Create patient name lookup
       const patientLookup: Record<string, string> = {};
-      if (patients) {
-        patients.forEach(patient => {
-          patientLookup[patient.id] = patient.name;
-        });
-      }
+      patients.forEach((patient: any) => {
+        patientLookup[patient.id] = patient.name;
+      });
 
       // Combine activities
       const allActivities: Activity[] = [];
 
       // Add appointment activities
-      if (appointments) {
-        appointments.forEach(apt => {
-          allActivities.push({
-            id: apt.id,
-            type: 'appointment',
-            description: `Agendamento: ${apt.session_type}`,
-            date: apt.created_at,
-            patientName: apt.patient_id ? patientLookup[apt.patient_id] : undefined,
-          });
+      appointments.forEach((apt: any) => {
+        allActivities.push({
+          id: apt.id,
+          type: 'appointment',
+          description: `Agendamento: ${apt.session_type || 'Sessão'}`,
+          date: apt.created_at,
+          patientName: apt.patient_id ? patientLookup[apt.patient_id] : undefined,
         });
-      }
+      });
 
       // Add patient activities
-      if (patients) {
-        patients.forEach(patient => {
-          allActivities.push({
-            id: patient.id,
-            type: 'patient',
-            description: `Novo paciente cadastrado`,
-            date: patient.created_at,
-            patientName: patient.name,
-          });
+      patients.forEach((patient: any) => {
+        allActivities.push({
+          id: patient.id,
+          type: 'patient',
+          description: `Novo paciente cadastrado`,
+          date: patient.created_at,
+          patientName: patient.name,
         });
-      }
+      });
 
       // Add treatment plan activities
-      if (plans) {
-        plans.forEach(plan => {
-          allActivities.push({
-            id: plan.id,
-            type: 'treatment_plan',
-            description: `Nova trilha: ${plan.name}`,
-            date: plan.created_at,
-            patientName: plan.patient_id ? patientLookup[plan.patient_id] : undefined,
-          });
+      plans.forEach((plan: any) => {
+        allActivities.push({
+          id: plan.id,
+          type: 'treatment_plan',
+          description: `Nova trilha: ${plan.name || 'Trilha'}`,
+          date: plan.created_at,
+          patientName: plan.patient_id ? patientLookup[plan.patient_id] : undefined,
         });
-      }
+      });
 
       // Sort by date and get the 8 most recent
       const sortedActivities = allActivities
@@ -95,10 +103,11 @@ export function useRecentActivities() {
         .slice(0, 8);
 
       setActivities(sortedActivities);
+      console.log('✅ Recent activities loaded:', sortedActivities.length);
 
     } catch (error) {
-      console.error('Error fetching recent activities:', error);
-      // Set fallback data instead of showing error
+      console.error('💥 Error fetching recent activities:', error);
+      setError('Erro ao carregar atividades recentes');
       setActivities([]);
     } finally {
       setIsLoading(false);
@@ -112,6 +121,7 @@ export function useRecentActivities() {
   return {
     activities,
     isLoading,
+    error,
     refreshActivities: fetchRecentActivities,
   };
 }

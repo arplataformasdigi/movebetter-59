@@ -8,6 +8,7 @@ import { UpcomingSessions } from "@/components/dashboard/UpcomingSessions";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useRecentActivities } from "@/hooks/useRecentActivities";
 import { useUpcomingSessions } from "@/hooks/useUpcomingSessions";
+import { AlertCircle } from "lucide-react";
 
 function StatsCardSkeleton() {
   return (
@@ -24,10 +25,33 @@ function StatsCardSkeleton() {
   );
 }
 
+function ErrorCard({ title, message }: { title: string; message: string }) {
+  return (
+    <Card className="border-red-200 bg-red-50">
+      <CardContent className="flex items-center space-x-2 pt-6">
+        <AlertCircle className="h-5 w-5 text-red-500" />
+        <div>
+          <h4 className="font-medium text-red-800">{title}</h4>
+          <p className="text-sm text-red-600">{message}</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function Dashboard() {
-  const { stats, isLoading: statsLoading } = useDashboardData();
-  const { activities, isLoading: activitiesLoading } = useRecentActivities();
-  const { sessions, isLoading: sessionsLoading } = useUpcomingSessions();
+  const { stats, isLoading: statsLoading, error: statsError } = useDashboardData();
+  const { activities, isLoading: activitiesLoading, error: activitiesError } = useRecentActivities();
+  const { sessions, isLoading: sessionsLoading, error: sessionsError } = useUpcomingSessions();
+
+  console.log('📊 Dashboard render:', {
+    statsLoading,
+    activitiesLoading,
+    sessionsLoading,
+    hasStatsError: !!statsError,
+    hasActivitiesError: !!activitiesError,
+    hasSessionsError: !!sessionsError
+  });
 
   return (
     <div className="space-y-6">
@@ -46,6 +70,13 @@ export function Dashboard() {
             <StatsCardSkeleton />
             <StatsCardSkeleton />
           </>
+        ) : statsError ? (
+          <div className="col-span-full">
+            <ErrorCard 
+              title="Erro ao carregar estatísticas" 
+              message="Não foi possível carregar os dados do dashboard." 
+            />
+          </div>
         ) : (
           <>
             <Card>
@@ -104,7 +135,14 @@ export function Dashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ActivityCard activities={activities} isLoading={activitiesLoading} />
+            {activitiesError ? (
+              <ErrorCard 
+                title="Erro ao carregar atividades" 
+                message="Não foi possível carregar as atividades recentes." 
+              />
+            ) : (
+              <ActivityCard activities={activities} isLoading={activitiesLoading} />
+            )}
           </CardContent>
         </Card>
         
@@ -116,7 +154,14 @@ export function Dashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <UpcomingSessions sessions={sessions} isLoading={sessionsLoading} />
+            {sessionsError ? (
+              <ErrorCard 
+                title="Erro ao carregar sessões" 
+                message="Não foi possível carregar as próximas sessões." 
+              />
+            ) : (
+              <UpcomingSessions sessions={sessions} isLoading={sessionsLoading} />
+            )}
           </CardContent>
         </Card>
       </div>

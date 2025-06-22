@@ -14,55 +14,69 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [mounted, setMounted] = useState(true);
+  const [initialized, setInitialized] = useState(false);
   
   console.log('🔄 AuthProvider: Initial state set', { 
     hasUser: !!user, 
     hasSession: !!session, 
-    isLoading 
+    isLoading,
+    initialized
   });
 
   useEffect(() => {
+    if (initialized) return;
+    
     console.log('🚀 AUTH INITIALIZATION STARTED');
     console.time('⏱️ Auth Initialization');
     
-    let authInitialized = false;
+    let mounted = true;
     
     const initializeAuth = async () => {
-      if (authInitialized) return;
-      authInitialized = true;
-      
       try {
-        // Get initial session first
-        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        setInitialized(true);
+        
+        // Get initial session with timeout
+        console.log('📱 Getting initial session...');
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Session timeout')), 5000)
+        );
+        
+        const { data: { session: initialSession } } = await Promise.race([
+          sessionPromise,
+          timeoutPromise
+        ]) as any;
         
         if (!mounted) return;
         
-        console.log('📱 Initial session check:', {
+        console.log('📱 Initial session result:', {
           hasSession: !!initialSession,
           userId: initialSession?.user?.id || 'none'
         });
         
         if (initialSession?.user) {
-          await processUserSession(initialSession);
+          await handleUserSession(initialSession);
         } else {
           console.log('🚪 No initial session found');
           setSession(null);
           setUser(null);
+        }
+      } catch (error) {
+        console.error('💥 Error during auth initialization:', error);
+        if (mounted) {
+          setSession(null);
+          setUser(null);
+        }
+      } finally {
+        if (mounted) {
           setIsLoading(false);
           console.timeEnd('⏱️ Auth Initialization');
           console.log('✅ AUTH INITIALIZATION COMPLETED');
         }
-      } catch (error) {
-        console.error('💥 Error during auth initialization:', error);
-        setSession(null);
-        setUser(null);
-        setIsLoading(false);
-        console.timeEnd('⏱️ Auth Initialization');
       }
     };
     
-    const processUserSession = async (session: Session) => {
+    const handleUserSession = async (session: Session) => {
       if (!mounted) return;
       
       console.log('👤 Processing user session...');
@@ -75,27 +89,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!mounted) return;
         
         if (profile) {
-          console.log('✅ Profile loaded from database:', profile);
+          console.log('✅ Profile loaded:', profile);
           setUser(profile);
         } else {
-          console.log('⚠️ No profile found, creating default...');
+          console.log('⚠️ Creating default profile...');
           const defaultProfile = createDefaultProfile(session.user);
           setUser(defaultProfile);
         }
       } catch (error) {
         console.error('💥 Error loading profile:', error);
-        const defaultProfile = createDefaultProfile(session.user);
-        setUser(defaultProfile);
-      } finally {
         if (mounted) {
-          setIsLoading(false);
-          console.timeEnd('⏱️ Auth Initialization');
-          console.log('✅ AUTH INITIALIZATION COMPLETED');
+          const defaultProfile = createDefaultProfile(session.user);
+          setUser(defaultProfile);
         }
       }
     };
 
-    // Configure auth state listener
+    // Set up auth state listener
     console.log('📡 Setting up auth state change listener...');
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -104,14 +114,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log('🔔 AUTH STATE CHANGE EVENT:', event);
         
         if (event === 'SIGNED_IN' && session?.user) {
-          await processUserSession(session);
+          await handleUserSession(session);
         } else if (event === 'SIGNED_OUT') {
           console.log('🚪 User signed out');
           setSession(null);
           setUser(null);
-          if (mounted) {
-            setIsLoading(false);
-          }
+        }
+        
+        // Always ensure loading is false after auth events
+        if (mounted && isLoading) {
+          setIsLoading(false);
         }
       }
     );
@@ -122,31 +134,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Cleanup
     return () => {
       console.log('🧹 Cleaning up auth context...');
-      setMounted(false);
+      mounted = false;
       subscription.unsubscribe();
       console.log('✅ Auth context cleanup completed');
     };
-  }, []);
+  }, [initialized]);
+
+  // Fallback timeout to ensure isLoading never stays true indefinitely
+  useEffect(() => {
+    const fallbackTimeout = setTimeout(() => {
+      if (isLoading) {
+        console.warn('⚠️ Fallback timeout triggered - forcing loading to false');
+        setIsLoading(false);
+      }
+    }, 8000);
+
+    return () => clearTimeout(fallbackTimeout);
+  }, [isLoading]);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
-    const result = await loginUser(email, password);
-    if (result.error) {
+    try {
+      const result = await loginUser(email, password);
+      if (result.error) {
+        setIsLoading(false);
+      }
+      return result;
+    } catch (error) {
+      console.error('Login error:', error);
       setIsLoading(false);
+      return { error };
     }
-    return result;
   };
 
   const register = async (email: string, password: string, name: string, cpf?: string) => {
-    return await registerUser(email, password, name, cpf);
+    try {
+      return await registerUser(email, password, name, cpf);
+    } catch (error) {
+      console.error('Register error:', error);
+      return { error };
+    }
   };
 
   const logout = async () => {
     setIsLoading(true);
-    setUser(null);
-    setSession(null);
-    await logoutUser();
-    setIsLoading(false);
+    try {
+      setUser(null);
+      setSession(null);
+      await logoutUser();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const contextValue = {

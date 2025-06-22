@@ -19,17 +19,28 @@ export const createDefaultProfile = (authUser: User): UserProfile => {
 };
 
 export const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
-  console.time('⏱️ fetchUserProfile');
   console.log('🔍 Starting profile fetch for userId:', userId);
   
   try {
-    console.log('📡 Making Supabase query to profiles table...');
+    // Create a timeout promise
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Profile fetch timeout')), 3000);
+    });
     
-    const { data: profile, error } = await supabase
+    // Create the query promise
+    const queryPromise = supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .maybeSingle();
+    
+    console.log('📡 Making Supabase query to profiles table...');
+    
+    // Race the query against the timeout
+    const { data: profile, error } = await Promise.race([
+      queryPromise,
+      timeoutPromise
+    ]);
     
     console.log('📡 Supabase query completed', { 
       hasData: !!profile, 
@@ -39,7 +50,6 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile | nu
     
     if (error) {
       console.error('❌ Profile fetch error:', error);
-      console.timeEnd('⏱️ fetchUserProfile');
       return null;
     }
 
@@ -55,16 +65,17 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile | nu
         cpf_cnpj: profile.cpf_cnpj || undefined,
       };
       console.log('🔄 Transformed profile:', userProfile);
-      console.timeEnd('⏱️ fetchUserProfile');
       return userProfile;
     }
     
     console.log('⚠️ No profile found in database');
-    console.timeEnd('⏱️ fetchUserProfile');
     return null;
   } catch (error) {
-    console.error('💥 Exception in fetchUserProfile:', error);
-    console.timeEnd('⏱️ fetchUserProfile');
+    if (error instanceof Error && error.message === 'Profile fetch timeout') {
+      console.warn('⏰ Profile fetch timed out');
+    } else {
+      console.error('💥 Exception in fetchUserProfile:', error);
+    }
     return null;
   }
 };

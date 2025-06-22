@@ -13,13 +13,21 @@ interface ProtectedRouteProps {
 function LoadingScreen() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-indigo-50">
-      <div className="text-center space-y-4">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-movebetter-primary mx-auto"></div>
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-32 mx-auto" />
-          <Skeleton className="h-3 w-24 mx-auto" />
+      <div className="flex flex-col items-center space-y-6">
+        <div className="relative">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-movebetter-primary"></div>
+          <div className="absolute inset-0 animate-pulse rounded-full h-16 w-16 border-2 border-movebetter-secondary opacity-20"></div>
         </div>
-        <p className="text-sm text-muted-foreground">Carregando...</p>
+        <div className="text-center space-y-3">
+          <h2 className="text-xl font-semibold text-gray-800">Carregando</h2>
+          <div className="space-y-2">
+            <Skeleton className="h-3 w-48 mx-auto" />
+            <Skeleton className="h-3 w-32 mx-auto" />
+          </div>
+          <p className="text-sm text-muted-foreground animate-pulse">
+            Inicializando sistema...
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -43,11 +51,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     timestamp: new Date().toISOString()
   });
 
+  // Show loading screen while auth is initializing
   if (isLoading) {
     console.log('⏳ ProtectedRoute: Showing loading screen');
     return <LoadingScreen />;
   }
 
+  // Redirect to auth if not authenticated
   if (!isAuthenticated || !user) {
     console.log('🚫 ProtectedRoute: User not authenticated, redirecting to /auth', {
       isAuthenticated,
@@ -57,7 +67,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/auth" state={{ from: location.pathname }} replace />;
   }
 
-  // Se tem roles definidas, verifica se o usuário tem acesso
+  // Check role permissions
   if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
     console.log('🚫 ProtectedRoute: User role not allowed', {
       userRole: user.role,
