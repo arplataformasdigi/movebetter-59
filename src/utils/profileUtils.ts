@@ -19,33 +19,18 @@ export const createDefaultProfile = (authUser: User): UserProfile => {
 };
 
 export const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
-  console.log('🔍 Starting profile fetch for userId:', userId);
+  console.log('🔍 Fetching profile for userId:', userId);
   
   try {
-    // Create a timeout promise
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('Profile fetch timeout')), 3000);
-    });
-    
-    // Create the query promise
-    const queryPromise = supabase
+    const { data: profile, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .maybeSingle();
     
-    console.log('📡 Making Supabase query to profiles table...');
-    
-    // Race the query against the timeout
-    const { data: profile, error } = await Promise.race([
-      queryPromise,
-      timeoutPromise
-    ]);
-    
-    console.log('📡 Supabase query completed', { 
+    console.log('📡 Profile query result:', { 
       hasData: !!profile, 
-      error: error?.message || 'none',
-      errorCode: error?.code || 'none'
+      error: error?.message || 'none'
     });
     
     if (error) {
@@ -54,8 +39,8 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile | nu
     }
 
     if (profile) {
-      console.log('✅ Profile found in database:', profile);
-      const userProfile = {
+      console.log('✅ Profile found:', profile.name);
+      return {
         id: profile.id,
         name: profile.name,
         email: profile.email,
@@ -64,18 +49,12 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile | nu
         phone: profile.phone || undefined,
         cpf_cnpj: profile.cpf_cnpj || undefined,
       };
-      console.log('🔄 Transformed profile:', userProfile);
-      return userProfile;
     }
     
     console.log('⚠️ No profile found in database');
     return null;
   } catch (error) {
-    if (error instanceof Error && error.message === 'Profile fetch timeout') {
-      console.warn('⏰ Profile fetch timed out');
-    } else {
-      console.error('💥 Exception in fetchUserProfile:', error);
-    }
+    console.error('💥 Exception in fetchUserProfile:', error);
     return null;
   }
 };
