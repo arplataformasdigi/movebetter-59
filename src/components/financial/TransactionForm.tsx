@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import { getCurrentDate } from "@/utils/dateUtils";
 
 interface Transaction {
   id: string;
@@ -39,7 +39,7 @@ export function TransactionForm({ onAddTransaction, categories }: TransactionFor
     type: "income" as "income" | "expense",
     description: "",
     amount: "",
-    date: new Date().toISOString().split('T')[0],
+    date: getCurrentDate(),
     category: "",
   });
 
@@ -69,7 +69,7 @@ export function TransactionForm({ onAddTransaction, categories }: TransactionFor
       type: "income",
       description: "",
       amount: "",
-      date: new Date().toISOString().split('T')[0],
+      date: getCurrentDate(),
       category: "",
     });
   };

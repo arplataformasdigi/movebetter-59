@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +14,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { formatDateToBrazilian } from "@/utils/dateUtils";
 
 interface Transaction {
   id: string;
@@ -72,7 +72,7 @@ export function TransactionList({ transactions, onEdit, onDeleteTransaction }: T
                     <div>
                       <p className="font-medium">{transaction.description}</p>
                       <p className="text-sm text-gray-500">
-                        {transaction.category} • {new Date(transaction.date).toLocaleDateString('pt-BR')}
+                        {transaction.category} • {formatDateToBrazilian(transaction.date)}
                       </p>
                     </div>
                   </div>

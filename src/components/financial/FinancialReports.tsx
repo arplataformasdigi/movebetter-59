@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Download, Calendar } from "lucide-react";
 import { toast } from "sonner";
+import { getCurrentDate, formatDateToBrazilian, isDateInRange } from "@/utils/dateUtils";
 
 interface Transaction {
   id: string;
@@ -21,17 +21,13 @@ interface FinancialReportsProps {
 }
 
 export function FinancialReports({ transactions }: FinancialReportsProps) {
-  // Set default dates - current month (June 2025)
+  // Set default dates using the utility function
   const [startDate, setStartDate] = useState("2025-06-01");
-  const [endDate, setEndDate] = useState("2025-06-22"); // Today
+  const [endDate, setEndDate] = useState(getCurrentDate());
 
-  // Filter transactions by date range
+  // Filter transactions by date range using utility function
   const filteredTransactions = transactions.filter(t => {
-    if (!startDate || !endDate) return true;
-    const transactionDate = new Date(t.date);
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    return transactionDate >= start && transactionDate <= end;
+    return isDateInRange(t.date, startDate, endDate);
   });
 
   const totalIncome = filteredTransactions
@@ -117,8 +113,8 @@ export function FinancialReports({ transactions }: FinancialReportsProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="p-4 border rounded-lg">
               <h3 className="font-medium mb-2">Resumo do Período</h3>
-              <p>De: {new Date(startDate).toLocaleDateString('pt-BR')}</p>
-              <p>Até: {new Date(endDate).toLocaleDateString('pt-BR')}</p>
+              <p>De: {formatDateToBrazilian(startDate)}</p>
+              <p>Até: {formatDateToBrazilian(endDate)}</p>
               <p className="mt-2">Total de transações: {filteredTransactions.length}</p>
             </div>
             <div className="p-4 border rounded-lg">

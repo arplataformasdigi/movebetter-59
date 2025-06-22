@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useFinancialTransactions } from "@/hooks/useFinancialTransactions";
+import { getCurrentDate, formatDateToInput } from "@/utils/dateUtils";
 
 interface Transaction {
   id: string;
@@ -48,7 +48,7 @@ export function TransactionFormDialog({ isOpen, onClose, transaction }: Transact
     type: "expense" as "income" | "expense",
     description: "",
     amount: "",
-    transaction_date: "2025-06-22",
+    transaction_date: getCurrentDate(),
     category_id: "",
     notes: "",
   });
@@ -61,7 +61,7 @@ export function TransactionFormDialog({ isOpen, onClose, transaction }: Transact
         type: transaction.type,
         description: transaction.description,
         amount: transaction.amount.toString(),
-        transaction_date: transaction.transaction_date,
+        transaction_date: formatDateToInput(transaction.transaction_date),
         category_id: transaction.category_id,
         notes: transaction.notes || "",
       });
@@ -71,7 +71,7 @@ export function TransactionFormDialog({ isOpen, onClose, transaction }: Transact
         type: "expense",
         description: "",
         amount: "",
-        transaction_date: "2025-06-22",
+        transaction_date: getCurrentDate(),
         category_id: "",
         notes: "",
       });
