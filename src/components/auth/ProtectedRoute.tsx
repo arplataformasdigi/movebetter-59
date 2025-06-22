@@ -16,15 +16,19 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { user, isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
 
-  console.log('ProtectedRoute check:', {
+  console.log('🛡️ PROTECTED ROUTE CHECK:', {
+    currentPath: location.pathname,
     isLoading,
     isAuthenticated,
-    userRole: user?.role,
+    userRole: user?.role || 'none',
+    userName: user?.name || 'none',
     allowedRoles,
-    currentPath: location.pathname
+    hasUser: !!user,
+    timestamp: new Date().toISOString()
   });
 
   if (isLoading) {
+    console.log('⏳ ProtectedRoute: Showing loading screen');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -36,20 +40,33 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (!isAuthenticated || !user) {
-    console.log('User not authenticated, redirecting to auth');
+    console.log('🚫 ProtectedRoute: User not authenticated, redirecting to /auth', {
+      isAuthenticated,
+      hasUser: !!user,
+      fromPath: location.pathname
+    });
     return <Navigate to="/auth" state={{ from: location.pathname }} replace />;
   }
 
   // Se tem roles definidas, verifica se o usuário tem acesso
   if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
-    console.log('User role not allowed, redirecting based on role');
-    // Redireciona para a página apropriada com base no papel do usuário
+    console.log('🚫 ProtectedRoute: User role not allowed', {
+      userRole: user.role,
+      allowedRoles,
+      redirectingTo: user.role === "patient" ? "/paciente" : "/"
+    });
+    
     if (user.role === "patient") {
       return <Navigate to="/paciente" replace />;
     }
     return <Navigate to="/" replace />;
   }
 
-  console.log('Access granted to protected route');
+  console.log('✅ ProtectedRoute: Access granted', {
+    userRole: user.role,
+    allowedRoles,
+    path: location.pathname
+  });
+  
   return <>{children}</>;
 };
