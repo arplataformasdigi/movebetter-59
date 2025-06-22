@@ -111,11 +111,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     console.log('🚀 AUTH INITIALIZATION STARTED');
     console.time('⏱️ Auth Initialization');
     
-    // Verificar configuração do Supabase
-    console.log('🔧 Supabase client config check:', {
-      url: supabase.supabaseUrl,
-      hasKey: !!supabase.supabaseKey,
-      authUrl: supabase.auth.url
+    // Verificar se o cliente Supabase está disponível
+    console.log('🔧 Supabase client availability check:', {
+      hasSupabase: !!supabase,
+      hasAuth: !!supabase?.auth
     });
     
     // Failsafe: garantir que isLoading seja resolvido
