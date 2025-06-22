@@ -22,32 +22,42 @@ export function useRecentActivities() {
       setError(null);
 
       // Create timeout promise
-      const timeoutPromise = (ms: number) => new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Query timeout')), ms)
-      );
+      const createTimeoutPromise = (ms: number) => 
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Query timeout')), ms)
+        );
 
       // Fetch data with timeouts
-      const queries = [
+      const [appointmentsResult, patientsResult, plansResult] = await Promise.allSettled([
         Promise.race([
           supabase.from('appointments').select('id, created_at, session_type, patient_id').order('created_at', { ascending: false }).limit(5),
-          timeoutPromise(3000)
+          createTimeoutPromise(3000)
         ]),
         Promise.race([
           supabase.from('patients').select('id, name, created_at').order('created_at', { ascending: false }).limit(3),
-          timeoutPromise(3000)
+          createTimeoutPromise(3000)
         ]),
         Promise.race([
           supabase.from('treatment_plans').select('id, name, created_at, patient_id').order('created_at', { ascending: false }).limit(3),
-          timeoutPromise(3000)
+          createTimeoutPromise(3000)
         ])
-      ];
-
-      const results = await Promise.allSettled(queries);
+      ]);
 
       // Process results safely
-      const appointments = results[0].status === 'fulfilled' && results[0].value && !results[0].value.error ? results[0].value.data || [] : [];
-      const patients = results[1].status === 'fulfilled' && results[1].value && !results[1].value.error ? results[1].value.data || [] : [];
-      const plans = results[2].status === 'fulfilled' && results[2].value && !results[2].value.error ? results[2].value.data || [] : [];
+      const appointments = appointmentsResult.status === 'fulfilled' && 
+        appointmentsResult.value && 
+        !(appointmentsResult.value as any).error ? 
+        (appointmentsResult.value as any).data || [] : [];
+        
+      const patients = patientsResult.status === 'fulfilled' && 
+        patientsResult.value && 
+        !(patientsResult.value as any).error ? 
+        (patientsResult.value as any).data || [] : [];
+        
+      const plans = plansResult.status === 'fulfilled' && 
+        plansResult.value && 
+        !(plansResult.value as any).error ? 
+        (plansResult.value as any).data || [] : [];
 
       console.log('📊 Activities data:', { 
         appointmentsCount: appointments.length, 

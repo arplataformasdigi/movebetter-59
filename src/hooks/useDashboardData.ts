@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -26,31 +27,30 @@ export function useDashboardData() {
       console.log('📊 Fetching dashboard data...');
 
       // Create timeout for each query
-      const timeoutPromise = (ms: number) => new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Query timeout')), ms)
-      );
+      const createTimeoutPromise = (ms: number) => 
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Query timeout')), ms)
+        );
 
       // Fetch all data with individual timeouts
-      const queries = [
+      const [patientsResult, appointmentsResult, scoresResult, plansResult] = await Promise.allSettled([
         Promise.race([
           supabase.from('patients').select('id', { count: 'exact' }).eq('status', 'active'),
-          timeoutPromise(3000)
+          createTimeoutPromise(3000)
         ]),
         Promise.race([
           supabase.from('appointments').select('id', { count: 'exact' }).eq('status', 'completed'),
-          timeoutPromise(3000)
+          createTimeoutPromise(3000)
         ]),
         Promise.race([
           supabase.from('patient_scores').select('total_points'),
-          timeoutPromise(3000)
+          createTimeoutPromise(3000)
         ]),
         Promise.race([
           supabase.from('treatment_plans').select('progress_percentage').eq('is_active', true),
-          timeoutPromise(3000)
+          createTimeoutPromise(3000)
         ])
-      ];
-
-      const results = await Promise.allSettled(queries);
+      ]);
 
       let activeCount = 0;
       let completedCount = 0;
@@ -58,40 +58,73 @@ export function useDashboardData() {
       let avgProgress = 0;
 
       // Handle active patients
-      if (results[0].status === 'fulfilled' && results[0].value && !results[0].value.error) {
-        activeCount = results[0].value.count || 0;
-        console.log('✅ Active patients:', activeCount);
+      if (patientsResult.status === 'fulfilled') {
+        try {
+          const result = patientsResult.value as any;
+          if (result && !result.error && typeof result.count === 'number') {
+            activeCount = result.count;
+            console.log('✅ Active patients:', activeCount);
+          } else {
+            console.warn('⚠️ Failed to fetch active patients:', result?.error);
+          }
+        } catch (err) {
+          console.warn('⚠️ Error processing active patients:', err);
+        }
       } else {
-        console.warn('⚠️ Failed to fetch active patients:', results[0]);
+        console.warn('⚠️ Active patients query failed:', patientsResult.reason);
       }
 
       // Handle completed sessions  
-      if (results[1].status === 'fulfilled' && results[1].value && !results[1].value.error) {
-        completedCount = results[1].value.count || 0;
-        console.log('✅ Completed sessions:', completedCount);
+      if (appointmentsResult.status === 'fulfilled') {
+        try {
+          const result = appointmentsResult.value as any;
+          if (result && !result.error && typeof result.count === 'number') {
+            completedCount = result.count;
+            console.log('✅ Completed sessions:', completedCount);
+          } else {
+            console.warn('⚠️ Failed to fetch completed sessions:', result?.error);
+          }
+        } catch (err) {
+          console.warn('⚠️ Error processing completed sessions:', err);
+        }
       } else {
-        console.warn('⚠️ Failed to fetch completed sessions:', results[1]);
+        console.warn('⚠️ Completed sessions query failed:', appointmentsResult.reason);
       }
 
       // Handle gamification points
-      if (results[2].status === 'fulfilled' && results[2].value && !results[2].value.error) {
-        totalPoints = results[2].value.data?.reduce((sum: number, score: any) => sum + (score.total_points || 0), 0) || 0;
-        console.log('✅ Total points:', totalPoints);
+      if (scoresResult.status === 'fulfilled') {
+        try {
+          const result = scoresResult.value as any;
+          if (result && !result.error && Array.isArray(result.data)) {
+            totalPoints = result.data.reduce((sum: number, score: any) => sum + (score.total_points || 0), 0);
+            console.log('✅ Total points:', totalPoints);
+          } else {
+            console.warn('⚠️ Failed to fetch gamification points:', result?.error);
+          }
+        } catch (err) {
+          console.warn('⚠️ Error processing gamification points:', err);
+        }
       } else {
-        console.warn('⚠️ Failed to fetch gamification points:', results[2]);
+        console.warn('⚠️ Gamification points query failed:', scoresResult.reason);
       }
 
       // Handle progress data
-      if (results[3].status === 'fulfilled' && results[3].value && !results[3].value.error && results[3].value.data) {
-        const progressList = results[3].value.data;
-        if (progressList.length > 0) {
-          avgProgress = Math.round(
-            progressList.reduce((sum: number, plan: any) => sum + (plan.progress_percentage || 0), 0) / progressList.length
-          );
+      if (plansResult.status === 'fulfilled') {
+        try {
+          const result = plansResult.value as any;
+          if (result && !result.error && Array.isArray(result.data) && result.data.length > 0) {
+            avgProgress = Math.round(
+              result.data.reduce((sum: number, plan: any) => sum + (plan.progress_percentage || 0), 0) / result.data.length
+            );
+            console.log('✅ Average progress:', avgProgress);
+          } else {
+            console.warn('⚠️ Failed to fetch progress data:', result?.error);
+          }
+        } catch (err) {
+          console.warn('⚠️ Error processing progress data:', err);
         }
-        console.log('✅ Average progress:', avgProgress);
       } else {
-        console.warn('⚠️ Failed to fetch progress data:', results[3]);
+        console.warn('⚠️ Progress data query failed:', plansResult.reason);
       }
 
       setStats({
