@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
@@ -48,7 +47,7 @@ export default function CalendarPage() {
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
 
-  const { appointments, isLoading: isLoadingAppointments, cancelAppointment } = useAppointmentsRealtime();
+  const { appointments, isLoading: isLoadingAppointments, cancelAppointment, completeAppointment } = useAppointmentsRealtime();
   const { patients, isLoading: isLoadingPatients } = usePatients();
 
   // Debug: Log appointments data
@@ -70,6 +69,10 @@ export default function CalendarPage() {
 
   const handleCancelAppointment = async (id: string) => {
     await cancelAppointment(id);
+  };
+
+  const handleCompleteAppointment = async (id: string) => {
+    await completeAppointment(id);
   };
 
   // Converter appointments para eventos do calendar
@@ -175,6 +178,7 @@ export default function CalendarPage() {
           <AppointmentsList 
             appointments={appointments}
             onCancelAppointment={handleCancelAppointment}
+            onCompleteAppointment={handleCompleteAppointment}
           />
         </TabsContent>
       </Tabs>

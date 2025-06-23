@@ -133,7 +133,7 @@ export function useAppointments() {
       
       const { data, error } = await supabase
         .from('appointments')
-        .update({ status: 'cancelled' })
+        .update({ status: 'completed' })
         .eq('id', id)
         .select(`
           *,
@@ -154,6 +154,37 @@ export function useAppointments() {
     } catch (error) {
       console.error('Error in cancelAppointment:', error);
       toast.error("Erro inesperado ao cancelar agendamento");
+      return { success: false, error };
+    }
+  };
+
+  const completeAppointment = async (id: string) => {
+    try {
+      console.log('Completing appointment:', id);
+      
+      const { data, error } = await supabase
+        .from('appointments')
+        .update({ status: 'completed' })
+        .eq('id', id)
+        .select(`
+          *,
+          patients (name)
+        `)
+        .single();
+
+      if (error) {
+        console.error('Error completing appointment:', error);
+        toast.error("Erro ao marcar agendamento como atendido: " + error.message);
+        return { success: false, error };
+      }
+
+      console.log('Appointment completed successfully:', data);
+      setAppointments(prev => prev.map(a => a.id === id ? data : a));
+      toast.success("Agendamento marcado como atendido com sucesso");
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error in completeAppointment:', error);
+      toast.error("Erro inesperado ao marcar agendamento como atendido");
       return { success: false, error };
     }
   };
@@ -192,6 +223,7 @@ export function useAppointments() {
     addAppointment,
     updateAppointment,
     cancelAppointment,
+    completeAppointment,
     deleteAppointment,
   };
 }

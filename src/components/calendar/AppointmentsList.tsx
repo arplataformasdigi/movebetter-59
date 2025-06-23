@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -6,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CalendarDays, Clock, User, X, Search } from "lucide-react";
+import { CalendarDays, Clock, User, X, Search, Check } from "lucide-react";
 import { Appointment } from "@/hooks/useAppointments";
 import { formatDateToBrazilian } from "@/utils/dateUtils";
 import {
@@ -24,13 +23,15 @@ import {
 interface AppointmentsListProps {
   appointments: Appointment[];
   onCancelAppointment: (id: string) => Promise<void>;
+  onCompleteAppointment: (id: string) => Promise<void>;
 }
 
-export function AppointmentsList({ appointments, onCancelAppointment }: AppointmentsListProps) {
+export function AppointmentsList({ appointments, onCancelAppointment, onCompleteAppointment }: AppointmentsListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [actionType, setActionType] = useState<'cancel' | 'complete' | null>(null);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -74,14 +75,20 @@ export function AppointmentsList({ appointments, onCancelAppointment }: Appointm
   const cancelledAppointments = filteredAppointments.filter(app => app.status === 'cancelled');
   const completedAppointments = filteredAppointments.filter(app => app.status === 'completed');
 
-  const handleCancelClick = (appointment: Appointment) => {
+  const handleActionClick = (appointment: Appointment, action: 'cancel' | 'complete') => {
     setSelectedAppointment(appointment);
+    setActionType(action);
   };
 
-  const handleConfirmCancel = async () => {
-    if (selectedAppointment) {
-      await onCancelAppointment(selectedAppointment.id);
+  const handleConfirmAction = async () => {
+    if (selectedAppointment && actionType) {
+      if (actionType === 'cancel') {
+        await onCancelAppointment(selectedAppointment.id);
+      } else if (actionType === 'complete') {
+        await onCompleteAppointment(selectedAppointment.id);
+      }
       setSelectedAppointment(null);
+      setActionType(null);
     }
   };
 
@@ -179,42 +186,26 @@ export function AppointmentsList({ appointments, onCancelAppointment }: Appointm
                         )}
                       </div>
                     </div>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="text-red-600 border-red-200 hover:bg-red-50"
-                          onClick={() => handleCancelClick(appointment)}
-                        >
-                          <X className="h-4 w-4 mr-1" />
-                          Cancelar
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Cancelar Agendamento</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Tem certeza que deseja cancelar este agendamento?
-                            <br /><br />
-                            <strong>Paciente:</strong> {appointment.patients?.name || 'Não informado'}
-                            <br />
-                            <strong>Data:</strong> {formatDateToBrazilian(appointment.appointment_date)} às {appointment.appointment_time}
-                            <br />
-                            <strong>Tipo:</strong> {appointment.session_type}
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Não cancelar</AlertDialogCancel>
-                          <AlertDialogAction 
-                            onClick={() => handleConfirmCancel()}
-                            className="bg-red-600 hover:bg-red-700"
-                          >
-                            Confirmar Cancelamento
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="text-green-600 border-green-200 hover:bg-green-50"
+                        onClick={() => handleActionClick(appointment, 'complete')}
+                      >
+                        <Check className="h-4 w-4 mr-1" />
+                        Atendido
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="text-red-600 border-red-200 hover:bg-red-50"
+                        onClick={() => handleActionClick(appointment, 'cancel')}
+                      >
+                        <X className="h-4 w-4 mr-1" />
+                        Cancelar
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -281,7 +272,7 @@ export function AppointmentsList({ appointments, onCancelAppointment }: Appointm
                 <CardContent className="p-4">
                   <div className="flex items-start gap-4">
                     <div className="bg-green-100 p-2 rounded-md">
-                      <CalendarDays className="h-5 w-5 text-green-600" />
+                      <Check className="h-5 w-5 text-green-600" />
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
@@ -322,6 +313,39 @@ export function AppointmentsList({ appointments, onCancelAppointment }: Appointm
           )}
         </TabsContent>
       </Tabs>
+
+      <AlertDialog open={selectedAppointment !== null} onOpenChange={(open) => !open && setSelectedAppointment(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {actionType === 'cancel' ? 'Cancelar Agendamento' : 'Confirmar Atendimento'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {actionType === 'cancel' 
+                ? 'Tem certeza que deseja cancelar este agendamento?' 
+                : 'Tem certeza que deseja marcar este agendamento como atendido?'
+              }
+              <br /><br />
+              <strong>Paciente:</strong> {selectedAppointment?.patients?.name || 'Não informado'}
+              <br />
+              <strong>Data:</strong> {selectedAppointment && formatDateToBrazilian(selectedAppointment.appointment_date)} às {selectedAppointment?.appointment_time}
+              <br />
+              <strong>Tipo:</strong> {selectedAppointment?.session_type}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>
+              {actionType === 'cancel' ? 'Não cancelar' : 'Não confirmar'}
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmAction}
+              className={actionType === 'cancel' ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}
+            >
+              {actionType === 'cancel' ? 'Confirmar Cancelamento' : 'Confirmar Atendimento'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

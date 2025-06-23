@@ -5,7 +5,8 @@ import { toast } from 'sonner';
 import { useAppointments, Appointment } from './useAppointments';
 
 export function useAppointmentsRealtime() {
-  const { appointments, setAppointments, ...appointmentHooks } = useAppointments();
+  const appointmentHooks = useAppointments();
+  const { appointments, setAppointments } = appointmentHooks;
 
   useEffect(() => {
     const channel = supabase
@@ -42,6 +43,8 @@ export function useAppointmentsRealtime() {
           ));
           if (updatedAppointment.status === 'cancelled') {
             toast.info("Agendamento cancelado!");
+          } else if (updatedAppointment.status === 'completed') {
+            toast.success("Agendamento marcado como atendido!");
           } else {
             toast.success("Agendamento atualizado!");
           }
@@ -68,8 +71,5 @@ export function useAppointmentsRealtime() {
     };
   }, [setAppointments]);
 
-  return {
-    appointments,
-    ...appointmentHooks
-  };
+  return appointmentHooks;
 }
