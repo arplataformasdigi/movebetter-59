@@ -50,10 +50,49 @@ export function usePatientEvolutions(patientId?: string) {
 
   useEffect(() => {
     fetchEvolutions();
+
+    if (patientId) {
+      // Setup realtime subscription
+      const channel = supabase
+        .channel('evolutions_changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'patient_evolutions'
+          },
+          () => {
+            fetchEvolutions();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
   }, [patientId]);
 
   const addEvolution = async (evolutionData: Omit<Evolution, 'id' | 'created_at' | 'updated_at'>) => {
     try {
+      // Check if the medical record is still active
+      const { data: medicalRecord, error: recordError } = await supabase
+        .from('patient_medical_records')
+        .select('status')
+        .eq('id', evolutionData.medical_record_id)
+        .single();
+
+      if (recordError || !medicalRecord) {
+        toast.error("Prontuário não encontrado");
+        return { success: false, error: recordError };
+      }
+
+      if (medicalRecord.status === 'discharged') {
+        toast.error("Não é possível criar evolução para um prontuário que recebeu alta");
+        return { success: false, error: "Medical record discharged" };
+      }
+
       const { data, error } = await supabase
         .from('patient_evolutions')
         .insert([evolutionData])
@@ -66,7 +105,6 @@ export function usePatientEvolutions(patientId?: string) {
         return { success: false, error };
       }
 
-      setEvolutions(prev => [data, ...prev]);
       toast.success("Evolução adicionada com sucesso");
       return { success: true, data };
     } catch (error) {
@@ -91,7 +129,6 @@ export function usePatientEvolutions(patientId?: string) {
         return { success: false, error };
       }
 
-      setEvolutions(prev => prev.map(e => e.id === evolutionId ? data : e));
       toast.success("Evolução atualizada com sucesso");
       return { success: true, data };
     } catch (error) {
@@ -116,7 +153,6 @@ export function usePatientEvolutions(patientId?: string) {
         return { success: false, error };
       }
 
-      setEvolutions(prev => prev.filter(e => e.id !== evolutionId));
       toast.success("Evolução encerrada com sucesso");
       return { success: true, data };
     } catch (error) {

@@ -18,6 +18,7 @@ export interface MedicalRecord {
   medical_history: string;
   treatment_plan: string;
   evaluation?: string;
+  status: 'active' | 'discharged';
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -56,13 +57,45 @@ export function usePatientMedicalRecords(patientId?: string) {
 
   useEffect(() => {
     fetchMedicalRecords();
+
+    if (patientId) {
+      // Setup realtime subscription
+      const channel = supabase
+        .channel('medical_records_changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'patient_medical_records'
+          },
+          () => {
+            fetchMedicalRecords();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
   }, [patientId]);
 
   const addMedicalRecord = async (recordData: Omit<MedicalRecord, 'id' | 'created_at' | 'updated_at'>) => {
     try {
+      // Check if there's already an active medical record
+      const activeRecords = medicalRecords.filter(record => record.status === 'active');
+      if (activeRecords.length > 0) {
+        toast.error("Já existe um prontuário ativo para este paciente. É necessário dar alta antes de criar um novo.");
+        return { success: false, error: "Active record exists" };
+      }
+
       const { data, error } = await supabase
         .from('patient_medical_records')
-        .insert([recordData])
+        .insert([{
+          ...recordData,
+          status: 'active'
+        }])
         .select()
         .single();
 
@@ -72,7 +105,6 @@ export function usePatientMedicalRecords(patientId?: string) {
         return { success: false, error };
       }
 
-      setMedicalRecords(prev => [data, ...prev]);
       toast.success("Prontuário adicionado com sucesso");
       return { success: true, data };
     } catch (error) {
@@ -82,7 +114,55 @@ export function usePatientMedicalRecords(patientId?: string) {
     }
   };
 
-  const closeMedicalRecord = async (recordId: string) => {
+  const updateMedicalRecord = async (recordId: string, updates: Partial<MedicalRecord>) => {
+    try {
+      const { data, error } = await supabase
+        .from('patient_medical_records')
+        .update(updates)
+        .eq('id', recordId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating medical record:', error);
+        toast.error("Erro ao atualizar prontuário");
+        return { success: false, error };
+      }
+
+      toast.success("Prontuário atualizado com sucesso");
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error in updateMedicalRecord:', error);
+      toast.error("Erro inesperado ao atualizar prontuário");
+      return { success: false, error };
+    }
+  };
+
+  const dischargeMedicalRecord = async (recordId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('patient_medical_records')
+        .update({ status: 'discharged' })
+        .eq('id', recordId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error discharging medical record:', error);
+        toast.error("Erro ao dar alta do prontuário");
+        return { success: false, error };
+      }
+
+      toast.success("Alta dada com sucesso");
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error in dischargeMedicalRecord:', error);
+      toast.error("Erro inesperado ao dar alta do prontuário");
+      return { success: false, error };
+    }
+  };
+
+  const deleteMedicalRecord = async (recordId: string) => {
     try {
       const { data, error } = await supabase
         .from('patient_medical_records')
@@ -92,19 +172,26 @@ export function usePatientMedicalRecords(patientId?: string) {
         .single();
 
       if (error) {
-        console.error('Error closing medical record:', error);
-        toast.error("Erro ao encerrar prontuário");
+        console.error('Error deleting medical record:', error);
+        toast.error("Erro ao excluir prontuário");
         return { success: false, error };
       }
 
-      setMedicalRecords(prev => prev.filter(record => record.id !== recordId));
-      toast.success("Prontuário encerrado com sucesso");
+      toast.success("Prontuário excluído com sucesso");
       return { success: true, data };
     } catch (error) {
-      console.error('Error in closeMedicalRecord:', error);
-      toast.error("Erro inesperado ao encerrar prontuário");
+      console.error('Error in deleteMedicalRecord:', error);
+      toast.error("Erro inesperado ao excluir prontuário");
       return { success: false, error };
     }
+  };
+
+  const getActiveRecord = () => {
+    return medicalRecords.find(record => record.status === 'active');
+  };
+
+  const hasActiveRecord = () => {
+    return medicalRecords.some(record => record.status === 'active');
   };
 
   return {
@@ -112,6 +199,10 @@ export function usePatientMedicalRecords(patientId?: string) {
     isLoading,
     fetchMedicalRecords,
     addMedicalRecord,
-    closeMedicalRecord,
+    updateMedicalRecord,
+    dischargeMedicalRecord,
+    deleteMedicalRecord,
+    getActiveRecord,
+    hasActiveRecord,
   };
 }

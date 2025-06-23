@@ -81,6 +81,28 @@ export function usePatientPreEvaluations(patientId?: string) {
 
   useEffect(() => {
     fetchPreEvaluations();
+
+    if (patientId) {
+      // Setup realtime subscription
+      const channel = supabase
+        .channel('pre_evaluations_changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'patient_pre_evaluations'
+          },
+          () => {
+            fetchPreEvaluations();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
   }, [patientId]);
 
   const addPreEvaluation = async (evaluationData: Omit<PreEvaluation, 'id' | 'created_at' | 'updated_at'>) => {
@@ -97,7 +119,6 @@ export function usePatientPreEvaluations(patientId?: string) {
         return { success: false, error };
       }
 
-      setPreEvaluations(prev => [data, ...prev]);
       toast.success("Pré-avaliação adicionada com sucesso");
       return { success: true, data };
     } catch (error) {
@@ -107,10 +128,58 @@ export function usePatientPreEvaluations(patientId?: string) {
     }
   };
 
+  const updatePreEvaluation = async (evaluationId: string, updates: Partial<PreEvaluation>) => {
+    try {
+      const { data, error } = await supabase
+        .from('patient_pre_evaluations')
+        .update(updates)
+        .eq('id', evaluationId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating pre evaluation:', error);
+        toast.error("Erro ao atualizar pré-avaliação");
+        return { success: false, error };
+      }
+
+      toast.success("Pré-avaliação atualizada com sucesso");
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error in updatePreEvaluation:', error);
+      toast.error("Erro inesperado ao atualizar pré-avaliação");
+      return { success: false, error };
+    }
+  };
+
+  const deletePreEvaluation = async (evaluationId: string) => {
+    try {
+      const { error } = await supabase
+        .from('patient_pre_evaluations')
+        .delete()
+        .eq('id', evaluationId);
+
+      if (error) {
+        console.error('Error deleting pre evaluation:', error);
+        toast.error("Erro ao excluir pré-avaliação");
+        return { success: false, error };
+      }
+
+      toast.success("Pré-avaliação excluída com sucesso");
+      return { success: true };
+    } catch (error) {
+      console.error('Error in deletePreEvaluation:', error);
+      toast.error("Erro inesperado ao excluir pré-avaliação");
+      return { success: false, error };
+    }
+  };
+
   return {
     preEvaluations,
     isLoading,
     fetchPreEvaluations,
     addPreEvaluation,
+    updatePreEvaluation,
+    deletePreEvaluation,
   };
 }

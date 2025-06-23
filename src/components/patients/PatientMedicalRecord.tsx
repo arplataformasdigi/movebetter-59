@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,6 +21,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -34,7 +45,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { XCircle } from "lucide-react";
+import { GraduationCap, Edit, Trash2, XCircle } from "lucide-react";
 import { usePatientMedicalRecords, MedicalRecord } from "@/hooks/usePatientMedicalRecords";
 
 const formSchema = z.object({
@@ -59,8 +70,17 @@ interface PatientMedicalRecordProps {
 }
 
 export function PatientMedicalRecord({ patientId }: PatientMedicalRecordProps) {
-  const [open, setOpen] = React.useState(false);
-  const { medicalRecords, isLoading, addMedicalRecord, closeMedicalRecord } = usePatientMedicalRecords(patientId);
+  const [open, setOpen] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<MedicalRecord | null>(null);
+  const { 
+    medicalRecords, 
+    isLoading, 
+    addMedicalRecord, 
+    updateMedicalRecord, 
+    dischargeMedicalRecord, 
+    deleteMedicalRecord,
+    hasActiveRecord 
+  } = usePatientMedicalRecords(patientId);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -81,31 +101,82 @@ export function PatientMedicalRecord({ patientId }: PatientMedicalRecordProps) {
   });
 
   function onSubmit(values: FormValues) {
-    const recordData = {
-      patient_id: patientId,
-      age: values.age,
-      gender: values.gender,
-      weight: values.weight,
-      height: values.height,
-      birth_date: values.birth_date,
-      profession: values.profession,
-      marital_status: values.marital_status,
-      visit_reason: values.visit_reason,
-      current_condition: values.current_condition,
-      medical_history: values.medical_history,
-      treatment_plan: values.treatment_plan,
-      evaluation: values.evaluation,
-      is_active: true,
-    };
+    if (editingRecord) {
+      const updateData = {
+        age: values.age,
+        gender: values.gender,
+        weight: values.weight,
+        height: values.height,
+        birth_date: values.birth_date,
+        profession: values.profession,
+        marital_status: values.marital_status,
+        visit_reason: values.visit_reason,
+        current_condition: values.current_condition,
+        medical_history: values.medical_history,
+        treatment_plan: values.treatment_plan,
+        evaluation: values.evaluation,
+      };
+      
+      updateMedicalRecord(editingRecord.id, updateData);
+      setEditingRecord(null);
+    } else {
+      const recordData = {
+        patient_id: patientId,
+        age: values.age,
+        gender: values.gender,
+        weight: values.weight,
+        height: values.height,
+        birth_date: values.birth_date,
+        profession: values.profession,
+        marital_status: values.marital_status,
+        visit_reason: values.visit_reason,
+        current_condition: values.current_condition,
+        medical_history: values.medical_history,
+        treatment_plan: values.treatment_plan,
+        evaluation: values.evaluation,
+        status: 'active' as const,
+        is_active: true,
+      };
+      
+      addMedicalRecord(recordData);
+    }
     
-    addMedicalRecord(recordData);
     form.reset();
     setOpen(false);
   }
 
-  const handleCloseRecord = (recordId: string) => {
-    if (confirm("Tem certeza que deseja encerrar este prontuário?")) {
-      closeMedicalRecord(recordId);
+  const handleEditRecord = (record: MedicalRecord) => {
+    setEditingRecord(record);
+    form.reset({
+      age: record.age,
+      gender: record.gender,
+      weight: record.weight,
+      height: record.height,
+      birth_date: record.birth_date,
+      profession: record.profession,
+      marital_status: record.marital_status,
+      visit_reason: record.visit_reason,
+      current_condition: record.current_condition,
+      medical_history: record.medical_history,
+      treatment_plan: record.treatment_plan,
+      evaluation: record.evaluation || "",
+    });
+    setOpen(true);
+  };
+
+  const handleDischargeRecord = (recordId: string) => {
+    dischargeMedicalRecord(recordId);
+  };
+
+  const handleDeleteRecord = (recordId: string) => {
+    deleteMedicalRecord(recordId);
+  };
+
+  const getStatusBadge = (status: string) => {
+    if (status === 'active') {
+      return <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">Ativo</Badge>;
+    } else {
+      return <Badge variant="outline" className="bg-gray-100 text-gray-800 border-gray-200">Alta</Badge>;
     }
   };
 
@@ -117,15 +188,31 @@ export function PatientMedicalRecord({ patientId }: PatientMedicalRecordProps) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Prontuário do Paciente</h3>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(isOpen) => {
+          setOpen(isOpen);
+          if (!isOpen) {
+            setEditingRecord(null);
+            form.reset();
+          }
+        }}>
           <DialogTrigger asChild>
-            <Button size="sm">Adicionar Registro</Button>
+            <Button 
+              size="sm" 
+              disabled={hasActiveRecord() && !editingRecord}
+            >
+              {hasActiveRecord() && !editingRecord ? "Há prontuário ativo" : "Adicionar Registro"}
+            </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Novo Prontuário</DialogTitle>
+              <DialogTitle>
+                {editingRecord ? "Editar Prontuário" : "Novo Prontuário"}
+              </DialogTitle>
               <DialogDescription>
-                Registre as informações da consulta e avaliação do paciente.
+                {editingRecord 
+                  ? "Edite as informações do prontuário do paciente."
+                  : "Registre as informações da consulta e avaliação do paciente."
+                }
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -150,7 +237,7 @@ export function PatientMedicalRecord({ patientId }: PatientMedicalRecordProps) {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Sexo</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Selecione" />
@@ -230,7 +317,7 @@ export function PatientMedicalRecord({ patientId }: PatientMedicalRecordProps) {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Situação</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Selecione" />
@@ -314,7 +401,9 @@ export function PatientMedicalRecord({ patientId }: PatientMedicalRecordProps) {
                   )}
                 />
                 <DialogFooter>
-                  <Button type="submit">Salvar Prontuário</Button>
+                  <Button type="submit">
+                    {editingRecord ? "Atualizar Prontuário" : "Salvar Prontuário"}
+                  </Button>
                 </DialogFooter>
               </form>
             </Form>
@@ -333,24 +422,95 @@ export function PatientMedicalRecord({ patientId }: PatientMedicalRecordProps) {
           {medicalRecords.map((record) => (
             <Card key={record.id}>
               <CardHeader className="pb-2">
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-start">
                   <div>
-                    <CardTitle className="text-base">
+                    <CardTitle className="text-base flex items-center gap-2">
                       Consulta de {format(new Date(record.created_at), "dd 'de' MMMM 'de' yyyy", {locale: ptBR})}
+                      {getStatusBadge(record.status)}
                     </CardTitle>
                     <CardDescription>
                       {format(new Date(record.created_at), "HH:mm", {locale: ptBR})}
                     </CardDescription>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleCloseRecord(record.id)}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <XCircle className="h-4 w-4" />
-                    Encerrar
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    {record.status === 'active' && (
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditRecord(record)}
+                          className="h-8 w-8 p-0"
+                          title="Editar prontuário"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                              title="Excluir prontuário"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Tem certeza que deseja excluir este prontuário? Esta ação não pode ser desfeita.
+                                O prontuário será removido permanentemente do sistema.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => handleDeleteRecord(record.id)}
+                                className="bg-red-600 hover:bg-red-700"
+                              >
+                                Excluir
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-blue-600 hover:text-blue-700"
+                              title="Dar alta do prontuário"
+                            >
+                              <GraduationCap className="h-4 w-4 mr-1" />
+                              Dar Alta
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Confirmar Alta</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Tem certeza que deseja dar alta a este prontuário? 
+                                Após a alta, não será possível editar o prontuário ou criar novas evoluções para ele.
+                                Esta ação bloqueará o prontuário mas manterá o histórico.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => handleDischargeRecord(record.id)}
+                                className="bg-blue-600 hover:bg-blue-700"
+                              >
+                                Dar Alta
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="pb-2 space-y-2">
@@ -366,6 +526,9 @@ export function PatientMedicalRecord({ patientId }: PatientMedicalRecordProps) {
                   </div>
                   <div>
                     <span className="font-medium text-gray-700">Altura:</span> {record.height}cm
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Data de Nascimento:</span> {record.birth_date ? format(new Date(record.birth_date), "dd/MM/yyyy", {locale: ptBR}) : 'Não informado'}
                   </div>
                   <div>
                     <span className="font-medium text-gray-700">Profissão:</span> {record.profession}

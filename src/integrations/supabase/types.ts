@@ -484,6 +484,7 @@ export type Database = {
           medical_history: string
           patient_id: string
           profession: string
+          status: string | null
           treatment_plan: string
           updated_at: string | null
           visit_reason: string
@@ -503,6 +504,7 @@ export type Database = {
           medical_history: string
           patient_id: string
           profession: string
+          status?: string | null
           treatment_plan: string
           updated_at?: string | null
           visit_reason: string
@@ -522,6 +524,7 @@ export type Database = {
           medical_history?: string
           patient_id?: string
           profession?: string
+          status?: string | null
           treatment_plan?: string
           updated_at?: string | null
           visit_reason?: string

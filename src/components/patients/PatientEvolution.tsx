@@ -15,6 +15,17 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
@@ -62,6 +73,9 @@ export function PatientEvolution({ patientId }: PatientEvolutionProps) {
       progress_score: 5,
     },
   });
+
+  // Filter only active medical records for the select
+  const activeMedicalRecords = medicalRecords.filter(record => record.status === 'active');
 
   function onSubmit(values: EvolutionFormValues) {
     const lastEvolution = evolutions.length > 0 ? evolutions[0] : undefined;
@@ -114,9 +128,7 @@ export function PatientEvolution({ patientId }: PatientEvolutionProps) {
   };
 
   const handleCloseEvolution = (evolutionId: string) => {
-    if (confirm("Tem certeza que deseja encerrar esta evolução?")) {
-      closeEvolution(evolutionId);
-    }
+    closeEvolution(evolutionId);
   };
 
   const getProgressColor = (score: number) => {
@@ -150,6 +162,8 @@ export function PatientEvolution({ patientId }: PatientEvolutionProps) {
     );
   };
 
+  const canCreateEvolution = activeMedicalRecords.length > 0;
+
   if (isLoading || recordsLoading) {
     return <div>Carregando evoluções...</div>;
   }
@@ -166,7 +180,9 @@ export function PatientEvolution({ patientId }: PatientEvolutionProps) {
           }
         }}>
           <DialogTrigger asChild>
-            <Button>Adicionar Evolução</Button>
+            <Button disabled={!canCreateEvolution && !editingEvolution}>
+              {!canCreateEvolution && !editingEvolution ? "Nenhum prontuário ativo" : "Adicionar Evolução"}
+            </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
@@ -180,18 +196,23 @@ export function PatientEvolution({ patientId }: PatientEvolutionProps) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Prontuário</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Selecione um prontuário" />
+                            <SelectValue placeholder="Selecione um prontuário ativo" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {medicalRecords.map((record) => (
+                          {activeMedicalRecords.map((record) => (
                             <SelectItem key={record.id} value={record.id}>
                               {record.visit_reason} - {format(new Date(record.created_at), "dd/MM/yyyy", {locale: ptBR})}
                             </SelectItem>
                           ))}
+                          {activeMedicalRecords.length === 0 && (
+                            <SelectItem value="" disabled>
+                              Nenhum prontuário ativo disponível
+                            </SelectItem>
+                          )}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -259,13 +280,24 @@ export function PatientEvolution({ patientId }: PatientEvolutionProps) {
         </Dialog>
       </div>
 
-      {evolutions.length === 0 ? (
+      {!canCreateEvolution && evolutions.length === 0 && (
+        <Card>
+          <CardContent className="p-6 text-center text-muted-foreground">
+            <p>Para criar uma evolução, é necessário ter um prontuário ativo.</p>
+            <p>Crie um prontuário primeiro na aba "Prontuário".</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {evolutions.length === 0 && canCreateEvolution && (
         <Card>
           <CardContent className="p-6 text-center text-muted-foreground">
             Nenhum registro de evolução encontrado para este paciente.
           </CardContent>
         </Card>
-      ) : (
+      )}
+
+      {evolutions.length > 0 && (
         <div className="space-y-4">
           {evolutions.map((evolution) => (
             <Card key={evolution.id}>
@@ -285,14 +317,38 @@ export function PatientEvolution({ patientId }: PatientEvolutionProps) {
                       Score: {evolution.progress_score}/10
                     </Badge>
                     {renderProgressDifference(evolution.progress_score, evolution.previous_score)}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleCloseEvolution(evolution.id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <XCircle className="h-4 w-4" />
-                    </Button>
+                    
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700 h-8 w-8 p-0"
+                          title="Encerrar evolução"
+                        >
+                          <XCircle className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Confirmar Encerramento</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Tem certeza que deseja encerrar esta evolução? Esta ação removerá a evolução da lista ativa,
+                            mas manterá o histórico no sistema.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={() => handleCloseEvolution(evolution.id)}
+                            className="bg-red-600 hover:bg-red-700"
+                          >
+                            Encerrar
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm">

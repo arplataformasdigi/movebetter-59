@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -25,6 +26,7 @@ import { PatientDetails } from "@/components/patients/PatientDetails";
 import { DeletePatientDialog } from "@/components/patients/DeletePatientDialog";
 import { AssignPackageDialog } from "@/components/patients/AssignPackageDialog";
 import { usePatients, Patient } from "@/hooks/usePatients";
+import { usePatientPackages } from "@/hooks/usePatientPackages";
 import { usePackagesData } from "@/hooks/usePackagesData";
 
 const getStatusDetails = (status: Patient["status"]) => {
@@ -48,10 +50,10 @@ const getStatusDetails = (status: Patient["status"]) => {
 };
 
 export function Patients() {
-  const { patients, isLoading, updatePatient, deletePatient, fetchPatients } = usePatients();
+  const { patients, isLoading, updatePatient, deletePatient } = usePatients();
   const { packages, isLoading: packagesLoading } = usePackagesData();
+  const { getPatientPackage, assignPackage } = usePatientPackages();
   const [searchQuery, setSearchQuery] = useState("");
-  const [packageAssignments, setPackageAssignments] = useState<any[]>([]);
 
   useEffect(() => {
     console.log('Current patients state:', patients);
@@ -80,8 +82,17 @@ export function Patients() {
     await deletePatient(patientId);
   };
 
-  const handleAssignPackage = (assignment: any) => {
-    setPackageAssignments([...packageAssignments, assignment]);
+  const handleAssignPackage = async (assignment: any) => {
+    const packageData = {
+      patient_id: assignment.patientId,
+      package_id: assignment.packageId,
+      final_price: assignment.finalPrice,
+      status: 'active',
+      assigned_date: new Date().toISOString().split('T')[0],
+      sessions_used: 0,
+    };
+    
+    await assignPackage(packageData);
   };
 
   // Show all patients regardless of status
@@ -91,10 +102,6 @@ export function Patients() {
       (patient.email && patient.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (patient.phone && patient.phone.includes(searchQuery))
     );
-
-  const getPatientPackage = (patientId: string) => {
-    return packageAssignments.find(assignment => assignment.patientId === patientId);
-  };
 
   if (isLoading) {
     return (
@@ -208,9 +215,9 @@ export function Patients() {
                       <TableCell>
                         {assignedPackage ? (
                           <div className="text-sm">
-                            <div className="font-medium">{assignedPackage.packageName}</div>
+                            <div className="font-medium">{assignedPackage.packages?.name}</div>
                             <div className="text-muted-foreground">
-                              R$ {assignedPackage.finalPrice.toFixed(2)}
+                              R$ {assignedPackage.final_price.toFixed(2)}
                             </div>
                           </div>
                         ) : (

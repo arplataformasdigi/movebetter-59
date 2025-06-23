@@ -55,6 +55,26 @@ export function usePatients() {
 
   useEffect(() => {
     fetchPatients();
+
+    // Setup realtime subscription
+    const channel = supabase
+      .channel('patients_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'patients'
+        },
+        () => {
+          fetchPatients();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const addPatient = async (patientData: Omit<Patient, 'id' | 'created_at'>) => {
@@ -74,7 +94,6 @@ export function usePatients() {
       }
 
       console.log('Patient added successfully:', data);
-      setPatients(prev => [data, ...prev]);
       toast.success("Paciente adicionado com sucesso");
       return { success: true, data };
     } catch (error) {
@@ -102,7 +121,6 @@ export function usePatients() {
       }
 
       console.log('Patient updated successfully:', data);
-      setPatients(prev => prev.map(p => p.id === id ? data : p));
       toast.success("Paciente atualizado com sucesso");
       return { success: true, data };
     } catch (error) {
@@ -128,7 +146,6 @@ export function usePatients() {
       }
 
       console.log('Patient deleted successfully');
-      setPatients(prev => prev.filter(p => p.id !== id));
       toast.success("Paciente removido com sucesso");
       return { success: true };
     } catch (error) {
