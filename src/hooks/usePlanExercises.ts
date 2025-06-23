@@ -31,12 +31,13 @@ export function usePlanExercises(planId?: string) {
 
   const fetchPlanExercises = useCallback(async () => {
     if (!planId) {
+      console.log('No planId provided, skipping fetch');
       setIsLoading(false);
       return;
     }
 
     try {
-      console.log('Fetching plan exercises from Supabase...');
+      console.log('Fetching plan exercises for planId:', planId);
       setIsLoading(true);
       
       const { data, error } = await supabase

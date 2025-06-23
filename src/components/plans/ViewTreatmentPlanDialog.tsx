@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import {
   Dialog,
@@ -58,6 +59,10 @@ export function ViewTreatmentPlanDialog({ plan, open, onOpenChange }: ViewTreatm
     updatePlanExercise, 
     removePlanExercise 
   } = usePlanExercises(plan?.id);
+
+  console.log('ViewTreatmentPlanDialog - Plan:', plan);
+  console.log('ViewTreatmentPlanDialog - Plan exercises:', planExercises);
+  console.log('ViewTreatmentPlanDialog - Is loading:', isLoading);
   
   const isControlled = open !== undefined && onOpenChange !== undefined;
   const isOpen = isControlled ? open : internalOpen;
@@ -69,15 +74,19 @@ export function ViewTreatmentPlanDialog({ plan, open, onOpenChange }: ViewTreatm
   };
 
   const handleDeleteExercise = (exercise) => {
+    console.log('Deleting exercise:', exercise);
     setExerciseToDelete(exercise);
     setDeleteDialogOpen(true);
   };
 
   const confirmDeleteExercise = async () => {
     if (exerciseToDelete) {
-      await removePlanExercise(exerciseToDelete.id);
-      setDeleteDialogOpen(false);
-      setExerciseToDelete(null);
+      console.log('Confirming delete for exercise:', exerciseToDelete.id);
+      const result = await removePlanExercise(exerciseToDelete.id);
+      if (result.success) {
+        setDeleteDialogOpen(false);
+        setExerciseToDelete(null);
+      }
     }
   };
 
