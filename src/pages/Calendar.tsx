@@ -5,10 +5,12 @@ import { format, parse, startOfWeek, getDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { Button } from "@/components/ui/button";
-import { Plus, RefreshCw } from "lucide-react";
+import { Plus } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScheduleAppointmentForm } from "@/components/calendar/ScheduleAppointmentForm";
 import { AppointmentDetailsDialog } from "@/components/calendar/AppointmentDetailsDialog";
-import { useAppointments } from "@/hooks/useAppointments";
+import { AppointmentsList } from "@/components/calendar/AppointmentsList";
+import { useAppointmentsRealtime } from "@/hooks/useAppointmentsRealtime";
 import { usePatients } from "@/hooks/usePatients";
 import { formatDateToBrazilian } from "@/utils/dateUtils";
 
@@ -46,7 +48,7 @@ export default function CalendarPage() {
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
 
-  const { appointments, isLoading: isLoadingAppointments, fetchAppointments } = useAppointments();
+  const { appointments, isLoading: isLoadingAppointments, cancelAppointment } = useAppointmentsRealtime();
   const { patients, isLoading: isLoadingPatients } = usePatients();
 
   // Debug: Log appointments data
@@ -66,9 +68,8 @@ export default function CalendarPage() {
     setIsDetailsDialogOpen(true);
   };
 
-  const handleRefresh = () => {
-    console.log('Refreshing appointments...');
-    fetchAppointments();
+  const handleCancelAppointment = async (id: string) => {
+    await cancelAppointment(id);
   };
 
   // Converter appointments para eventos do calendar
@@ -139,34 +140,44 @@ export default function CalendarPage() {
             Gerencie seus agendamentos ({appointments.length} agendamentos encontrados)
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleRefresh}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Atualizar
-          </Button>
-          <Button onClick={() => setIsDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Novo Agendamento
-          </Button>
-        </div>
+        <Button onClick={() => setIsDialogOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          Novo Agendamento
+        </Button>
       </div>
 
-      <div className="bg-white rounded-lg border p-4" style={{ height: "600px" }}>
-        <Calendar
-          localizer={localizer}
-          events={events}
-          startAccessor="start"
-          endAccessor="end"
-          style={{ height: "100%" }}
-          onSelectSlot={handleSelectSlot}
-          onSelectEvent={handleSelectEvent}
-          selectable
-          eventPropGetter={eventStyleGetter}
-          messages={messages}
-          views={['month', 'week', 'day']}
-          defaultView="month"
-        />
-      </div>
+      <Tabs defaultValue="calendar" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="calendar">Visualização Calendário</TabsTrigger>
+          <TabsTrigger value="list">Lista de Agendamentos</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="calendar" className="space-y-4">
+          <div className="bg-white rounded-lg border p-4" style={{ height: "600px" }}>
+            <Calendar
+              localizer={localizer}
+              events={events}
+              startAccessor="start"
+              endAccessor="end"
+              style={{ height: "100%" }}
+              onSelectSlot={handleSelectSlot}
+              onSelectEvent={handleSelectEvent}
+              selectable
+              eventPropGetter={eventStyleGetter}
+              messages={messages}
+              views={['month', 'week', 'day']}
+              defaultView="month"
+            />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="list" className="space-y-4">
+          <AppointmentsList 
+            appointments={appointments}
+            onCancelAppointment={handleCancelAppointment}
+          />
+        </TabsContent>
+      </Tabs>
 
       <ScheduleAppointmentForm
         isOpen={isDialogOpen}

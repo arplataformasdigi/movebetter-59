@@ -127,6 +127,37 @@ export function useAppointments() {
     }
   };
 
+  const cancelAppointment = async (id: string) => {
+    try {
+      console.log('Cancelling appointment:', id);
+      
+      const { data, error } = await supabase
+        .from('appointments')
+        .update({ status: 'cancelled' })
+        .eq('id', id)
+        .select(`
+          *,
+          patients (name)
+        `)
+        .single();
+
+      if (error) {
+        console.error('Error cancelling appointment:', error);
+        toast.error("Erro ao cancelar agendamento: " + error.message);
+        return { success: false, error };
+      }
+
+      console.log('Appointment cancelled successfully:', data);
+      setAppointments(prev => prev.map(a => a.id === id ? data : a));
+      toast.success("Agendamento cancelado com sucesso");
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error in cancelAppointment:', error);
+      toast.error("Erro inesperado ao cancelar agendamento");
+      return { success: false, error };
+    }
+  };
+
   const deleteAppointment = async (id: string) => {
     try {
       console.log('Deleting appointment:', id);
@@ -155,10 +186,12 @@ export function useAppointments() {
 
   return {
     appointments,
+    setAppointments,
     isLoading,
     fetchAppointments,
     addAppointment,
     updateAppointment,
+    cancelAppointment,
     deleteAppointment,
   };
 }
