@@ -49,27 +49,7 @@ export function usePatientAccess() {
 
   useEffect(() => {
     fetchPatientAccess();
-
-    // Setup realtime subscription
-    const channel = supabase
-      .channel('patient-access-realtime')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'patient_app_access'
-        },
-        (payload) => {
-          console.log('Patient access change:', payload);
-          fetchPatientAccess(); // Refetch to get complete data
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    // Removido a subscrição realtime para evitar múltiplas subscrições
   }, []);
 
   const createPatientAccess = async (patientId: string, allowedPages: string[]) => {
@@ -101,6 +81,8 @@ export function usePatientAccess() {
       }
 
       toast.success("Acesso criado com sucesso");
+      // Refresh data after creation
+      await fetchPatientAccess();
       return { success: true, data };
     } catch (error) {
       console.error('Error in createPatientAccess:', error);
@@ -127,6 +109,8 @@ export function usePatientAccess() {
       }
 
       toast.success("Acesso atualizado com sucesso");
+      // Refresh data after update
+      await fetchPatientAccess();
       return { success: true, data };
     } catch (error) {
       console.error('Error in updatePatientAccess:', error);
@@ -148,6 +132,8 @@ export function usePatientAccess() {
       }
 
       toast.success("Acesso removido com sucesso");
+      // Refresh data after deletion
+      await fetchPatientAccess();
       return { success: true };
     } catch (error) {
       console.error('Error in deletePatientAccess:', error);

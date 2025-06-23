@@ -13,6 +13,7 @@ import { AssignPackageDialog } from "@/components/patients/AssignPackageDialog";
 import { PatientAccessDialog } from "@/components/patients/PatientAccessDialog";
 import { usePatients } from "@/hooks/usePatients";
 import { usePackagesData } from "@/hooks/usePackagesData";
+import { usePatientAccess } from "@/hooks/usePatientAccess";
 
 export default function Patients() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -24,9 +25,11 @@ export default function Patients() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [assignPackageOpen, setAssignPackageOpen] = useState(false);
   const [addPatientOpen, setAddPatientOpen] = useState(false);
+  const [accessDialogPatient, setAccessDialogPatient] = useState<{ id: string; name: string } | null>(null);
 
   const { patients, isLoading, addPatient, updatePatient, deletePatient } = usePatients();
   const { packages } = usePackagesData();
+  const { patientAccess, createPatientAccess, updatePatientAccess, deletePatientAccess } = usePatientAccess();
 
   const handleAddPatient = async (patientData: any) => {
     const result = await addPatient(patientData);
@@ -87,6 +90,10 @@ export default function Patients() {
   const openAssignPackageDialog = (patient: any) => {
     setSelectedPatient(patient);
     setAssignPackageOpen(true);
+  };
+
+  const openAccessDialog = (patient: any) => {
+    setAccessDialogPatient({ id: patient.id, name: patient.name });
   };
 
   if (isLoading) {
@@ -191,10 +198,9 @@ export default function Patients() {
                       <Button variant="outline" size="sm" onClick={() => openEditDialog(patient)}>
                         <Pencil className="h-4 w-4 mr-1" /> Editar
                       </Button>
-                      <PatientAccessDialog 
-                        patientId={patient.id}
-                        patientName={patient.name}
-                      />
+                      <Button variant="outline" size="sm" onClick={() => openAccessDialog(patient)}>
+                        <FileText className="h-4 w-4 mr-1" /> Acesso
+                      </Button>
                     </div>
                     
                     <div className="flex justify-between mt-2">
@@ -262,6 +268,18 @@ export default function Patients() {
             console.log('Package assigned:', assignment);
             setAssignPackageOpen(false);
           }}
+        />
+      )}
+
+      {accessDialogPatient && (
+        <PatientAccessDialog
+          patientId={accessDialogPatient.id}
+          patientName={accessDialogPatient.name}
+          patientAccess={patientAccess}
+          onCreateAccess={createPatientAccess}
+          onUpdateAccess={updatePatientAccess}
+          onDeleteAccess={deletePatientAccess}
+          onClose={() => setAccessDialogPatient(null)}
         />
       )}
 
