@@ -1,14 +1,15 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Eye, Edit, Trash, Target, User, Calendar } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Plus, Eye, Edit, Trash, Target, User, Calendar, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { AddTreatmentPlanDialog } from "@/components/plans/AddTreatmentPlanDialog";
 import { EditTreatmentPlanDialog } from "@/components/plans/EditTreatmentPlanDialog";
 import { ViewTreatmentPlanDialog } from "@/components/plans/ViewTreatmentPlanDialog";
-import { AddExercisesToPlanDialog } from "@/components/plans/AddExercisesToPlanDialog";
+import { CreateExerciseForPlanDialog } from "@/components/plans/CreateExerciseForPlanDialog";
 import { useTreatmentPlans } from "@/hooks/useTreatmentPlans";
-import { usePlanExercises } from "@/hooks/usePlanExercises";
 import { useExercises } from "@/hooks/useExercises";
 import { formatDateToBrazilian } from "@/utils/dateUtils";
 import {
@@ -27,12 +28,19 @@ export default function Trilhas() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isAddExercisesDialogOpen, setIsAddExercisesDialogOpen] = useState(false);
+  const [isCreateExerciseDialogOpen, setIsCreateExerciseDialogOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [planToDelete, setPlanToDelete] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const { treatmentPlans, isLoading, deleteTreatmentPlan } = useTreatmentPlans();
   const { exercises } = useExercises();
+
+  // Filtrar trilhas por nome do paciente
+  const filteredPlans = treatmentPlans.filter(plan => 
+    plan.patients?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    plan.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   console.log('Treatment plans in component:', treatmentPlans);
 
@@ -51,9 +59,9 @@ export default function Trilhas() {
     setIsDeleteDialogOpen(true);
   };
 
-  const handleAddExercises = (plan) => {
+  const handleCreateExercise = (plan) => {
     setSelectedPlan(plan);
-    setIsAddExercisesDialogOpen(true);
+    setIsCreateExerciseDialogOpen(true);
   };
 
   const handleConfirmDelete = async () => {
@@ -80,7 +88,7 @@ export default function Trilhas() {
             <Target className="mr-2 h-6 w-6" /> Trilhas de Tratamento
           </h1>
           <p className="text-muted-foreground">
-            Gerencie planos de tratamento personalizados ({treatmentPlans.length} trilhas encontradas)
+            Gerencie planos de tratamento personalizados ({filteredPlans.length} trilhas encontradas)
           </p>
         </div>
         <div className="flex gap-2">
@@ -91,23 +99,41 @@ export default function Trilhas() {
         </div>
       </div>
 
-      {treatmentPlans.length === 0 ? (
+      {/* Campo de pesquisa */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Pesquisar por nome do paciente ou trilha..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
+      {filteredPlans.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Target className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium text-center mb-2">Nenhuma trilha encontrada</h3>
+            <h3 className="text-lg font-medium text-center mb-2">
+              {searchTerm ? "Nenhuma trilha encontrada" : "Nenhuma trilha encontrada"}
+            </h3>
             <p className="text-muted-foreground text-center mb-4">
-              Crie trilhas de tratamento personalizadas para seus pacientes
+              {searchTerm ? 
+                "Tente ajustar os termos de pesquisa" : 
+                "Crie trilhas de tratamento personalizadas para seus pacientes"
+              }
             </p>
-            <Button onClick={() => setIsAddDialogOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Criar primeira trilha
-            </Button>
+            {!searchTerm && (
+              <Button onClick={() => setIsAddDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Criar primeira trilha
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {treatmentPlans.map((plan) => (
+          {filteredPlans.map((plan) => (
             <Card key={plan.id} className="hover:shadow-md transition-shadow">
               <CardHeader>
                 <div className="flex justify-between items-start">
@@ -170,7 +196,7 @@ export default function Trilhas() {
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        onClick={() => handleAddExercises(plan)}
+                        onClick={() => handleCreateExercise(plan)}
                         className="text-xs px-2"
                       >
                         <Plus className="h-3 w-3 mr-1" /> Exercícios
@@ -209,11 +235,10 @@ export default function Trilhas() {
         onOpenChange={setIsViewDialogOpen}
       />
 
-      <AddExercisesToPlanDialog
+      <CreateExerciseForPlanDialog
         plan={selectedPlan}
-        exercises={exercises}
-        open={isAddExercisesDialogOpen}
-        onOpenChange={setIsAddExercisesDialogOpen}
+        open={isCreateExerciseDialogOpen}
+        onOpenChange={setIsCreateExerciseDialogOpen}
       />
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import {
   Dialog,
@@ -223,27 +222,44 @@ export function ViewTreatmentPlanDialog({ plan, open, onOpenChange }: ViewTreatm
                     </CardHeader>
                     <CardContent className="space-y-3">
                       {dayExercises.map((planEx) => (
-                        <div key={planEx.id} className="p-3 bg-gray-50 rounded-lg">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
+                        <div key={planEx.id} className={`p-4 rounded-lg border-2 transition-all ${
+                          planEx.is_completed 
+                            ? 'bg-green-50 border-green-200' 
+                            : 'bg-gray-50 border-gray-200'
+                        }`}>
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-3">
                               <Button
                                 size="sm"
-                                variant="ghost"
-                                className="h-6 w-6 p-0"
+                                variant={planEx.is_completed ? "default" : "outline"}
+                                className={`h-8 w-8 p-0 ${
+                                  planEx.is_completed 
+                                    ? 'bg-green-600 hover:bg-green-700' 
+                                    : 'hover:bg-gray-100'
+                                }`}
                                 onClick={() => handleToggleCompletion(planEx.id, planEx.is_completed)}
                               >
                                 {planEx.is_completed ? (
-                                  <CheckCircle className="h-4 w-4 text-green-600" />
+                                  <CheckCircle className="h-4 w-4 text-white" />
                                 ) : (
                                   <Circle className="h-4 w-4 text-gray-400" />
                                 )}
                               </Button>
-                              <span className={`font-medium ${planEx.is_completed ? 'line-through text-gray-500' : ''}`}>
-                                {planEx.exercises?.name}
-                              </span>
-                              <Badge variant={planEx.is_completed ? "default" : "secondary"} className="ml-2">
-                                {planEx.is_completed ? "Concluído" : "Pendente"}
-                              </Badge>
+                              <div>
+                                <span className={`font-medium ${planEx.is_completed ? 'line-through text-green-700' : ''}`}>
+                                  {planEx.exercises?.name}
+                                </span>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <Badge variant={planEx.is_completed ? "default" : "secondary"} className="text-xs">
+                                    {planEx.is_completed ? "Concluído" : "Pendente"}
+                                  </Badge>
+                                  {planEx.is_completed && (
+                                    <span className="text-xs text-green-600">
+                                      ✓ Exercício realizado
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
                             </div>
                             <div className="flex gap-1">
                               <Button
