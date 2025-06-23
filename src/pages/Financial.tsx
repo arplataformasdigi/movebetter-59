@@ -13,6 +13,19 @@ import { CategoryManager } from "@/components/financial/CategoryManager";
 import { FinancialReports } from "@/components/financial/FinancialReports";
 import { CategoryAnalysis } from "@/components/financial/CategoryAnalysis";
 import { useFinancialTransactionsRealtime } from "@/hooks/useFinancialTransactionsRealtime";
+import { FinancialTransaction } from "@/hooks/useFinancialTransactions";
+
+// Transform FinancialTransaction to match TransactionList expected format
+const transformTransactionForList = (transaction: FinancialTransaction) => ({
+  id: transaction.id,
+  type: transaction.type,
+  description: transaction.description,
+  amount: transaction.amount,
+  date: transaction.transaction_date,
+  category: transaction.financial_categories?.name || 'Sem categoria',
+  category_id: transaction.category_id,
+  financial_categories: transaction.financial_categories,
+});
 
 export default function Financial() {
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -70,6 +83,9 @@ export default function Financial() {
     );
   }
 
+  // Transform transactions for components that expect the Transaction interface
+  const transformedTransactions = transactions.map(transformTransactionForList);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -101,7 +117,7 @@ export default function Financial() {
 
         <TabsContent value="transactions" className="space-y-6">
           <TransactionList
-            transactions={transactions}
+            transactions={transformedTransactions}
             onEdit={openEditDialog}
             onDelete={handleDeleteTransaction}
           />
