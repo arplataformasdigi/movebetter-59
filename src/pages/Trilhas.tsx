@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,37 @@ export default function Trilhas() {
   );
 
   console.log('Treatment plans in component:', treatmentPlans);
+
+  // Handler functions
+  const handleView = (plan) => {
+    setSelectedPlan(plan);
+    setIsViewDialogOpen(true);
+  };
+
+  const handleEdit = (plan) => {
+    setSelectedPlan(plan);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleCreateExercise = (plan) => {
+    setSelectedPlan(plan);
+    setIsCreateExerciseDialogOpen(true);
+  };
+
+  const handleDeleteClick = (plan) => {
+    setPlanToDelete(plan);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (planToDelete) {
+      const result = await deleteTreatmentPlan(planToDelete.id);
+      if (result.success) {
+        setIsDeleteDialogOpen(false);
+        setPlanToDelete(null);
+      }
+    }
+  };
 
   // Custom hook to calculate real-time progress for each plan
   const PlanCard = ({ plan }) => {
