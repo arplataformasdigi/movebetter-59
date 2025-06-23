@@ -162,8 +162,8 @@ const formSchema = z.object({
   exames_recentes: z.string().min(1, "Exames recentes é obrigatório"),
   condicoes_saude: z.string().min(1, "Condições de saúde é obrigatório"),
   cirurgias: z.string().min(1, "Cirurgias é obrigatório"),
-  medicamentos: z.string().optional(),
-  alergias: z.string().optional(),
+  medicamentos: z.string().min(1, "Medicamentos é obrigatório"),
+  alergias: z.string().min(1, "Alergias é obrigatório"),
   doencas_familiares: z.string().min(1, "Doenças familiares é obrigatório"),
   condicoes_similares: z.string().min(1, "Condições similares é obrigatório"),
   alimentacao: z.string().min(1, "Alimentação é obrigatória"),
@@ -172,18 +172,18 @@ const formSchema = z.object({
   fumante: z.string().min(1, "Fumante é obrigatório"),
   ingestao_agua: z.string().min(1, "Ingestão de água é obrigatória"),
   tempo_sentado: z.string().min(1, "Tempo sentado é obrigatório"),
-  nivel_estresse: z.string().optional(),
-  questoes_emocionais: z.string().optional(),
-  impacto_qualidade_vida: z.string().optional(),
-  expectativas_tratamento: z.string().optional(),
+  nivel_estresse: z.string().min(1, "Nível de estresse é obrigatório"),
+  questoes_emocionais: z.string().min(1, "Questões emocionais é obrigatório"),
+  impacto_qualidade_vida: z.string().min(1, "Impacto na qualidade de vida é obrigatório"),
+  expectativas_tratamento: z.string().min(1, "Expectativas do tratamento é obrigatório"),
   exercicios_casa: z.string().min(1, "Exercícios em casa é obrigatório"),
-  restricoes: z.string().optional(),
+  restricoes: z.string().min(1, "Restrições é obrigatório"),
   dificuldade_dia: z.string().min(1, "Dificuldade no dia é obrigatória"),
   dispositivo_auxilio: z.string().min(1, "Dispositivo de auxílio é obrigatório"),
   dificuldade_equilibrio: z.string().min(1, "Dificuldade de equilíbrio é obrigatória"),
   limitacao_movimento: z.string().min(1, "Limitação de movimento é obrigatória"),
-  info_adicional: z.string().optional(),
-  duvidas_fisioterapia: z.string().optional(),
+  info_adicional: z.string().min(1, "Informações adicionais é obrigatório"),
+  duvidas_fisioterapia: z.string().min(1, "Dúvidas sobre fisioterapia é obrigatório"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -250,15 +250,15 @@ export function PatientPreEvaluation({ patientId, patientName }: PatientPreEvalu
   });
 
   function onSubmit(values: FormValues) {
+    const evaluationData = {
+      patient_id: patientId,
+      ...values,
+    };
+
     if (editingEvaluation) {
-      updatePreEvaluation(editingEvaluation.id, values);
+      updatePreEvaluation(editingEvaluation.id, evaluationData);
       setEditingEvaluation(null);
     } else {
-      const evaluationData = {
-        patient_id: patientId,
-        ...values,
-      };
-      
       addPreEvaluation(evaluationData);
     }
     
