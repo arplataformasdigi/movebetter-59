@@ -119,7 +119,7 @@ export default function Financial() {
           <TransactionList
             transactions={transformedTransactions}
             onEdit={openEditDialog}
-            onDelete={handleDeleteTransaction}
+            onDeleteTransaction={handleDeleteTransaction}
           />
         </TabsContent>
 
