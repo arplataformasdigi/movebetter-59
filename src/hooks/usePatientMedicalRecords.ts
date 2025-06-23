@@ -46,7 +46,13 @@ export function usePatientMedicalRecords(patientId?: string) {
         return;
       }
 
-      setMedicalRecords(data || []);
+      // Type casting to ensure status is properly typed
+      const typedData = (data || []).map(record => ({
+        ...record,
+        status: (record.status || 'active') as 'active' | 'discharged'
+      }));
+
+      setMedicalRecords(typedData);
     } catch (error) {
       console.error('Error in fetchMedicalRecords:', error);
       toast.error("Erro inesperado ao carregar prontuários");
