@@ -15,8 +15,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { usePlanExercises } from "@/hooks/usePlanExercises";
+import { useExercises } from "@/hooks/useExercises";
 import { ExerciseSelector } from "./ExerciseSelector";
-import { Plus, AlertCircle } from "lucide-react";
+import { ExerciseForm } from "../exercises/ExerciseForm";
+import { Plus, AlertCircle, Dumbbell } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface Exercise {
@@ -49,8 +51,10 @@ export function AddExercisesToPlanDialog({
   const [durationMinutes, setDurationMinutes] = useState("");
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showCreateExercise, setShowCreateExercise] = useState(false);
 
   const { addPlanExercise } = usePlanExercises(plan?.id);
+  const { addExercise } = useExercises();
 
   const selectedExercise = exercises.find(ex => ex.id === selectedExerciseId);
 
@@ -62,6 +66,30 @@ export function AddExercisesToPlanDialog({
   };
 
   const hasErrors = Object.values(errors).some(error => error !== "");
+
+  const handleCreateExercise = async (exerciseData: any) => {
+    const formattedData = {
+      name: exerciseData.name,
+      description: exerciseData.description,
+      instructions: exerciseData.description, // Use description as instructions for now
+      category: exerciseData.category,
+      difficulty_level: exerciseData.difficulty === "iniciante" ? 1 : 
+                       exerciseData.difficulty === "intermediário" ? 3 : 5,
+      duration_minutes: null,
+      equipment_needed: exerciseData.targetArea ? [exerciseData.targetArea] : [],
+      image_url: exerciseData.thumbnailUrl || null,
+      video_url: exerciseData.videoUrl || null,
+      is_active: true,
+    };
+
+    const result = await addExercise(formattedData);
+    
+    if (result.success) {
+      setShowCreateExercise(false);
+      setSelectedExerciseId(result.data.id);
+      toast.success("Exercício criado com sucesso!");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,10 +130,50 @@ export function AddExercisesToPlanDialog({
     setRepetitions("10");
     setDurationMinutes("");
     setNotes("");
+    setShowCreateExercise(false);
   };
 
+  const handleDialogClose = (isOpen: boolean) => {
+    if (!isOpen) {
+      resetForm();
+    }
+    onOpenChange(isOpen);
+  };
+
+  if (showCreateExercise) {
+    return (
+      <Dialog open={open} onOpenChange={handleDialogClose}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Dumbbell className="h-5 w-5" />
+              Criar Novo Exercício
+            </DialogTitle>
+            <DialogDescription>
+              Crie um novo exercício para adicionar à trilha "{plan?.name}"
+            </DialogDescription>
+          </DialogHeader>
+
+          <ExerciseForm
+            onSave={handleCreateExercise}
+          />
+
+          <DialogFooter>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => setShowCreateExercise(false)}
+            >
+              Voltar para Seleção
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleDialogClose}>
       <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -118,13 +186,48 @@ export function AddExercisesToPlanDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Seletor de Exercícios */}
+          {/* Seletor de Exercícios com botão para criar */}
           <div>
-            <ExerciseSelector
-              exercises={exercises}
-              selectedExerciseId={selectedExerciseId}
-              onExerciseSelect={setSelectedExerciseId}
-            />
+            <div className="flex items-center justify-between mb-4">
+              <Label className="text-base font-medium">Exercícios</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowCreateExercise(true)}
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Criar Exercício
+              </Button>
+            </div>
+            
+            {exercises.length === 0 ? (
+              <Card className="border-dashed">
+                <CardContent className="flex flex-col items-center justify-center py-8">
+                  <Dumbbell className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium text-center mb-2">Nenhum exercício disponível</h3>
+                  <p className="text-muted-foreground text-center mb-4">
+                    Crie seu primeiro exercício para começar a montar trilhas de tratamento
+                  </p>
+                  <Button
+                    type="button"
+                    onClick={() => setShowCreateExercise(true)}
+                    className="flex items-center gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Criar Primeiro Exercício
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <ExerciseSelector
+                exercises={exercises}
+                selectedExerciseId={selectedExerciseId}
+                onExerciseSelect={setSelectedExerciseId}
+              />
+            )}
+            
             {errors.exercise && (
               <Alert className="mt-2">
                 <AlertCircle className="h-4 w-4" />
@@ -134,88 +237,90 @@ export function AddExercisesToPlanDialog({
           </div>
 
           {/* Configurações do Exercício */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Configurações do Exercício</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="dayNumber">Dia da Trilha *</Label>
-                  <Input
-                    id="dayNumber"
-                    type="number"
-                    min="1"
-                    value={dayNumber}
-                    onChange={(e) => setDayNumber(e.target.value)}
-                    className={errors.dayNumber ? "border-red-500" : ""}
-                  />
-                  {errors.dayNumber && (
-                    <p className="text-sm text-red-500 mt-1">{errors.dayNumber}</p>
-                  )}
+          {exercises.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Configurações do Exercício</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="dayNumber">Dia da Trilha *</Label>
+                    <Input
+                      id="dayNumber"
+                      type="number"
+                      min="1"
+                      value={dayNumber}
+                      onChange={(e) => setDayNumber(e.target.value)}
+                      className={errors.dayNumber ? "border-red-500" : ""}
+                    />
+                    {errors.dayNumber && (
+                      <p className="text-sm text-red-500 mt-1">{errors.dayNumber}</p>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="sets">Séries *</Label>
+                    <Input
+                      id="sets"
+                      type="number"
+                      min="1"
+                      value={sets}
+                      onChange={(e) => setSets(e.target.value)}
+                      className={errors.sets ? "border-red-500" : ""}
+                    />
+                    {errors.sets && (
+                      <p className="text-sm text-red-500 mt-1">{errors.sets}</p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="sets">Séries *</Label>
-                  <Input
-                    id="sets"
-                    type="number"
-                    min="1"
-                    value={sets}
-                    onChange={(e) => setSets(e.target.value)}
-                    className={errors.sets ? "border-red-500" : ""}
-                  />
-                  {errors.sets && (
-                    <p className="text-sm text-red-500 mt-1">{errors.sets}</p>
-                  )}
-                </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="repetitions">Repetições</Label>
-                  <Input
-                    id="repetitions"
-                    type="number"
-                    min="1"
-                    value={repetitions}
-                    onChange={(e) => setRepetitions(e.target.value)}
-                    placeholder="Ex: 10, 15"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Deixe vazio se não aplicável
-                  </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="repetitions">Repetições</Label>
+                    <Input
+                      id="repetitions"
+                      type="number"
+                      min="1"
+                      value={repetitions}
+                      onChange={(e) => setRepetitions(e.target.value)}
+                      placeholder="Ex: 10, 15"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Deixe vazio se não aplicável
+                    </p>
+                  </div>
+                  <div>
+                    <Label htmlFor="duration">Duração (minutos)</Label>
+                    <Input
+                      id="duration"
+                      type="number"
+                      min="1"
+                      value={durationMinutes}
+                      onChange={(e) => setDurationMinutes(e.target.value)}
+                      placeholder={selectedExercise?.duration_minutes ? `Padrão: ${selectedExercise.duration_minutes}min` : "Ex: 5, 10"}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {selectedExercise?.duration_minutes 
+                        ? `Exercício tem duração padrão de ${selectedExercise.duration_minutes}min`
+                        : "Deixe vazio se não aplicável"
+                      }
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="duration">Duração (minutos)</Label>
-                  <Input
-                    id="duration"
-                    type="number"
-                    min="1"
-                    value={durationMinutes}
-                    onChange={(e) => setDurationMinutes(e.target.value)}
-                    placeholder={selectedExercise?.duration_minutes ? `Padrão: ${selectedExercise.duration_minutes}min` : "Ex: 5, 10"}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {selectedExercise?.duration_minutes 
-                      ? `Exercício tem duração padrão de ${selectedExercise.duration_minutes}min`
-                      : "Deixe vazio se não aplicável"
-                    }
-                  </p>
-                </div>
-              </div>
 
-              <div>
-                <Label htmlFor="notes">Observações</Label>
-                <Textarea
-                  id="notes"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Instruções específicas, modificações, etc."
-                  rows={3}
-                />
-              </div>
-            </CardContent>
-          </Card>
+                <div>
+                  <Label htmlFor="notes">Observações</Label>
+                  <Textarea
+                    id="notes"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Instruções específicas, modificações, etc."
+                    rows={3}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <DialogFooter>
             <Button 
@@ -225,13 +330,15 @@ export function AddExercisesToPlanDialog({
             >
               Cancelar
             </Button>
-            <Button 
-              type="submit" 
-              disabled={hasErrors || isSubmitting}
-              className="min-w-[120px]"
-            >
-              {isSubmitting ? "Adicionando..." : "Adicionar Exercício"}
-            </Button>
+            {exercises.length > 0 && (
+              <Button 
+                type="submit" 
+                disabled={hasErrors || isSubmitting}
+                className="min-w-[120px]"
+              >
+                {isSubmitting ? "Adicionando..." : "Adicionar Exercício"}
+              </Button>
+            )}
           </DialogFooter>
         </form>
       </DialogContent>
