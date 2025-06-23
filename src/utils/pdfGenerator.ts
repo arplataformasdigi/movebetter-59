@@ -1,18 +1,9 @@
 
 import { PreEvaluation } from '@/hooks/usePatientPreEvaluations';
-import { Patient } from '@/hooks/usePatients';
-
-export interface ProfessionalData {
-  name: string;
-  address: string;
-  phone: string;
-  councilNumber: string;
-}
 
 export const generatePreEvaluationPDF = (
   preEvaluation: PreEvaluation,
-  patient: Patient,
-  professional: ProfessionalData
+  patientName: string
 ) => {
   // Create a new window for the PDF
   const printWindow = window.open('', '_blank');
@@ -26,12 +17,10 @@ export const generatePreEvaluationPDF = (
     <html>
     <head>
       <meta charset="utf-8">
-      <title>Pré-avaliação - ${patient.name}</title>
+      <title>Pré-avaliação - ${patientName}</title>
       <style>
         body { font-family: Arial, sans-serif; margin: 20px; font-size: 12px; }
         .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
-        .professional-info { margin-bottom: 20px; }
-        .patient-info { margin-bottom: 20px; background-color: #f5f5f5; padding: 15px; }
         .section { margin-bottom: 20px; }
         .section-title { font-weight: bold; font-size: 14px; margin-bottom: 10px; color: #333; border-bottom: 1px solid #ddd; }
         .field { margin-bottom: 8px; }
@@ -50,43 +39,11 @@ export const generatePreEvaluationPDF = (
         <h2>FISIOTERAPIA</h2>
       </div>
 
-      <div class="professional-info">
-        <div class="section-title">Dados do Profissional</div>
-        <div class="field">
-          <span class="field-label">Nome:</span>
-          <span class="field-value">${professional.name}</span>
-        </div>
-        <div class="field">
-          <span class="field-label">Endereço:</span>
-          <span class="field-value">${professional.address}</span>
-        </div>
-        <div class="field">
-          <span class="field-label">Telefone:</span>
-          <span class="field-value">${professional.phone}</span>
-        </div>
-        <div class="field">
-          <span class="field-label">CREFITO:</span>
-          <span class="field-value">${professional.councilNumber}</span>
-        </div>
-      </div>
-
-      <div class="patient-info">
+      <div class="section">
         <div class="section-title">Dados do Paciente</div>
         <div class="field">
           <span class="field-label">Nome:</span>
-          <span class="field-value">${patient.name}</span>
-        </div>
-        <div class="field">
-          <span class="field-label">Email:</span>
-          <span class="field-value">${patient.email || 'Não informado'}</span>
-        </div>
-        <div class="field">
-          <span class="field-label">Telefone:</span>
-          <span class="field-value">${patient.phone || 'Não informado'}</span>
-        </div>
-        <div class="field">
-          <span class="field-label">Data de Nascimento:</span>
-          <span class="field-value">${patient.birth_date || 'Não informado'}</span>
+          <span class="field-value">${patientName}</span>
         </div>
       </div>
 

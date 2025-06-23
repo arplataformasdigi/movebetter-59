@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -45,7 +46,82 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ClipboardList, Edit, Trash2, Download } from "lucide-react";
 import { usePatientPreEvaluations, PreEvaluation } from "@/hooks/usePatientPreEvaluations";
-import { generatePreEvaluationPDF } from "@/utils/pdfGenerator";
+
+// Simplified PDF generation function
+const generatePreEvaluationPDF = (evaluation: PreEvaluation, patientName: string) => {
+  // Simple PDF generation using browser print
+  const printWindow = window.open('', '_blank');
+  
+  if (!printWindow) {
+    throw new Error('Popup bloqueado. Permita popups para gerar o PDF.');
+  }
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Pré-avaliação - ${patientName}</title>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 20px; font-size: 12px; }
+        .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
+        .section { margin-bottom: 20px; }
+        .section-title { font-weight: bold; font-size: 14px; margin-bottom: 10px; color: #333; border-bottom: 1px solid #ddd; }
+        .field { margin-bottom: 8px; }
+        .field-label { font-weight: bold; display: inline-block; min-width: 150px; }
+        .field-value { display: inline-block; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>FICHA DE PRÉ-AVALIAÇÃO</h1>
+        <h2>FISIOTERAPIA</h2>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Dados do Paciente</div>
+        <div class="field">
+          <span class="field-label">Nome:</span>
+          <span class="field-value">${patientName}</span>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Informações da Pré-avaliação</div>
+        <div class="field">
+          <span class="field-label">Profissão:</span>
+          <span class="field-value">${evaluation.profissao}</span>
+        </div>
+        <div class="field">
+          <span class="field-label">Queixa Principal:</span>
+          <span class="field-value">${evaluation.queixa_principal}</span>
+        </div>
+        <div class="field">
+          <span class="field-label">Tempo do Problema:</span>
+          <span class="field-value">${evaluation.tempo_problema}</span>
+        </div>
+        <div class="field">
+          <span class="field-label">Descrição da Dor:</span>
+          <span class="field-value">${evaluation.descricao_dor}</span>
+        </div>
+      </div>
+
+      <div class="footer">
+        <p>Data de Avaliação: ${new Date(evaluation.created_at).toLocaleDateString('pt-BR')}</p>
+      </div>
+    </body>
+    </html>
+  `;
+
+  printWindow.document.write(html);
+  printWindow.document.close();
+  
+  printWindow.onload = () => {
+    setTimeout(() => {
+      printWindow.print();
+    }, 250);
+  };
+};
 
 const formSchema = z.object({
   profissao: z.string().min(2, "Profissão é obrigatória"),
@@ -154,13 +230,10 @@ export function PatientPreEvaluation({ patientId, patientName }: PatientPreEvalu
 
   function onSubmit(values: FormValues) {
     if (editingEvaluation) {
-      updatePreEvaluation(editingEvaluation.id, values);
-      setEditingEvaluation(null);
-    } else {
-      const evaluationData = {
-        patient_id: patientId,
+      // For updates, ensure all required fields are present
+      const updateData: Partial<PreEvaluation> = {
         ...values,
-        // Ensure required fields have default values if empty
+        // Ensure all required fields have values
         alcool: values.alcool || "Não informado",
         doencas_familiares: values.doencas_familiares || "Não informado",
         condicoes_similares: values.condicoes_similares || "Não informado",
@@ -174,6 +247,70 @@ export function PatientPreEvaluation({ patientId, patientName }: PatientPreEvalu
         dispositivo_auxilio: values.dispositivo_auxilio || "Não informado",
         dificuldade_equilibrio: values.dificuldade_equilibrio || "Não informado",
         limitacao_movimento: values.limitacao_movimento || "Não informado",
+        alivio_dor: values.alivio_dor || "Não informado",
+        piora_dor: values.piora_dor || "Não informado",
+        interferencia_dor: values.interferencia_dor || "Não informado",
+        irradiacao_dor: values.irradiacao_dor || "Não informado",
+        escala_dor: values.escala_dor || "Não informado",
+        descricao_dor: values.descricao_dor || "Não informado",
+        tratamento_anterior: values.tratamento_anterior || "Não informado",
+        inicio_problema: values.inicio_problema || "Não informado",
+        tempo_problema: values.tempo_problema || "Não informado",
+        queixa_principal: values.queixa_principal || "Não informado",
+        hobby: values.hobby || "Não informado",
+        atividade_fisica: values.atividade_fisica || "Não informado",
+        profissao: values.profissao || "Não informado",
+        diagnostico_medico: values.diagnostico_medico || "Não informado",
+        exames_recentes: values.exames_recentes || "Não informado",
+        condicoes_saude: values.condicoes_saude || "Não informado",
+        cirurgias: values.cirurgias || "Não informado",
+      };
+      
+      updatePreEvaluation(editingEvaluation.id, updateData);
+      setEditingEvaluation(null);
+    } else {
+      // For new evaluations, create the complete object
+      const evaluationData = {
+        patient_id: patientId,
+        profissao: values.profissao,
+        atividade_fisica: values.atividade_fisica,
+        hobby: values.hobby,
+        queixa_principal: values.queixa_principal,
+        tempo_problema: values.tempo_problema,
+        inicio_problema: values.inicio_problema,
+        tratamento_anterior: values.tratamento_anterior,
+        descricao_dor: values.descricao_dor,
+        escala_dor: values.escala_dor,
+        irradiacao_dor: values.irradiacao_dor,
+        piora_dor: values.piora_dor,
+        alivio_dor: values.alivio_dor,
+        interferencia_dor: values.interferencia_dor,
+        diagnostico_medico: values.diagnostico_medico,
+        exames_recentes: values.exames_recentes,
+        condicoes_saude: values.condicoes_saude,
+        cirurgias: values.cirurgias,
+        medicamentos: values.medicamentos,
+        alergias: values.alergias,
+        doencas_familiares: values.doencas_familiares,
+        condicoes_similares: values.condicoes_similares,
+        alimentacao: values.alimentacao,
+        padrao_sono: values.padrao_sono,
+        alcool: values.alcool,
+        fumante: values.fumante,
+        ingestao_agua: values.ingestao_agua,
+        tempo_sentado: values.tempo_sentado,
+        nivel_estresse: values.nivel_estresse,
+        questoes_emocionais: values.questoes_emocionais,
+        impacto_qualidade_vida: values.impacto_qualidade_vida,
+        expectativas_tratamento: values.expectativas_tratamento,
+        exercicios_casa: values.exercicios_casa,
+        restricoes: values.restricoes,
+        dificuldade_dia: values.dificuldade_dia,
+        dispositivo_auxilio: values.dispositivo_auxilio,
+        dificuldade_equilibrio: values.dificuldade_equilibrio,
+        limitacao_movimento: values.limitacao_movimento,
+        info_adicional: values.info_adicional,
+        duvidas_fisioterapia: values.duvidas_fisioterapia,
       };
       
       addPreEvaluation(evaluationData);

@@ -98,7 +98,7 @@ export function PatientDetails({ patient, onUpdatePatient }: PatientDetailsProps
               <TabsTrigger value="evolution">Evolução do Paciente</TabsTrigger>
             </TabsList>
             <TabsContent value="pre-evaluation" className="pt-4">
-              <PatientPreEvaluation patientId={patient.id} />
+              <PatientPreEvaluation patientId={patient.id} patientName={patient.name} />
             </TabsContent>
             <TabsContent value="records" className="pt-4">
               <PatientMedicalRecord patientId={patient.id} />
