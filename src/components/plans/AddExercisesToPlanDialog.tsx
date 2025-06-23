@@ -71,8 +71,8 @@ export function AddExercisesToPlanDialog({
     const formattedData = {
       name: exerciseData.name,
       description: exerciseData.description,
-      instructions: exerciseData.description, // Use description as instructions for now
-      category: exerciseData.category,
+      instructions: exerciseData.description,
+      category: null,
       difficulty_level: exerciseData.difficulty === "iniciante" ? 1 : 
                        exerciseData.difficulty === "intermediário" ? 3 : 5,
       duration_minutes: null,

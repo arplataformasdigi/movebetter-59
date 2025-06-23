@@ -25,9 +25,6 @@ import { DialogClose, DialogFooter } from "@/components/ui/dialog";
 
 const exerciseSchema = z.object({
   name: z.string().min(3, { message: "Nome deve ter no mínimo 3 caracteres" }),
-  category: z.enum(["corrida", "pilates", "reabilitação"], { 
-    required_error: "Categoria é obrigatória" 
-  }),
   difficulty: z.enum(["iniciante", "intermediário", "avançado"], { 
     required_error: "Nível de dificuldade é obrigatório" 
   }),
@@ -49,7 +46,6 @@ export function ExerciseForm({ onSave, defaultValues }: ExerciseFormProps) {
     resolver: zodResolver(exerciseSchema),
     defaultValues: defaultValues || {
       name: "",
-      category: undefined,
       difficulty: undefined,
       targetArea: "",
       description: "",
@@ -61,7 +57,6 @@ export function ExerciseForm({ onSave, defaultValues }: ExerciseFormProps) {
   function onSubmit(data: ExerciseFormValues) {
     console.log(data);
     onSave?.(data);
-    // In a real app, you would save the data to your backend here
   }
 
   return (
@@ -97,53 +92,28 @@ export function ExerciseForm({ onSave, defaultValues }: ExerciseFormProps) {
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="category"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Categoria</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione a categoria" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent className="bg-white">
-                    <SelectItem value="corrida">Corrida</SelectItem>
-                    <SelectItem value="pilates">Pilates</SelectItem>
-                    <SelectItem value="reabilitação">Reabilitação</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="difficulty"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Nível de Dificuldade</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione a dificuldade" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent className="bg-white">
-                    <SelectItem value="iniciante">Iniciante</SelectItem>
-                    <SelectItem value="intermediário">Intermediário</SelectItem>
-                    <SelectItem value="avançado">Avançado</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+        <FormField
+          control={form.control}
+          name="difficulty"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nível de Dificuldade</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a dificuldade" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent className="bg-white">
+                  <SelectItem value="iniciante">Iniciante</SelectItem>
+                  <SelectItem value="intermediário">Intermediário</SelectItem>
+                  <SelectItem value="avançado">Avançado</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}
