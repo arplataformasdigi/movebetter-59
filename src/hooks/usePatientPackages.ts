@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -54,9 +53,10 @@ export function usePatientPackages() {
   useEffect(() => {
     fetchPatientPackages();
 
-    // Setup realtime subscription
+    // Setup realtime subscription with unique channel name
+    const channelName = `patient_packages_changes_${Date.now()}`;
     const channel = supabase
-      .channel('patient_packages_changes')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {

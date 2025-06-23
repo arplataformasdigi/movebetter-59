@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -83,9 +82,10 @@ export function usePatientPreEvaluations(patientId?: string) {
     fetchPreEvaluations();
 
     if (patientId) {
-      // Setup realtime subscription
+      // Setup realtime subscription with unique channel name including patientId
+      const channelName = `pre_evaluations_changes_${patientId}_${Date.now()}`;
       const channel = supabase
-        .channel('pre_evaluations_changes')
+        .channel(channelName)
         .on(
           'postgres_changes',
           {
