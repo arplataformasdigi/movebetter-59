@@ -112,7 +112,7 @@ export default function Financial() {
         </TabsList>
 
         <TabsContent value="summary" className="space-y-6">
-          <FinancialSummary transactions={transactions} />
+          <FinancialSummary transactions={transformedTransactions} />
         </TabsContent>
 
         <TabsContent value="transactions" className="space-y-6">
@@ -132,11 +132,11 @@ export default function Financial() {
         </TabsContent>
 
         <TabsContent value="analysis" className="space-y-6">
-          <CategoryAnalysis transactions={transactions} />
+          <CategoryAnalysis transactions={transformedTransactions} />
         </TabsContent>
 
         <TabsContent value="reports" className="space-y-6">
-          <FinancialReports transactions={transactions} />
+          <FinancialReports transactions={transformedTransactions} />
         </TabsContent>
       </Tabs>
 
