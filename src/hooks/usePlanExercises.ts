@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -144,12 +143,21 @@ export function usePlanExercises(planId?: string) {
             
             if (!isMountedRef.current) return;
             
-            // Fetch the new exercise with exercise data
+            // Fetch the new exercise with complete exercise data
             const { data: newExercise } = await supabase
               .from('plan_exercises')
               .select(`
                 *,
-                exercises (name, description, instructions)
+                exercises (
+                  id,
+                  name, 
+                  description, 
+                  instructions,
+                  difficulty_level,
+                  duration_minutes,
+                  image_url,
+                  video_url
+                )
               `)
               .eq('id', payload.new.id)
               .single();
@@ -172,12 +180,21 @@ export function usePlanExercises(planId?: string) {
             
             if (!isMountedRef.current) return;
             
-            // Fetch the updated exercise with exercise data
+            // Fetch the updated exercise with complete exercise data
             const { data: updatedExercise } = await supabase
               .from('plan_exercises')
               .select(`
                 *,
-                exercises (name, description, instructions)
+                exercises (
+                  id,
+                  name, 
+                  description, 
+                  instructions,
+                  difficulty_level,
+                  duration_minutes,
+                  image_url,
+                  video_url
+                )
               `)
               .eq('id', payload.new.id)
               .single();
