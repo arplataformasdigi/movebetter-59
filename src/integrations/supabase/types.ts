@@ -412,6 +412,44 @@ export type Database = {
         }
         Relationships: []
       }
+      patient_app_access: {
+        Row: {
+          allowed_pages: string[] | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          patient_id: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          allowed_pages?: string[] | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          patient_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          allowed_pages?: string[] | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          patient_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_app_access_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patient_evolutions: {
         Row: {
           conduta_atendimento: string
@@ -800,6 +838,7 @@ export type Database = {
           id: string
           medical_history: string | null
           name: string
+          password_hash: string | null
           phone: string | null
           status: Database["public"]["Enums"]["patient_status"] | null
           updated_at: string | null
@@ -817,6 +856,7 @@ export type Database = {
           id?: string
           medical_history?: string | null
           name: string
+          password_hash?: string | null
           phone?: string | null
           status?: Database["public"]["Enums"]["patient_status"] | null
           updated_at?: string | null
@@ -834,6 +874,7 @@ export type Database = {
           id?: string
           medical_history?: string | null
           name?: string
+          password_hash?: string | null
           phone?: string | null
           status?: Database["public"]["Enums"]["patient_status"] | null
           updated_at?: string | null

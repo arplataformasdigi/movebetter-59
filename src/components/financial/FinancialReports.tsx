@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,18 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Download, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { getCurrentDate, formatDateToBrazilian, isDateInRange } from "@/utils/dateUtils";
-
-interface Transaction {
-  id: string;
-  type: "income" | "expense";
-  description: string;
-  amount: number;
-  date: string;
-  category: string;
-}
+import { generateFinancialPDF } from "./PDFReportGenerator";
+import { FinancialTransaction } from "@/hooks/useFinancialTransactions";
 
 interface FinancialReportsProps {
-  transactions: Transaction[];
+  transactions: FinancialTransaction[];
 }
 
 export function FinancialReports({ transactions }: FinancialReportsProps) {
@@ -27,16 +21,16 @@ export function FinancialReports({ transactions }: FinancialReportsProps) {
 
   // Filter transactions by date range using utility function
   const filteredTransactions = transactions.filter(t => {
-    return isDateInRange(t.date, startDate, endDate);
+    return isDateInRange(t.transaction_date, startDate, endDate);
   });
 
   const totalIncome = filteredTransactions
     .filter(t => t.type === "income")
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + Number(t.amount), 0);
 
   const totalExpenses = filteredTransactions
     .filter(t => t.type === "expense")
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + Number(t.amount), 0);
 
   const balance = totalIncome - totalExpenses;
 
@@ -44,23 +38,38 @@ export function FinancialReports({ transactions }: FinancialReportsProps) {
   const incomeByCategory = filteredTransactions
     .filter(t => t.type === "income")
     .reduce((acc, t) => {
-      acc[t.category] = (acc[t.category] || 0) + t.amount;
+      const categoryName = t.financial_categories?.name || 'Sem categoria';
+      acc[categoryName] = (acc[categoryName] || 0) + Number(t.amount);
       return acc;
     }, {} as Record<string, number>);
 
   const expensesByCategory = filteredTransactions
     .filter(t => t.type === "expense")
     .reduce((acc, t) => {
-      acc[t.category] = (acc[t.category] || 0) + t.amount;
+      const categoryName = t.financial_categories?.name || 'Sem categoria';
+      acc[categoryName] = (acc[categoryName] || 0) + Number(t.amount);
       return acc;
     }, {} as Record<string, number>);
 
   const generatePDF = () => {
-    toast.success("Relatório PDF gerado com sucesso!");
-  };
+    try {
+      const reportData = {
+        transactions: filteredTransactions,
+        startDate,
+        endDate,
+        totalIncome,
+        totalExpenses,
+        balance,
+        incomeByCategory,
+        expensesByCategory,
+      };
 
-  const generateExcel = () => {
-    toast.success("Relatório Excel gerado com sucesso!");
+      generateFinancialPDF(reportData);
+      toast.success("Relatório PDF gerado com sucesso!");
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error("Erro ao gerar relatório PDF");
+    }
   };
 
   return (
@@ -69,16 +78,11 @@ export function FinancialReports({ transactions }: FinancialReportsProps) {
         <div className="flex items-center justify-between">
           <div>
             <CardTitle>Relatórios Financeiros</CardTitle>
-            <CardDescription>Análise detalhada do período selecionado</CardDescription>
+            <CardDescription>Análise detalhada do período selecionado - Atualizado em tempo real</CardDescription>
           </div>
-          <div className="flex space-x-2">
-            <Button onClick={generatePDF} variant="outline">
-              <Download className="mr-2 h-4 w-4" /> PDF
-            </Button>
-            <Button onClick={generateExcel} variant="outline">
-              <Download className="mr-2 h-4 w-4"  /> Excel
-            </Button>
-          </div>
+          <Button onClick={generatePDF} variant="outline">
+            <Download className="mr-2 h-4 w-4" /> Baixar PDF
+          </Button>
         </div>
       </CardHeader>
       <CardContent>

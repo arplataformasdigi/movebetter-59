@@ -1,117 +1,93 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { 
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Users, Power, PowerOff } from "lucide-react";
+import { Users, Plus, Search, Pencil, Trash, Eye, FileText, Activity } from "lucide-react";
 import { AddPatientDialog } from "@/components/patients/AddPatientDialog";
 import { EditPatientDialog } from "@/components/patients/EditPatientDialog";
-import { PatientDetails } from "@/components/patients/PatientDetails";
 import { DeletePatientDialog } from "@/components/patients/DeletePatientDialog";
+import { PatientDetails } from "@/components/patients/PatientDetails";
 import { AssignPackageDialog } from "@/components/patients/AssignPackageDialog";
-import { usePatients, Patient } from "@/hooks/usePatients";
-import { usePatientPackages } from "@/hooks/usePatientPackages";
+import { PatientAccessDialog } from "@/components/patients/PatientAccessDialog";
+import { usePatients } from "@/hooks/usePatients";
 import { usePackagesData } from "@/hooks/usePackagesData";
 
-const getStatusDetails = (status: Patient["status"]) => {
-  switch (status) {
-    case "active":
-      return { 
-        label: "Ativo",
-        color: "bg-green-100 text-green-800 border-green-200" 
-      };
-    case "inactive":
-      return { 
-        label: "Inativo", 
-        color: "bg-red-100 text-red-800 border-red-200" 
-      };
-    default:
-      return { 
-        label: "Desconhecido", 
-        color: "bg-gray-100 text-gray-800 border-gray-200" 
-      };
-  }
-};
+export default function Patients() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedPatient, setSelectedPatient] = useState<any>(null);
+  const [editingPatient, setEditingPatient] = useState<any>(null);
+  const [deletingPatient, setDeletingPatient] = useState<{ id: string; name: string } | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [assignPackageOpen, setAssignPackageOpen] = useState(false);
 
-export function Patients() {
-  const { patients, isLoading, updatePatient, deletePatient } = usePatients();
-  const { packages, isLoading: packagesLoading } = usePackagesData();
-  const { getPatientPackage, assignPackage } = usePatientPackages();
-  const [searchQuery, setSearchQuery] = useState("");
+  const { patients, isLoading, addPatient, updatePatient, deletePatient } = usePatients();
+  const { packages } = usePackagesData();
 
-  useEffect(() => {
-    console.log('Current patients state:', patients);
-    console.log('Is loading:', isLoading);
-  }, [patients, isLoading]);
-
-  const handleUpdatePatient = (updatedPatient: any) => {
-    const patientData = {
-      name: updatedPatient.name,
-      email: updatedPatient.email || undefined,
-      phone: updatedPatient.phone || undefined,
-      status: updatedPatient.status,
-    };
-    updatePatient(updatedPatient.id, patientData);
+  const handleAddPatient = async (patientData: any) => {
+    return await addPatient(patientData);
   };
 
-  const handleToggleStatus = async (patientId: string) => {
-    const patient = patients.find(p => p.id === patientId);
-    if (patient) {
-      const newStatus: Patient["status"] = patient.status === "active" ? "inactive" : "active";
-      await updatePatient(patientId, { status: newStatus });
+  const handleEditPatient = async (updatedPatient: any) => {
+    const result = await updatePatient(updatedPatient.id, updatedPatient);
+    if (result.success) {
+      setEditDialogOpen(false);
+      setEditingPatient(null);
     }
   };
 
   const handleDeletePatient = async (patientId: string) => {
-    await deletePatient(patientId);
+    const result = await deletePatient(patientId);
+    if (result.success) {
+      setDeletingPatient(null);
+    }
   };
 
-  const handleAssignPackage = async (assignment: any) => {
-    const packageData = {
-      patient_id: assignment.patientId,
-      package_id: assignment.packageId,
-      final_price: assignment.finalPrice,
-      status: 'active',
-      assigned_date: new Date().toISOString().split('T')[0],
-      sessions_used: 0,
-    };
-    
-    await assignPackage(packageData);
+  const filteredPatients = patients.filter(patient => 
+    patient.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+    (statusFilter === "all" || patient.status === statusFilter)
+  );
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "active": return "bg-green-100 text-green-800";
+      case "inactive": return "bg-gray-100 text-gray-800";
+      case "completed": return "bg-blue-100 text-blue-800";
+      default: return "bg-gray-100 text-gray-800";
+    }
   };
 
-  // Show all patients regardless of status
-  const filteredPatients = patients
-    .filter(patient => 
-      patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (patient.email && patient.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (patient.phone && patient.phone.includes(searchQuery))
-    );
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "active": return "Ativo";
+      case "inactive": return "Inativo";
+      case "completed": return "Concluído";
+      default: return status;
+    }
+  };
+
+  const openEditDialog = (patient: any) => {
+    setEditingPatient(patient);
+    setEditDialogOpen(true);
+  };
+
+  const openDetailsDialog = (patient: any) => {
+    setSelectedPatient(patient);
+    setDetailsOpen(true);
+  };
+
+  const openAssignPackageDialog = (patient: any) => {
+    setSelectedPatient(patient);
+    setAssignPackageOpen(true);
+  };
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center">
-            <Users className="mr-2 h-8 w-8" /> Pacientes
-          </h1>
-          <p className="text-muted-foreground">Carregando pacientes...</p>
-        </div>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-lg">Carregando pacientes...</div>
       </div>
     );
   }
@@ -124,147 +100,156 @@ export function Patients() {
             <Users className="mr-2 h-8 w-8" /> Pacientes
           </h1>
           <p className="text-muted-foreground">
-            Gerencie seus pacientes e seus planos de tratamento.
+            Gerencie pacientes e suas permissões de acesso ao sistema.
           </p>
         </div>
-        <div className="flex gap-2">
-          <AddPatientDialog />
-        </div>
+        <AddPatientDialog onAddPatient={handleAddPatient} />
       </div>
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Lista de Pacientes</CardTitle>
-              <CardDescription>
-                Gerencie todos os pacientes registrados ({filteredPatients.length} pacientes encontrados)
-              </CardDescription>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Input 
-                placeholder="Buscar pacientes..." 
-                className="w-64"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}  
-              />
-            </div>
-          </div>
+          <CardTitle>Lista de Pacientes</CardTitle>
+          <CardDescription>
+            Gerencie informações dos pacientes e configure permissões de acesso
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          {filteredPatients.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Users className="mx-auto h-12 w-12 text-muted-foreground/50" />
-              <h3 className="mt-2 text-sm font-medium">
-                {searchQuery ? "Nenhum paciente encontrado" : "Nenhum paciente cadastrado"}
-              </h3>
-              <p className="mt-1 text-sm">
-                {searchQuery 
-                  ? "Tente ajustar sua busca ou cadastre um novo paciente." 
-                  : "Comece cadastrando seu primeiro paciente."
-                }
-              </p>
+          <div className="flex items-center justify-between space-x-2 mb-6">
+            <div className="flex items-center space-x-2">
+              <div className="relative">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  placeholder="Buscar pacientes..." 
+                  className="pl-8"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}  
+                />
+              </div>
+              <select 
+                className="border rounded px-3 py-2"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                <option value="all">Todos os Status</option>
+                <option value="active">Ativo</option>
+                <option value="inactive">Inativo</option>
+                <option value="completed">Concluído</option>
+              </select>
             </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Contato</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Pacote</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredPatients.map((patient) => {
-                  const status = getStatusDetails(patient.status);
-                  const assignedPackage = getPatientPackage(patient.id);
-                  
-                  return (
-                    <TableRow key={patient.id}>
-                      <TableCell>
-                        <div className="flex items-center space-x-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={undefined} alt={patient.name} />
-                            <AvatarFallback className="bg-movebetter-primary text-white">
-                              {patient.name.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <span className="font-medium">{patient.name}</span>
-                            {patient.cpf && (
-                              <div className="text-xs text-muted-foreground">
-                                CPF: {patient.cpf}
-                              </div>
-                            )}
-                          </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredPatients.length > 0 ? (
+              filteredPatients.map((patient) => (
+                <Card key={patient.id}>
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <CardTitle className="text-lg">{patient.name}</CardTitle>
+                      <Badge className={getStatusColor(patient.status)}>
+                        {getStatusLabel(patient.status)}
+                      </Badge>
+                    </div>
+                    {patient.email && (
+                      <CardDescription>{patient.email}</CardDescription>
+                    )}
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {patient.phone && (
+                        <div className="flex justify-between text-sm">
+                          <span>Telefone:</span>
+                          <span className="font-medium">{patient.phone}</span>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          <div>{patient.email || "Email não informado"}</div>
-                          <div className="text-muted-foreground">{patient.phone || "Telefone não informado"}</div>
+                      )}
+                      {patient.birth_date && (
+                        <div className="flex justify-between text-sm">
+                          <span>Nascimento:</span>
+                          <span className="font-medium">
+                            {new Date(patient.birth_date).toLocaleDateString('pt-BR')}
+                          </span>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={status.color}>
-                          {status.label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {assignedPackage ? (
-                          <div className="text-sm">
-                            <div className="font-medium">{assignedPackage.packages?.name}</div>
-                            <div className="text-muted-foreground">
-                              R$ {assignedPackage.final_price.toFixed(2)}
-                            </div>
-                          </div>
-                        ) : (
-                          <AssignPackageDialog
-                            patientId={patient.id}
-                            patientName={patient.name}
-                            packages={packages}
-                            onAssignPackage={handleAssignPackage}
-                          />
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center gap-2 justify-end">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleToggleStatus(patient.id)}
-                            className="h-8 w-8 p-0"
-                            title={patient.status === "active" ? "Desativar paciente" : "Ativar paciente"}
-                          >
-                            {patient.status === "active" ? (
-                              <PowerOff className="h-4 w-4 text-red-600" />
-                            ) : (
-                              <Power className="h-4 w-4 text-green-600" />
-                            )}
-                          </Button>
-                          <EditPatientDialog patient={patient} />
-                          <DeletePatientDialog 
-                            patientName={patient.name}
-                            onConfirm={() => handleDeletePatient(patient.id)}
-                          />
-                          <PatientDetails 
-                            patient={patient}
-                            onUpdatePatient={handleUpdatePatient}
-                          />
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          )}
+                      )}
+                      <div className="flex justify-between text-sm">
+                        <span>Cadastrado em:</span>
+                        <span className="font-medium">
+                          {new Date(patient.created_at).toLocaleDateString('pt-BR')}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      <Button variant="outline" size="sm" onClick={() => openDetailsDialog(patient)}>
+                        <Eye className="h-4 w-4 mr-1" /> Detalhes
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => openEditDialog(patient)}>
+                        <Pencil className="h-4 w-4 mr-1" /> Editar
+                      </Button>
+                      <PatientAccessDialog 
+                        patientId={patient.id}
+                        patientName={patient.name}
+                      />
+                    </div>
+                    
+                    <div className="flex justify-between mt-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => openAssignPackageDialog(patient)}
+                      >
+                        <Activity className="h-4 w-4 mr-1" /> Pacote
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="text-red-600 border-red-200 hover:bg-red-50"
+                        onClick={() => setDeletingPatient({ id: patient.id, name: patient.name })}
+                      >
+                        <Trash className="h-4 w-4 mr-1" /> Excluir
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="col-span-full text-center py-8">
+                <div className="text-gray-500 mb-2">
+                  {patients.length === 0 ? "Nenhum paciente cadastrado ainda" : "Nenhum paciente encontrado com os filtros atuais"}
+                </div>
+                {patients.length === 0 && (
+                  <AddPatientDialog onAddPatient={handleAddPatient} />
+                )}
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
+
+      <PatientDetails
+        patient={selectedPatient}
+        open={detailsOpen}
+        onOpenChange={setDetailsOpen}
+      />
+
+      <EditPatientDialog
+        patient={editingPatient}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onEditPatient={handleEditPatient}
+      />
+
+      <DeletePatientDialog
+        open={!!deletingPatient}
+        onOpenChange={() => setDeletingPatient(null)}
+        onConfirm={() => deletingPatient && handleDeletePatient(deletingPatient.id)}
+        patientName={deletingPatient?.name || ""}
+      />
+
+      <AssignPackageDialog
+        patient={selectedPatient}
+        packages={packages}
+        open={assignPackageOpen}
+        onOpenChange={setAssignPackageOpen}
+      />
     </div>
   );
 }
-
-export default Patients;
