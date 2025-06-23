@@ -350,12 +350,74 @@ export function usePlanExercises(planId?: string) {
 
       console.log('Exercise completion updated successfully');
       
+      // Update patient scores if exercise was completed
+      if (isCompleted && data) {
+        const planExercise = planExercises.find(ex => ex.id === exerciseId);
+        if (planExercise?.treatment_plan_id) {
+          // Get the treatment plan to find patient_id
+          const { data: treatmentPlan } = await supabase
+            .from('treatment_plans')
+            .select('patient_id')
+            .eq('id', planExercise.treatment_plan_id)
+            .single();
+
+          if (treatmentPlan?.patient_id) {
+            await updatePatientScore(treatmentPlan.patient_id);
+          }
+        }
+      }
+      
       toast.success(isCompleted ? "Exercício marcado como concluído" : "Exercício marcado como pendente");
       return { success: true, data };
     } catch (error) {
       console.error('Error in toggleExerciseCompletion:', error);
       toast.error("Erro inesperado ao atualizar exercício");
       return { success: false, error };
+    }
+  };
+
+  const updatePatientScore = async (patientId: string) => {
+    try {
+      // Check if patient_scores record exists
+      const { data: existingScore } = await supabase
+        .from('patient_scores')
+        .select('*')
+        .eq('patient_id', patientId)
+        .single();
+
+      if (existingScore) {
+        // Update existing record
+        const { error } = await supabase
+          .from('patient_scores')
+          .update({
+            total_points: existingScore.total_points + 10,
+            completed_exercises: existingScore.completed_exercises + 1,
+            last_activity_date: new Date().toISOString().split('T')[0],
+            updated_at: new Date().toISOString()
+          })
+          .eq('patient_id', patientId);
+
+        if (error) {
+          console.error('Error updating patient score:', error);
+        }
+      } else {
+        // Create new record
+        const { error } = await supabase
+          .from('patient_scores')
+          .insert({
+            patient_id: patientId,
+            total_points: 10,
+            completed_exercises: 1,
+            last_activity_date: new Date().toISOString().split('T')[0],
+            is_tracks_active: true
+          });
+
+        if (error) {
+          console.error('Error creating patient score:', error);
+        }
+      }
+    } catch (error) {
+      console.error('Error in updatePatientScore:', error);
     }
   };
 

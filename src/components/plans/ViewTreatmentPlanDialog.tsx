@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import {
   Dialog,
@@ -10,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { TreatmentPlan } from "@/hooks/useTreatmentPlans";
 import { usePlanExercises } from "@/hooks/usePlanExercises";
 import { EditPlanExerciseDialog } from "./EditPlanExerciseDialog";
@@ -68,6 +70,11 @@ export function ViewTreatmentPlanDialog({ plan, open, onOpenChange }: ViewTreatm
   const isOpen = isControlled ? open : internalOpen;
   const setIsOpen = isControlled ? onOpenChange : setInternalOpen;
 
+  // Calculate progress based on completed exercises
+  const totalExercises = planExercises.length;
+  const completedExercises = planExercises.filter(ex => ex.is_completed).length;
+  const progressPercentage = totalExercises > 0 ? Math.round((completedExercises / totalExercises) * 100) : 0;
+
   // Force refresh exercises when dialog opens
   useEffect(() => {
     if (isOpen && plan?.id) {
@@ -99,7 +106,30 @@ export function ViewTreatmentPlanDialog({ plan, open, onOpenChange }: ViewTreatm
   };
 
   const handleToggleCompletion = async (exerciseId: string, isCompleted: boolean) => {
-    await toggleExerciseCompletion(exerciseId, !isCompleted);
+    const result = await toggleExerciseCompletion(exerciseId, !isCompleted);
+    if (result.success) {
+      // Update patient scores when exercise is completed
+      if (!isCompleted && plan?.patient_id) {
+        await updatePatientScore(plan.patient_id);
+      }
+    }
+  };
+
+  const updatePatientScore = async (patientId: string) => {
+    try {
+      // Update patient scores
+      const { error } = await supabase.rpc('update_patient_score', {
+        p_patient_id: patientId,
+        p_points_to_add: 10, // 10 points per completed exercise
+        p_exercises_completed: 1
+      });
+
+      if (error) {
+        console.error('Error updating patient score:', error);
+      }
+    } catch (error) {
+      console.error('Error in updatePatientScore:', error);
+    }
   };
 
   // Agrupar exercícios por dia
@@ -166,16 +196,11 @@ export function ViewTreatmentPlanDialog({ plan, open, onOpenChange }: ViewTreatm
             </div>
             
             <div>
-              <div className="flex items-center justify-between text-sm mb-1">
+              <div className="flex items-center justify-between text-sm mb-2">
                 <span className="font-medium">Progresso</span>
-                <span>{plan.progress_percentage}%</span>
+                <span>{progressPercentage}% ({completedExercises}/{totalExercises})</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-blue-600 h-2 rounded-full" 
-                  style={{ width: `${plan.progress_percentage}%` }}
-                />
-              </div>
+              <Progress value={progressPercentage} className="h-3" />
             </div>
           </div>
         </div>
@@ -273,7 +298,7 @@ export function ViewTreatmentPlanDialog({ plan, open, onOpenChange }: ViewTreatm
                                   </Badge>
                                   {planEx.is_completed && (
                                     <span className="text-xs text-green-600">
-                                      ✓ Exercício realizado
+                                      ✓ +10 pontos
                                     </span>
                                   )}
                                 </div>
