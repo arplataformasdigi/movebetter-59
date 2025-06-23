@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -59,80 +58,85 @@ export function useExercises() {
   }, []);
 
   useEffect(() => {
-    // Set mounted flag
     isMountedRef.current = true;
     
     fetchExercises();
 
-    // Only create subscription if not already subscribed
-    if (!isSubscribedRef.current && !channelRef.current) {
-      const channelName = `exercises_realtime_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
-      console.log('Creating new channel:', channelName);
-      
-      channelRef.current = supabase
-        .channel(channelName)
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'exercises'
-          },
-          (payload) => {
-            console.log('New exercise inserted:', payload);
-            if (isMountedRef.current && payload.new.is_active) {
-              setExercises(prev => [payload.new as Exercise, ...prev]);
-            }
-          }
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'exercises'
-          },
-          (payload) => {
-            console.log('Exercise updated:', payload);
-            if (isMountedRef.current) {
-              const updatedExercise = payload.new as Exercise;
-              setExercises(prev => {
-                if (updatedExercise.is_active) {
-                  return prev.map(ex => ex.id === updatedExercise.id ? updatedExercise : ex);
-                } else {
-                  return prev.filter(ex => ex.id !== updatedExercise.id);
-                }
-              });
-            }
-          }
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: 'DELETE',
-            schema: 'public',
-            table: 'exercises'
-          },
-          (payload) => {
-            console.log('Exercise deleted:', payload);
-            if (isMountedRef.current) {
-              setExercises(prev => prev.filter(ex => ex.id !== payload.old.id));
-            }
-          }
-        );
-
-      channelRef.current.subscribe((status: string) => {
-        console.log('Exercises subscription status:', status);
-        if (status === 'SUBSCRIBED') {
-          isSubscribedRef.current = true;
-          console.log('Successfully subscribed to exercises changes');
-        } else if (status === 'CLOSED') {
-          isSubscribedRef.current = false;
-          console.log('Exercises channel subscription closed');
-        }
-      });
+    // Clean up any existing subscription first
+    if (channelRef.current) {
+      console.log('Cleaning up existing channel');
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+      isSubscribedRef.current = false;
     }
+
+    // Create new subscription with unique channel name
+    const channelName = `exercises_realtime_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    console.log('Creating new channel:', channelName);
+    
+    channelRef.current = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'exercises'
+        },
+        (payload) => {
+          console.log('New exercise inserted:', payload);
+          if (isMountedRef.current && payload.new.is_active) {
+            setExercises(prev => [payload.new as Exercise, ...prev]);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'exercises'
+        },
+        (payload) => {
+          console.log('Exercise updated:', payload);
+          if (isMountedRef.current) {
+            const updatedExercise = payload.new as Exercise;
+            setExercises(prev => {
+              if (updatedExercise.is_active) {
+                return prev.map(ex => ex.id === updatedExercise.id ? updatedExercise : ex);
+              } else {
+                return prev.filter(ex => ex.id !== updatedExercise.id);
+              }
+            });
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'exercises'
+        },
+        (payload) => {
+          console.log('Exercise deleted:', payload);
+          if (isMountedRef.current) {
+            setExercises(prev => prev.filter(ex => ex.id !== payload.old.id));
+          }
+        }
+      );
+
+    channelRef.current.subscribe((status: string) => {
+      console.log('Exercises subscription status:', status);
+      if (status === 'SUBSCRIBED') {
+        isSubscribedRef.current = true;
+        console.log('Successfully subscribed to exercises changes');
+      } else if (status === 'CLOSED') {
+        isSubscribedRef.current = false;
+        console.log('Exercises channel subscription closed');
+      }
+    });
 
     return () => {
       isMountedRef.current = false;
@@ -144,7 +148,7 @@ export function useExercises() {
         isSubscribedRef.current = false;
       }
     };
-  }, [fetchExercises]);
+  }, []); // Remove fetchExercises from dependencies to avoid recreation
 
   const addExercise = async (exerciseData: Omit<Exercise, 'id' | 'created_at'>) => {
     try {

@@ -33,7 +33,14 @@ export function ExerciseSelector({ exercises, selectedExerciseId, onExerciseSele
   const [searchTerm, setSearchTerm] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState("all");
 
+  console.log('ExerciseSelector received exercises:', exercises);
+
   const filteredExercises = useMemo(() => {
+    if (!exercises || exercises.length === 0) {
+      console.log('No exercises to filter');
+      return [];
+    }
+
     return exercises.filter(exercise => {
       const matchesSearch = exercise.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            exercise.description?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -43,6 +50,8 @@ export function ExerciseSelector({ exercises, selectedExerciseId, onExerciseSele
       return matchesSearch && matchesDifficulty;
     });
   }, [exercises, searchTerm, difficultyFilter]);
+
+  console.log('Filtered exercises:', filteredExercises);
 
   const selectedExercise = exercises.find(ex => ex.id === selectedExerciseId);
 
@@ -84,6 +93,9 @@ export function ExerciseSelector({ exercises, selectedExerciseId, onExerciseSele
           <div className="text-center py-8 text-muted-foreground">
             <Dumbbell className="h-8 w-8 mx-auto mb-2 opacity-50" />
             <p>Nenhum exercício encontrado</p>
+            {exercises.length === 0 && (
+              <p className="text-sm mt-2">Clique em "Criar Exercício" para adicionar exercícios</p>
+            )}
           </div>
         ) : (
           <div className="grid gap-2">

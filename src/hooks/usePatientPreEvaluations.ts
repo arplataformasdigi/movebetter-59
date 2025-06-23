@@ -54,12 +54,18 @@ export function usePatientPreEvaluations(patientId?: string) {
   const [isLoading, setIsLoading] = useState(true);
   const channelRef = useRef<any>(null);
   const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isMountedRef = useRef(true);
 
   const fetchPreEvaluations = async () => {
-    if (!patientId) return;
+    if (!patientId) {
+      setIsLoading(false);
+      return;
+    }
     
     try {
       setIsLoading(true);
+      console.log('Fetching pre-evaluations for patient:', patientId);
+      
       const { data, error } = await supabase
         .from('patient_pre_evaluations')
         .select('*')
@@ -68,17 +74,23 @@ export function usePatientPreEvaluations(patientId?: string) {
 
       if (error) {
         console.error('Error fetching pre evaluations:', error);
-        toast.error("Erro ao carregar pré-avaliações");
+        toast.error("Erro ao carregar pré-avaliações: " + error.message);
         return;
       }
 
-      console.log('Pre-evaluations fetched:', data);
-      setPreEvaluations(data || []);
+      console.log('Pre-evaluations fetched successfully:', data);
+      if (isMountedRef.current) {
+        setPreEvaluations(data || []);
+      }
     } catch (error) {
       console.error('Error in fetchPreEvaluations:', error);
-      toast.error("Erro inesperado ao carregar pré-avaliações");
+      if (isMountedRef.current) {
+        toast.error("Erro inesperado ao carregar pré-avaliações");
+      }
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -92,6 +104,7 @@ export function usePatientPreEvaluations(patientId?: string) {
   };
 
   useEffect(() => {
+    isMountedRef.current = true;
     fetchPreEvaluations();
 
     if (patientId) {
@@ -110,41 +123,81 @@ export function usePatientPreEvaluations(patientId?: string) {
           {
             event: '*',
             schema: 'public',
-            table: 'patient_pre_evaluations'
+            table: 'patient_pre_evaluations',
+            filter: `patient_id=eq.${patientId}`
           },
           (payload) => {
             console.log('Pre-evaluation realtime event:', payload);
-            debouncedFetch();
+            if (isMountedRef.current) {
+              debouncedFetch();
+            }
           }
         )
         .subscribe();
 
       channelRef.current = channel;
-
-      return () => {
-        if (fetchTimeoutRef.current) {
-          clearTimeout(fetchTimeoutRef.current);
-        }
-        if (channelRef.current) {
-          supabase.removeChannel(channelRef.current);
-          channelRef.current = null;
-        }
-      };
     }
+
+    return () => {
+      isMountedRef.current = false;
+      if (fetchTimeoutRef.current) {
+        clearTimeout(fetchTimeoutRef.current);
+      }
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
   }, [patientId]);
 
   const addPreEvaluation = async (evaluationData: Omit<PreEvaluation, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       console.log('Adding pre-evaluation:', evaluationData);
+      
+      // Garantir que todos os campos obrigatórios tenham valores válidos
+      const cleanedData = {
+        ...evaluationData,
+        profissao: evaluationData.profissao || '',
+        atividade_fisica: evaluationData.atividade_fisica || '',
+        hobby: evaluationData.hobby || '',
+        queixa_principal: evaluationData.queixa_principal || '',
+        tempo_problema: evaluationData.tempo_problema || '',
+        inicio_problema: evaluationData.inicio_problema || '',
+        tratamento_anterior: evaluationData.tratamento_anterior || '',
+        descricao_dor: evaluationData.descricao_dor || '',
+        escala_dor: evaluationData.escala_dor || '',
+        irradiacao_dor: evaluationData.irradiacao_dor || '',
+        piora_dor: evaluationData.piora_dor || '',
+        alivio_dor: evaluationData.alivio_dor || '',
+        interferencia_dor: evaluationData.interferencia_dor || '',
+        diagnostico_medico: evaluationData.diagnostico_medico || '',
+        exames_recentes: evaluationData.exames_recentes || '',
+        condicoes_saude: evaluationData.condicoes_saude || '',
+        cirurgias: evaluationData.cirurgias || '',
+        doencas_familiares: evaluationData.doencas_familiares || '',
+        condicoes_similares: evaluationData.condicoes_similares || '',
+        alimentacao: evaluationData.alimentacao || '',
+        padrao_sono: evaluationData.padrao_sono || '',
+        alcool: evaluationData.alcool || '',
+        fumante: evaluationData.fumante || '',
+        ingestao_agua: evaluationData.ingestao_agua || '',
+        tempo_sentado: evaluationData.tempo_sentado || '',
+        exercicios_casa: evaluationData.exercicios_casa || '',
+        dificuldade_dia: evaluationData.dificuldade_dia || '',
+        dispositivo_auxilio: evaluationData.dispositivo_auxilio || '',
+        dificuldade_equilibrio: evaluationData.dificuldade_equilibrio || '',
+        limitacao_movimento: evaluationData.limitacao_movimento || '',
+      };
+
       const { data, error } = await supabase
         .from('patient_pre_evaluations')
-        .insert([evaluationData])
+        .insert([cleanedData])
         .select()
         .single();
 
       if (error) {
         console.error('Error adding pre evaluation:', error);
-        toast.error("Erro ao adicionar pré-avaliação");
+        toast.error("Erro ao adicionar pré-avaliação: " + error.message);
         return { success: false, error };
       }
 
