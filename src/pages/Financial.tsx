@@ -125,12 +125,9 @@ export default function Financial() {
       </Tabs>
 
       <TransactionFormDialog
-        open={isFormOpen}
-        onOpenChange={closeForm}
-        onSubmit={editingTransaction ? handleEditTransaction : handleAddTransaction}
-        categories={categories}
-        initialData={editingTransaction}
-        mode={editingTransaction ? "edit" : "create"}
+        isOpen={isFormOpen}
+        onClose={closeForm}
+        transaction={editingTransaction}
       />
     </div>
   );

@@ -23,12 +23,17 @@ export default function Patients() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [assignPackageOpen, setAssignPackageOpen] = useState(false);
+  const [addPatientOpen, setAddPatientOpen] = useState(false);
 
   const { patients, isLoading, addPatient, updatePatient, deletePatient } = usePatients();
   const { packages } = usePackagesData();
 
   const handleAddPatient = async (patientData: any) => {
-    return await addPatient(patientData);
+    const result = await addPatient(patientData);
+    if (result.success) {
+      setAddPatientOpen(false);
+    }
+    return result;
   };
 
   const handleEditPatient = async (updatedPatient: any) => {
@@ -103,7 +108,9 @@ export default function Patients() {
             Gerencie pacientes e suas permissões de acesso ao sistema.
           </p>
         </div>
-        <AddPatientDialog onAddPatient={handleAddPatient} />
+        <Button onClick={() => setAddPatientOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" /> Adicionar Paciente
+        </Button>
       </div>
 
       <Card>
@@ -216,7 +223,9 @@ export default function Patients() {
                   {patients.length === 0 ? "Nenhum paciente cadastrado ainda" : "Nenhum paciente encontrado com os filtros atuais"}
                 </div>
                 {patients.length === 0 && (
-                  <AddPatientDialog onAddPatient={handleAddPatient} />
+                  <Button onClick={() => setAddPatientOpen(true)}>
+                    <Plus className="mr-2 h-4 w-4" /> Adicionar Primeiro Paciente
+                  </Button>
                 )}
               </div>
             )}
@@ -226,29 +235,35 @@ export default function Patients() {
 
       <PatientDetails
         patient={selectedPatient}
-        open={detailsOpen}
-        onOpenChange={setDetailsOpen}
+        isOpen={detailsOpen}
+        onClose={() => setDetailsOpen(false)}
       />
 
       <EditPatientDialog
         patient={editingPatient}
-        open={editDialogOpen}
-        onOpenChange={setEditDialogOpen}
+        isOpen={editDialogOpen}
+        onClose={() => setEditDialogOpen(false)}
         onEditPatient={handleEditPatient}
       />
 
       <DeletePatientDialog
-        open={!!deletingPatient}
-        onOpenChange={() => setDeletingPatient(null)}
+        isOpen={!!deletingPatient}
+        onClose={() => setDeletingPatient(null)}
         onConfirm={() => deletingPatient && handleDeletePatient(deletingPatient.id)}
         patientName={deletingPatient?.name || ""}
       />
 
       <AssignPackageDialog
-        patient={selectedPatient}
+        patientId={selectedPatient?.id}
         packages={packages}
-        open={assignPackageOpen}
-        onOpenChange={setAssignPackageOpen}
+        isOpen={assignPackageOpen}
+        onClose={() => setAssignPackageOpen(false)}
+      />
+
+      <AddPatientDialog
+        isOpen={addPatientOpen}
+        onClose={() => setAddPatientOpen(false)}
+        onAddPatient={handleAddPatient}
       />
     </div>
   );

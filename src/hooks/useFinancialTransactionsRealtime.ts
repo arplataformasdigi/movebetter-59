@@ -5,8 +5,17 @@ import { toast } from 'sonner';
 import { useFinancialTransactions, FinancialTransaction } from './useFinancialTransactions';
 
 export function useFinancialTransactionsRealtime() {
-  const transactionHooks = useFinancialTransactions();
-  const { transactions, setTransactions } = transactionHooks;
+  const {
+    transactions,
+    categories,
+    isLoading,
+    fetchTransactions,
+    addTransaction,
+    updateTransaction,
+    deleteTransaction,
+    addCategory,
+    deleteCategory,
+  } = useFinancialTransactions();
 
   useEffect(() => {
     const channel = supabase
@@ -20,22 +29,8 @@ export function useFinancialTransactionsRealtime() {
         },
         (payload) => {
           console.log('New transaction:', payload);
-          const newTransaction = payload.new as FinancialTransaction;
-          // Buscar a transação completa com categoria
-          supabase
-            .from('financial_transactions')
-            .select(`
-              *,
-              financial_categories (name, color)
-            `)
-            .eq('id', newTransaction.id)
-            .single()
-            .then(({ data }) => {
-              if (data) {
-                setTransactions(prev => [data, ...prev]);
-                toast.success("Nova transação adicionada!");
-              }
-            });
+          toast.success("Nova transação adicionada!");
+          fetchTransactions(); // Refetch data instead of manually updating state
         }
       )
       .on(
@@ -47,23 +42,8 @@ export function useFinancialTransactionsRealtime() {
         },
         (payload) => {
           console.log('Updated transaction:', payload);
-          const updatedTransaction = payload.new as FinancialTransaction;
-          supabase
-            .from('financial_transactions')
-            .select(`
-              *,
-              financial_categories (name, color)
-            `)
-            .eq('id', updatedTransaction.id)
-            .single()
-            .then(({ data }) => {
-              if (data) {
-                setTransactions(prev => prev.map(t => 
-                  t.id === updatedTransaction.id ? data : t
-                ));
-                toast.success("Transação atualizada!");
-              }
-            });
+          toast.success("Transação atualizada!");
+          fetchTransactions(); // Refetch data instead of manually updating state
         }
       )
       .on(
@@ -75,9 +55,8 @@ export function useFinancialTransactionsRealtime() {
         },
         (payload) => {
           console.log('Deleted transaction:', payload);
-          const deletedTransaction = payload.old as FinancialTransaction;
-          setTransactions(prev => prev.filter(t => t.id !== deletedTransaction.id));
           toast.success("Transação removida!");
+          fetchTransactions(); // Refetch data instead of manually updating state
         }
       )
       .subscribe();
@@ -85,7 +64,16 @@ export function useFinancialTransactionsRealtime() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [setTransactions]);
+  }, [fetchTransactions]);
 
-  return transactionHooks;
+  return {
+    transactions,
+    categories,
+    isLoading,
+    addTransaction,
+    updateTransaction,
+    deleteTransaction,
+    addCategory,
+    deleteCategory,
+  };
 }
