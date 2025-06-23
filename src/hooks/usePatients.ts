@@ -24,6 +24,7 @@ export function usePatients() {
   const [isLoading, setIsLoading] = useState(true);
   const channelRef = useRef<any>(null);
   const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isSubscribedRef = useRef(false);
 
   const fetchPatients = async () => {
     try {
@@ -65,38 +66,45 @@ export function usePatients() {
   };
 
   useEffect(() => {
+    // Initial fetch
     fetchPatients();
 
-    // Cleanup previous channel if it exists
-    if (channelRef.current) {
-      console.log('Removing existing channel');
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
+    // Only set up realtime subscription if not already subscribed
+    if (!isSubscribedRef.current) {
+      // Cleanup any existing channel first
+      if (channelRef.current) {
+        console.log('Removing existing channel');
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+
+      // Create unique channel name to avoid conflicts
+      const channelName = `patients_realtime_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      console.log('Creating new channel:', channelName);
+      
+      const channel = supabase
+        .channel(channelName)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'patients'
+          },
+          (payload) => {
+            console.log('Realtime event received:', payload);
+            debouncedFetch();
+          }
+        )
+        .subscribe((status) => {
+          console.log('Channel subscription status:', status);
+          if (status === 'SUBSCRIBED') {
+            isSubscribedRef.current = true;
+          }
+        });
+
+      channelRef.current = channel;
     }
-
-    // Setup realtime subscription with unique channel name
-    const channelName = `patients_realtime_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    console.log('Creating new channel:', channelName);
-    
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'patients'
-        },
-        (payload) => {
-          console.log('Realtime event received:', payload);
-          debouncedFetch();
-        }
-      )
-      .subscribe((status) => {
-        console.log('Channel subscription status:', status);
-      });
-
-    channelRef.current = channel;
 
     return () => {
       console.log('Cleaning up channel subscription');
@@ -106,9 +114,10 @@ export function usePatients() {
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
+        isSubscribedRef.current = false;
       }
     };
-  }, []);
+  }, []); // Empty dependency array to run only once
 
   const addPatient = async (patientData: Omit<Patient, 'id' | 'created_at'>) => {
     try {
