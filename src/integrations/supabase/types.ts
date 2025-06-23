@@ -414,28 +414,34 @@ export type Database = {
       }
       patient_app_access: {
         Row: {
-          allowed_pages: string[] | null
           created_at: string | null
+          created_by: string | null
+          email: string | null
           id: string
           is_active: boolean | null
+          password_hash: string | null
           patient_id: string | null
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
-          allowed_pages?: string[] | null
           created_at?: string | null
+          created_by?: string | null
+          email?: string | null
           id?: string
           is_active?: boolean | null
+          password_hash?: string | null
           patient_id?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
         Update: {
-          allowed_pages?: string[] | null
           created_at?: string | null
+          created_by?: string | null
+          email?: string | null
           id?: string
           is_active?: boolean | null
+          password_hash?: string | null
           patient_id?: string | null
           updated_at?: string | null
           user_id?: string | null

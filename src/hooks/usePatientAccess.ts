@@ -2,15 +2,18 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import bcrypt from 'bcryptjs';
 
 export interface PatientAccess {
   id: string;
   patient_id: string;
   user_id: string;
-  allowed_pages: string[];
+  email: string;
+  password_hash?: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  created_by: string;
   patients?: {
     name: string;
     email?: string;
@@ -49,10 +52,9 @@ export function usePatientAccess() {
 
   useEffect(() => {
     fetchPatientAccess();
-    // Removido a subscrição realtime para evitar múltiplas subscrições
   }, []);
 
-  const createPatientAccess = async (patientId: string, allowedPages: string[]) => {
+  const createPatientAccess = async (patientId: string, email: string, password: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -60,13 +62,19 @@ export function usePatientAccess() {
         return { success: false };
       }
 
+      // Hash da senha
+      const saltRounds = 10;
+      const password_hash = await bcrypt.hash(password, saltRounds);
+
       const { data, error } = await supabase
         .from('patient_app_access')
         .insert([{
           patient_id: patientId,
           user_id: user.id,
-          allowed_pages: allowedPages,
-          is_active: true
+          email: email,
+          password_hash: password_hash,
+          is_active: true,
+          created_by: user.id
         }])
         .select(`
           *,
@@ -81,7 +89,6 @@ export function usePatientAccess() {
       }
 
       toast.success("Acesso criado com sucesso");
-      // Refresh data after creation
       await fetchPatientAccess();
       return { success: true, data };
     } catch (error) {
@@ -92,6 +99,12 @@ export function usePatientAccess() {
 
   const updatePatientAccess = async (id: string, updates: Partial<PatientAccess>) => {
     try {
+      // Se há uma nova senha, fazer hash dela
+      if (updates.password_hash) {
+        const saltRounds = 10;
+        updates.password_hash = await bcrypt.hash(updates.password_hash, saltRounds);
+      }
+
       const { data, error } = await supabase
         .from('patient_app_access')
         .update(updates)
@@ -109,7 +122,6 @@ export function usePatientAccess() {
       }
 
       toast.success("Acesso atualizado com sucesso");
-      // Refresh data after update
       await fetchPatientAccess();
       return { success: true, data };
     } catch (error) {
@@ -132,12 +144,41 @@ export function usePatientAccess() {
       }
 
       toast.success("Acesso removido com sucesso");
-      // Refresh data after deletion
       await fetchPatientAccess();
       return { success: true };
     } catch (error) {
       console.error('Error in deletePatientAccess:', error);
       return { success: false, error };
+    }
+  };
+
+  const authenticatePatient = async (email: string, password: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('patient_app_access')
+        .select(`
+          *,
+          patients (name, email)
+        `)
+        .eq('email', email)
+        .eq('is_active', true)
+        .single();
+
+      if (error || !data) {
+        return { success: false, error: 'Credenciais inválidas' };
+      }
+
+      // Verificar senha
+      const isValidPassword = await bcrypt.compare(password, data.password_hash || '');
+      
+      if (!isValidPassword) {
+        return { success: false, error: 'Credenciais inválidas' };
+      }
+
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error in authenticatePatient:', error);
+      return { success: false, error: 'Erro na autenticação' };
     }
   };
 
@@ -148,5 +189,6 @@ export function usePatientAccess() {
     createPatientAccess,
     updatePatientAccess,
     deletePatientAccess,
+    authenticatePatient,
   };
 }
