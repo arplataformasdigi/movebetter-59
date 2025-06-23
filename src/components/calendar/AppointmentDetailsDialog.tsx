@@ -85,43 +85,9 @@ export function AppointmentDetailsDialog({ appointment, open, onOpenChange }: Ap
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CalendarDays className="h-5 w-5" />
-              <DialogTitle>Detalhes do Agendamento</DialogTitle>
-            </div>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50">
-                  <Trash2 className="h-4 w-4 mr-1" />
-                  Excluir
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Tem certeza que deseja excluir este agendamento? Esta ação não pode ser desfeita.
-                    <br /><br />
-                    <strong>Agendamento:</strong> {appointment.session_type}
-                    <br />
-                    <strong>Paciente:</strong> {appointment.patients?.name || 'Não informado'}
-                    <br />
-                    <strong>Data:</strong> {formatDateToBrazilian(appointment.appointment_date)} às {appointment.appointment_time}
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction 
-                    onClick={handleDeleteAppointment}
-                    disabled={isDeleting}
-                    className="bg-red-600 hover:bg-red-700"
-                  >
-                    {isDeleting ? 'Excluindo...' : 'Confirmar Exclusão'}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+          <div className="flex items-center gap-2">
+            <CalendarDays className="h-5 w-5" />
+            <DialogTitle>Detalhes do Agendamento</DialogTitle>
           </div>
           <DialogDescription>
             Informações completas sobre o agendamento
@@ -238,7 +204,41 @@ export function AppointmentDetailsDialog({ appointment, open, onOpenChange }: Ap
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Informações do Sistema</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm">Informações do Sistema</CardTitle>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50">
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Excluir
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Tem certeza que deseja excluir este agendamento? Esta ação não pode ser desfeita.
+                        <br /><br />
+                        <strong>Agendamento:</strong> {appointment.session_type}
+                        <br />
+                        <strong>Paciente:</strong> {appointment.patients?.name || 'Não informado'}
+                        <br />
+                        <strong>Data:</strong> {formatDateToBrazilian(appointment.appointment_date)} às {appointment.appointment_time}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={handleDeleteAppointment}
+                        disabled={isDeleting}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        {isDeleting ? 'Excluindo...' : 'Confirmar Exclusão'}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             </CardHeader>
             <CardContent className="text-sm text-gray-500">
               <p>Criado em: {formatDateToBrazilian(appointment.created_at)} às {new Date(appointment.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
