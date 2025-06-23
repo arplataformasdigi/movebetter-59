@@ -233,38 +233,39 @@ export default function Patients() {
         </CardContent>
       </Card>
 
-      <PatientDetails
-        patient={selectedPatient}
-        isOpen={detailsOpen}
-        onClose={() => setDetailsOpen(false)}
-      />
+      {selectedPatient && (
+        <PatientDetails
+          patient={selectedPatient}
+          onUpdatePatient={handleEditPatient}
+        />
+      )}
 
-      <EditPatientDialog
-        patient={editingPatient}
-        isOpen={editDialogOpen}
-        onClose={() => setEditDialogOpen(false)}
-        onEditPatient={handleEditPatient}
-      />
+      {editingPatient && (
+        <EditPatientDialog
+          patient={editingPatient}
+        />
+      )}
 
-      <DeletePatientDialog
-        isOpen={!!deletingPatient}
-        onClose={() => setDeletingPatient(null)}
-        onConfirm={() => deletingPatient && handleDeletePatient(deletingPatient.id)}
-        patientName={deletingPatient?.name || ""}
-      />
+      {deletingPatient && (
+        <DeletePatientDialog
+          patientName={deletingPatient.name}
+          onConfirm={() => handleDeletePatient(deletingPatient.id)}
+        />
+      )}
 
-      <AssignPackageDialog
-        patientId={selectedPatient?.id}
-        packages={packages}
-        isOpen={assignPackageOpen}
-        onClose={() => setAssignPackageOpen(false)}
-      />
+      {selectedPatient && (
+        <AssignPackageDialog
+          patientId={selectedPatient.id}
+          patientName={selectedPatient.name}
+          packages={packages}
+          onAssignPackage={(assignment) => {
+            console.log('Package assigned:', assignment);
+            setAssignPackageOpen(false);
+          }}
+        />
+      )}
 
-      <AddPatientDialog
-        isOpen={addPatientOpen}
-        onClose={() => setAddPatientOpen(false)}
-        onAddPatient={handleAddPatient}
-      />
+      <AddPatientDialog />
     </div>
   );
 }
