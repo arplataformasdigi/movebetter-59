@@ -1,5 +1,4 @@
-
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -25,6 +24,9 @@ export interface PlanExercise {
 export function usePlanExercises(planId?: string) {
   const [planExercises, setPlanExercises] = useState<PlanExercise[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const channelRef = useRef<any>(null);
+  const isSubscribedRef = useRef(false);
+  const currentPlanIdRef = useRef<string | undefined>(planId);
 
   const fetchPlanExercises = useCallback(async () => {
     if (!planId) {
@@ -62,85 +64,111 @@ export function usePlanExercises(planId?: string) {
   }, [planId]);
 
   useEffect(() => {
+    // If planId changed, cleanup previous subscription
+    if (currentPlanIdRef.current !== planId) {
+      if (channelRef.current && isSubscribedRef.current) {
+        console.log('Cleaning up previous plan exercises subscription');
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+        isSubscribedRef.current = false;
+      }
+      currentPlanIdRef.current = planId;
+    }
+
     fetchPlanExercises();
 
     if (!planId) return;
 
-    // Setup realtime subscription for plan exercises
-    const channel = supabase
-      .channel(`plan_exercises_${planId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'plan_exercises',
-          filter: `treatment_plan_id=eq.${planId}`
-        },
-        async (payload) => {
-          console.log('New plan exercise inserted:', payload);
-          
-          // Fetch the new exercise with exercise data
-          const { data: newExercise } = await supabase
-            .from('plan_exercises')
-            .select(`
-              *,
-              exercises (name, description, instructions)
-            `)
-            .eq('id', payload.new.id)
-            .single();
+    // Only create subscription if not already subscribed for this planId
+    if (!isSubscribedRef.current) {
+      const channelName = `plan_exercises_${planId}_${Date.now()}`;
+      
+      channelRef.current = supabase
+        .channel(channelName)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'plan_exercises',
+            filter: `treatment_plan_id=eq.${planId}`
+          },
+          async (payload) => {
+            console.log('New plan exercise inserted:', payload);
+            
+            // Fetch the new exercise with exercise data
+            const { data: newExercise } = await supabase
+              .from('plan_exercises')
+              .select(`
+                *,
+                exercises (name, description, instructions)
+              `)
+              .eq('id', payload.new.id)
+              .single();
 
-          if (newExercise) {
-            setPlanExercises(prev => [...prev, newExercise].sort((a, b) => a.day_number - b.day_number));
+            if (newExercise) {
+              setPlanExercises(prev => [...prev, newExercise].sort((a, b) => a.day_number - b.day_number));
+            }
           }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'plan_exercises',
-          filter: `treatment_plan_id=eq.${planId}`
-        },
-        async (payload) => {
-          console.log('Plan exercise updated:', payload);
-          
-          // Fetch the updated exercise with exercise data
-          const { data: updatedExercise } = await supabase
-            .from('plan_exercises')
-            .select(`
-              *,
-              exercises (name, description, instructions)
-            `)
-            .eq('id', payload.new.id)
-            .single();
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'plan_exercises',
+            filter: `treatment_plan_id=eq.${planId}`
+          },
+          async (payload) => {
+            console.log('Plan exercise updated:', payload);
+            
+            // Fetch the updated exercise with exercise data
+            const { data: updatedExercise } = await supabase
+              .from('plan_exercises')
+              .select(`
+                *,
+                exercises (name, description, instructions)
+              `)
+              .eq('id', payload.new.id)
+              .single();
 
-          if (updatedExercise) {
-            setPlanExercises(prev => 
-              prev.map(ex => ex.id === updatedExercise.id ? updatedExercise : ex)
-                  .sort((a, b) => a.day_number - b.day_number)
-            );
+            if (updatedExercise) {
+              setPlanExercises(prev => 
+                prev.map(ex => ex.id === updatedExercise.id ? updatedExercise : ex)
+                    .sort((a, b) => a.day_number - b.day_number)
+              );
+            }
           }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'DELETE',
+            schema: 'public',
+            table: 'plan_exercises',
+            filter: `treatment_plan_id=eq.${planId}`
+          },
+          (payload) => {
+            console.log('Plan exercise deleted:', payload);
+            setPlanExercises(prev => prev.filter(ex => ex.id !== payload.old.id));
+          }
+        );
+
+      channelRef.current.subscribe((status: string) => {
+        if (status === 'SUBSCRIBED') {
+          isSubscribedRef.current = true;
+          console.log(`Successfully subscribed to plan exercises changes for plan ${planId}`);
         }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'DELETE',
-          schema: 'public',
-          table: 'plan_exercises',
-          filter: `treatment_plan_id=eq.${planId}`
-        },
-        (payload) => {
-          console.log('Plan exercise deleted:', payload);
-          setPlanExercises(prev => prev.filter(ex => ex.id !== payload.old.id));
-        }
-      )
-      .subscribe();
+      });
+    }
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channelRef.current && isSubscribedRef.current) {
+        console.log('Cleaning up plan exercises subscription');
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+        isSubscribedRef.current = false;
+      }
     };
   }, [planId, fetchPlanExercises]);
 
