@@ -27,6 +27,7 @@ export function usePlanExercises(planId?: string) {
   const channelRef = useRef<any>(null);
   const isSubscribedRef = useRef(false);
   const currentPlanIdRef = useRef<string | undefined>(planId);
+  const isMountedRef = useRef(true);
 
   const fetchPlanExercises = useCallback(async () => {
     if (!planId) {
@@ -54,16 +55,25 @@ export function usePlanExercises(planId?: string) {
       }
 
       console.log('Plan exercises fetched successfully:', data);
-      setPlanExercises(data || []);
+      if (isMountedRef.current) {
+        setPlanExercises(data || []);
+      }
     } catch (error) {
       console.error('Error in fetchPlanExercises:', error);
-      toast.error("Erro inesperado ao carregar os exercícios do plano");
+      if (isMountedRef.current) {
+        toast.error("Erro inesperado ao carregar os exercícios do plano");
+      }
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [planId]);
 
   useEffect(() => {
+    // Set mounted flag
+    isMountedRef.current = true;
+    
     // If planId changed, cleanup previous subscription
     if (currentPlanIdRef.current !== planId) {
       if (channelRef.current && isSubscribedRef.current) {
@@ -80,8 +90,10 @@ export function usePlanExercises(planId?: string) {
     if (!planId) return;
 
     // Only create subscription if not already subscribed for this planId
-    if (!isSubscribedRef.current) {
-      const channelName = `plan_exercises_${planId}_${Date.now()}`;
+    if (!isSubscribedRef.current && !channelRef.current) {
+      const channelName = `plan_exercises_${planId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      console.log('Creating new channel for plan exercises:', channelName);
       
       channelRef.current = supabase
         .channel(channelName)
@@ -96,6 +108,8 @@ export function usePlanExercises(planId?: string) {
           async (payload) => {
             console.log('New plan exercise inserted:', payload);
             
+            if (!isMountedRef.current) return;
+            
             // Fetch the new exercise with exercise data
             const { data: newExercise } = await supabase
               .from('plan_exercises')
@@ -106,7 +120,7 @@ export function usePlanExercises(planId?: string) {
               .eq('id', payload.new.id)
               .single();
 
-            if (newExercise) {
+            if (newExercise && isMountedRef.current) {
               setPlanExercises(prev => [...prev, newExercise].sort((a, b) => a.day_number - b.day_number));
             }
           }
@@ -122,6 +136,8 @@ export function usePlanExercises(planId?: string) {
           async (payload) => {
             console.log('Plan exercise updated:', payload);
             
+            if (!isMountedRef.current) return;
+            
             // Fetch the updated exercise with exercise data
             const { data: updatedExercise } = await supabase
               .from('plan_exercises')
@@ -132,7 +148,7 @@ export function usePlanExercises(planId?: string) {
               .eq('id', payload.new.id)
               .single();
 
-            if (updatedExercise) {
+            if (updatedExercise && isMountedRef.current) {
               setPlanExercises(prev => 
                 prev.map(ex => ex.id === updatedExercise.id ? updatedExercise : ex)
                     .sort((a, b) => a.day_number - b.day_number)
@@ -150,19 +166,27 @@ export function usePlanExercises(planId?: string) {
           },
           (payload) => {
             console.log('Plan exercise deleted:', payload);
-            setPlanExercises(prev => prev.filter(ex => ex.id !== payload.old.id));
+            if (isMountedRef.current) {
+              setPlanExercises(prev => prev.filter(ex => ex.id !== payload.old.id));
+            }
           }
         );
 
       channelRef.current.subscribe((status: string) => {
+        console.log('Plan exercises subscription status:', status);
         if (status === 'SUBSCRIBED') {
           isSubscribedRef.current = true;
           console.log(`Successfully subscribed to plan exercises changes for plan ${planId}`);
+        } else if (status === 'CLOSED') {
+          isSubscribedRef.current = false;
+          console.log('Plan exercises channel subscription closed');
         }
       });
     }
 
     return () => {
+      isMountedRef.current = false;
+      
       if (channelRef.current && isSubscribedRef.current) {
         console.log('Cleaning up plan exercises subscription');
         supabase.removeChannel(channelRef.current);

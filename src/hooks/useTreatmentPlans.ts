@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -25,6 +24,7 @@ export function useTreatmentPlans() {
   const [isLoading, setIsLoading] = useState(true);
   const channelRef = useRef<any>(null);
   const isSubscribedRef = useRef(false);
+  const isMountedRef = useRef(true);
 
   const fetchTreatmentPlans = useCallback(async () => {
     try {
@@ -46,25 +46,36 @@ export function useTreatmentPlans() {
       }
 
       console.log('Treatment plans fetched successfully:', data);
-      setTreatmentPlans(data || []);
+      if (isMountedRef.current) {
+        setTreatmentPlans(data || []);
+      }
       
       if (data?.length === 0) {
         console.log('No treatment plans found in database');
       }
     } catch (error) {
       console.error('Error in fetchTreatmentPlans:', error);
-      toast.error("Erro inesperado ao carregar as trilhas");
+      if (isMountedRef.current) {
+        toast.error("Erro inesperado ao carregar as trilhas");
+      }
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
   }, []);
 
   useEffect(() => {
+    // Set mounted flag
+    isMountedRef.current = true;
+    
     fetchTreatmentPlans();
 
     // Only create subscription if not already subscribed
-    if (!isSubscribedRef.current) {
-      const channelName = `treatment_plans_changes_${Date.now()}`;
+    if (!isSubscribedRef.current && !channelRef.current) {
+      const channelName = `treatment_plans_realtime_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      console.log('Creating new channel:', channelName);
       
       channelRef.current = supabase
         .channel(channelName)
@@ -78,6 +89,8 @@ export function useTreatmentPlans() {
           async (payload) => {
             console.log('New treatment plan inserted:', payload);
             
+            if (!isMountedRef.current) return;
+            
             // Fetch the new plan with patient data
             const { data: newPlan } = await supabase
               .from('treatment_plans')
@@ -88,7 +101,7 @@ export function useTreatmentPlans() {
               .eq('id', payload.new.id)
               .single();
 
-            if (newPlan) {
+            if (newPlan && isMountedRef.current) {
               setTreatmentPlans(prev => [newPlan, ...prev]);
             }
           }
@@ -103,6 +116,8 @@ export function useTreatmentPlans() {
           async (payload) => {
             console.log('Treatment plan updated:', payload);
             
+            if (!isMountedRef.current) return;
+            
             // Fetch the updated plan with patient data
             const { data: updatedPlan } = await supabase
               .from('treatment_plans')
@@ -113,7 +128,7 @@ export function useTreatmentPlans() {
               .eq('id', payload.new.id)
               .single();
 
-            if (updatedPlan) {
+            if (updatedPlan && isMountedRef.current) {
               setTreatmentPlans(prev => 
                 prev.map(plan => plan.id === updatedPlan.id ? updatedPlan : plan)
               );
@@ -129,19 +144,27 @@ export function useTreatmentPlans() {
           },
           (payload) => {
             console.log('Treatment plan deleted:', payload);
-            setTreatmentPlans(prev => prev.filter(plan => plan.id !== payload.old.id));
+            if (isMountedRef.current) {
+              setTreatmentPlans(prev => prev.filter(plan => plan.id !== payload.old.id));
+            }
           }
         );
 
       channelRef.current.subscribe((status: string) => {
+        console.log('Subscription status:', status);
         if (status === 'SUBSCRIBED') {
           isSubscribedRef.current = true;
           console.log('Successfully subscribed to treatment plans changes');
+        } else if (status === 'CLOSED') {
+          isSubscribedRef.current = false;
+          console.log('Channel subscription closed');
         }
       });
     }
 
     return () => {
+      isMountedRef.current = false;
+      
       if (channelRef.current && isSubscribedRef.current) {
         console.log('Cleaning up treatment plans subscription');
         supabase.removeChannel(channelRef.current);
@@ -149,7 +172,7 @@ export function useTreatmentPlans() {
         isSubscribedRef.current = false;
       }
     };
-  }, [fetchTreatmentPlans]);
+  }, []); // Empty dependency array to run only once
 
   const addTreatmentPlan = async (planData: Omit<TreatmentPlan, 'id' | 'created_at' | 'updated_at' | 'patients'>) => {
     try {
