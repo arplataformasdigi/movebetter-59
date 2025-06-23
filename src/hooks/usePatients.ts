@@ -23,7 +23,7 @@ export function usePatients() {
   const [isLoading, setIsLoading] = useState(true);
   const channelRef = useRef<any>(null);
   const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const isInitializedRef = useRef(false);
+  const subscriptionStateRef = useRef<'idle' | 'subscribing' | 'subscribed' | 'cleaning'>('idle');
 
   const fetchPatients = async () => {
     try {
@@ -65,14 +65,14 @@ export function usePatients() {
   };
 
   const setupRealtimeSubscription = () => {
-    // Prevent multiple subscriptions
-    if (channelRef.current || isInitializedRef.current) {
-      console.log('Subscription already exists, skipping setup');
+    // Prevent multiple subscription attempts
+    if (subscriptionStateRef.current !== 'idle') {
+      console.log('Subscription not idle, current state:', subscriptionStateRef.current);
       return;
     }
 
     console.log('Setting up realtime subscription...');
-    isInitializedRef.current = true;
+    subscriptionStateRef.current = 'subscribing';
 
     // Create unique channel name
     const channelName = `patients_realtime_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -95,17 +95,29 @@ export function usePatients() {
         )
         .subscribe((status) => {
           console.log('Channel subscription status:', status);
+          if (status === 'SUBSCRIBED') {
+            subscriptionStateRef.current = 'subscribed';
+          } else if (status === 'CLOSED' && subscriptionStateRef.current !== 'cleaning') {
+            // If channel closed unexpectedly, reset state
+            subscriptionStateRef.current = 'idle';
+          }
         });
 
       channelRef.current = channel;
     } catch (error) {
       console.error('Error setting up realtime subscription:', error);
-      isInitializedRef.current = false;
+      subscriptionStateRef.current = 'idle';
     }
   };
 
   const cleanupSubscription = () => {
+    if (subscriptionStateRef.current === 'cleaning') {
+      console.log('Already cleaning up, skipping...');
+      return;
+    }
+
     console.log('Cleaning up subscription...');
+    subscriptionStateRef.current = 'cleaning';
     
     if (fetchTimeoutRef.current) {
       clearTimeout(fetchTimeoutRef.current);
@@ -122,17 +134,33 @@ export function usePatients() {
       channelRef.current = null;
     }
     
-    isInitializedRef.current = false;
+    // Reset state after a brief delay to prevent race conditions
+    setTimeout(() => {
+      subscriptionStateRef.current = 'idle';
+    }, 100);
   };
 
   useEffect(() => {
-    // Initial fetch
-    fetchPatients();
+    let isMounted = true;
 
-    // Setup realtime subscription
-    setupRealtimeSubscription();
+    const initializeHook = async () => {
+      if (!isMounted) return;
+      
+      // Initial fetch
+      await fetchPatients();
+      
+      if (!isMounted) return;
+      
+      // Setup realtime subscription only if component is still mounted
+      setupRealtimeSubscription();
+    };
 
-    return cleanupSubscription;
+    initializeHook();
+
+    return () => {
+      isMounted = false;
+      cleanupSubscription();
+    };
   }, []); // Empty dependency array to run only once
 
   const addPatient = async (patientData: Omit<Patient, 'id' | 'created_at'>) => {
