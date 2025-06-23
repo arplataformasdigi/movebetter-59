@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { 
   Calendar, 
@@ -20,9 +21,13 @@ import {
   Heart, 
   Clock,
   FileText,
-  Activity
+  Activity,
+  ClipboardList
 } from "lucide-react";
 import { Patient } from "@/hooks/usePatients";
+import { PatientMedicalRecord } from "./PatientMedicalRecord";
+import { PatientPreEvaluation } from "./PatientPreEvaluation";
+import { PatientEvolution } from "./PatientEvolution";
 
 interface PatientDetailsProps {
   patient: Patient;
@@ -51,168 +56,201 @@ export function PatientDetails({ patient, onUpdatePatient, onClose }: PatientDet
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
-            Detalhes do Paciente
+            {patient.name}
           </DialogTitle>
           <DialogDescription>
-            Informações completas sobre {patient.name}
+            Informações completas e registros médicos
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Informações Básicas */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  Informações Pessoais
-                </span>
-                <Badge className={getStatusColor(patient.status)}>
-                  {getStatusLabel(patient.status)}
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <div className="text-sm font-medium text-gray-500">Nome Completo</div>
-                  <div className="font-medium">{patient.name}</div>
-                </div>
-                
-                {patient.email && (
-                  <div className="space-y-2">
-                    <div className="text-sm font-medium text-gray-500 flex items-center gap-1">
-                      <Mail className="h-3 w-3" />
-                      E-mail
-                    </div>
-                    <div className="font-medium">{patient.email}</div>
-                  </div>
-                )}
-                
-                {patient.phone && (
-                  <div className="space-y-2">
-                    <div className="text-sm font-medium text-gray-500 flex items-center gap-1">
-                      <Phone className="h-3 w-3" />
-                      Telefone
-                    </div>
-                    <div className="font-medium">{patient.phone}</div>
-                  </div>
-                )}
-                
-                {patient.cpf && (
-                  <div className="space-y-2">
-                    <div className="text-sm font-medium text-gray-500">CPF</div>
-                    <div className="font-medium">{patient.cpf}</div>
-                  </div>
-                )}
-                
-                {patient.birth_date && (
-                  <div className="space-y-2">
-                    <div className="text-sm font-medium text-gray-500 flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      Data de Nascimento
-                    </div>
-                    <div className="font-medium">
-                      {new Date(patient.birth_date).toLocaleDateString('pt-BR')}
-                    </div>
-                  </div>
-                )}
-                
-                {patient.address && (
-                  <div className="space-y-2 md:col-span-2">
-                    <div className="text-sm font-medium text-gray-500 flex items-center gap-1">
-                      <MapPin className="h-3 w-3" />
-                      Endereço
-                    </div>
-                    <div className="font-medium">{patient.address}</div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+        <Tabs defaultValue="info" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="info" className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              Informações
+            </TabsTrigger>
+            <TabsTrigger value="prontuario" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Prontuário
+            </TabsTrigger>
+            <TabsTrigger value="pre-avaliacao" className="flex items-center gap-2">
+              <ClipboardList className="h-4 w-4" />
+              Pré-avaliação
+            </TabsTrigger>
+            <TabsTrigger value="evolucao" className="flex items-center gap-2">
+              <Activity className="h-4 w-4" />
+              Evolução
+            </TabsTrigger>
+          </TabsList>
 
-          {/* Contatos de Emergência */}
-          {(patient.emergency_contact || patient.emergency_phone) && (
+          <TabsContent value="info" className="space-y-6 mt-6">
+            {/* Informações Básicas */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Heart className="h-4 w-4" />
-                  Contato de Emergência
+                <CardTitle className="flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    Informações Pessoais
+                  </span>
+                  <Badge className={getStatusColor(patient.status)}>
+                    {getStatusLabel(patient.status)}
+                  </Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {patient.emergency_contact && (
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium text-gray-500">Nome Completo</div>
+                    <div className="font-medium">{patient.name}</div>
+                  </div>
+                  
+                  {patient.email && (
                     <div className="space-y-2">
-                      <div className="text-sm font-medium text-gray-500">Nome do Contato</div>
-                      <div className="font-medium">{patient.emergency_contact}</div>
+                      <div className="text-sm font-medium text-gray-500 flex items-center gap-1">
+                        <Mail className="h-3 w-3" />
+                        E-mail
+                      </div>
+                      <div className="font-medium">{patient.email}</div>
                     </div>
                   )}
                   
-                  {patient.emergency_phone && (
+                  {patient.phone && (
                     <div className="space-y-2">
                       <div className="text-sm font-medium text-gray-500 flex items-center gap-1">
                         <Phone className="h-3 w-3" />
-                        Telefone de Emergência
+                        Telefone
                       </div>
-                      <div className="font-medium">{patient.emergency_phone}</div>
+                      <div className="font-medium">{patient.phone}</div>
+                    </div>
+                  )}
+                  
+                  {patient.cpf && (
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium text-gray-500">CPF</div>
+                      <div className="font-medium">{patient.cpf}</div>
+                    </div>
+                  )}
+                  
+                  {patient.birth_date && (
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium text-gray-500 flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        Data de Nascimento
+                      </div>
+                      <div className="font-medium">
+                        {new Date(patient.birth_date).toLocaleDateString('pt-BR')}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {patient.address && (
+                    <div className="space-y-2 md:col-span-2">
+                      <div className="text-sm font-medium text-gray-500 flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />
+                        Endereço
+                      </div>
+                      <div className="font-medium">{patient.address}</div>
                     </div>
                   )}
                 </div>
               </CardContent>
             </Card>
-          )}
 
-          {/* Histórico Médico */}
-          {patient.medical_history && (
+            {/* Contatos de Emergência */}
+            {(patient.emergency_contact || patient.emergency_phone) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Heart className="h-4 w-4" />
+                    Contato de Emergência
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {patient.emergency_contact && (
+                      <div className="space-y-2">
+                        <div className="text-sm font-medium text-gray-500">Nome do Contato</div>
+                        <div className="font-medium">{patient.emergency_contact}</div>
+                      </div>
+                    )}
+                    
+                    {patient.emergency_phone && (
+                      <div className="space-y-2">
+                        <div className="text-sm font-medium text-gray-500 flex items-center gap-1">
+                          <Phone className="h-3 w-3" />
+                          Telefone de Emergência
+                        </div>
+                        <div className="font-medium">{patient.emergency_phone}</div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Histórico Médico */}
+            {patient.medical_history && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Histórico Médico
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-sm whitespace-pre-wrap">{patient.medical_history}</div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Informações do Sistema */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  Histórico Médico
+                  <Clock className="h-4 w-4" />
+                  Informações do Sistema
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-sm whitespace-pre-wrap">{patient.medical_history}</div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Informações do Sistema */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                Informações do Sistema
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <div className="text-sm font-medium text-gray-500">Data de Cadastro</div>
-                  <div className="font-medium">
-                    {new Date(patient.created_at).toLocaleDateString('pt-BR')} às{' '}
-                    {new Date(patient.created_at).toLocaleTimeString('pt-BR')}
-                  </div>
-                </div>
-                
-                {patient.updated_at && patient.updated_at !== patient.created_at && (
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <div className="text-sm font-medium text-gray-500">Última Atualização</div>
+                    <div className="text-sm font-medium text-gray-500">Data de Cadastro</div>
                     <div className="font-medium">
-                      {new Date(patient.updated_at).toLocaleDateString('pt-BR')} às{' '}
-                      {new Date(patient.updated_at).toLocaleTimeString('pt-BR')}
+                      {new Date(patient.created_at).toLocaleDateString('pt-BR')} às{' '}
+                      {new Date(patient.created_at).toLocaleTimeString('pt-BR')}
                     </div>
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                  
+                  {patient.updated_at && patient.updated_at !== patient.created_at && (
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium text-gray-500">Última Atualização</div>
+                      <div className="font-medium">
+                        {new Date(patient.updated_at).toLocaleDateString('pt-BR')} às{' '}
+                        {new Date(patient.updated_at).toLocaleTimeString('pt-BR')}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="prontuario" className="mt-6">
+            <PatientMedicalRecord patientId={patient.id} />
+          </TabsContent>
+
+          <TabsContent value="pre-avaliacao" className="mt-6">
+            <PatientPreEvaluation patientId={patient.id} patientName={patient.name} />
+          </TabsContent>
+
+          <TabsContent value="evolucao" className="mt-6">
+            <PatientEvolution patientId={patient.id} />
+          </TabsContent>
+        </Tabs>
 
         <div className="flex justify-end space-x-2 mt-6">
           <Button variant="outline" onClick={onClose}>
