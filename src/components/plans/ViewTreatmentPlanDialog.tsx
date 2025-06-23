@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -56,7 +56,8 @@ export function ViewTreatmentPlanDialog({ plan, open, onOpenChange }: ViewTreatm
     isLoading, 
     toggleExerciseCompletion, 
     updatePlanExercise, 
-    removePlanExercise 
+    removePlanExercise,
+    fetchPlanExercises 
   } = usePlanExercises(plan?.id);
 
   console.log('ViewTreatmentPlanDialog - Plan:', plan);
@@ -66,6 +67,14 @@ export function ViewTreatmentPlanDialog({ plan, open, onOpenChange }: ViewTreatm
   const isControlled = open !== undefined && onOpenChange !== undefined;
   const isOpen = isControlled ? open : internalOpen;
   const setIsOpen = isControlled ? onOpenChange : setInternalOpen;
+
+  // Force refresh exercises when dialog opens
+  useEffect(() => {
+    if (isOpen && plan?.id) {
+      console.log('Dialog opened, forcing exercise refresh for plan:', plan.id);
+      fetchPlanExercises();
+    }
+  }, [isOpen, plan?.id, fetchPlanExercises]);
 
   const handleEditExercise = (exercise) => {
     setSelectedExercise(exercise);
@@ -188,16 +197,25 @@ export function ViewTreatmentPlanDialog({ plan, open, onOpenChange }: ViewTreatm
               <Dumbbell className="h-4 w-4" />
               Exercícios do Plano ({planExercises.length})
             </h4>
+            {isLoading && (
+              <div className="text-xs text-muted-foreground">Carregando...</div>
+            )}
           </div>
           
           {isLoading ? (
-            <div className="text-sm text-muted-foreground">Carregando exercícios...</div>
+            <div className="text-sm text-muted-foreground text-center py-8">
+              <Dumbbell className="h-8 w-8 text-muted-foreground mx-auto mb-2 animate-pulse" />
+              Carregando exercícios...
+            </div>
           ) : planExercises.length === 0 ? (
             <Card>
               <CardContent className="text-center py-6">
                 <Dumbbell className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                 <p className="text-sm text-muted-foreground">
                   Nenhum exercício adicionado a esta trilha
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Use o botão "Exercícios" na trilha para adicionar exercícios
                 </p>
               </CardContent>
             </Card>
@@ -247,7 +265,7 @@ export function ViewTreatmentPlanDialog({ plan, open, onOpenChange }: ViewTreatm
                               </Button>
                               <div>
                                 <span className={`font-medium ${planEx.is_completed ? 'line-through text-green-700' : ''}`}>
-                                  {planEx.exercises?.name}
+                                  {planEx.exercises?.name || 'Exercício sem nome'}
                                 </span>
                                 <div className="flex items-center gap-2 mt-1">
                                   <Badge variant={planEx.is_completed ? "default" : "secondary"} className="text-xs">

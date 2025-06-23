@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -15,9 +16,14 @@ export interface PlanExercise {
   completed_at?: string;
   created_at: string;
   exercises?: {
+    id: string;
     name: string;
     description?: string;
     instructions?: string;
+    difficulty_level?: number;
+    duration_minutes?: number;
+    image_url?: string;
+    video_url?: string;
   };
 }
 
@@ -33,6 +39,7 @@ export function usePlanExercises(planId?: string) {
     if (!planId) {
       console.log('No planId provided, skipping fetch');
       setIsLoading(false);
+      setPlanExercises([]);
       return;
     }
 
@@ -44,10 +51,20 @@ export function usePlanExercises(planId?: string) {
         .from('plan_exercises')
         .select(`
           *,
-          exercises (name, description, instructions)
+          exercises (
+            id,
+            name, 
+            description, 
+            instructions,
+            difficulty_level,
+            duration_minutes,
+            image_url,
+            video_url
+          )
         `)
         .eq('treatment_plan_id', planId)
-        .order('day_number', { ascending: true });
+        .order('day_number', { ascending: true })
+        .order('created_at', { ascending: true });
 
       if (error) {
         console.error('Error fetching plan exercises:', error);
@@ -56,8 +73,24 @@ export function usePlanExercises(planId?: string) {
       }
 
       console.log('Plan exercises fetched successfully:', data);
+      
+      // Garantir que os dados estão formatados corretamente
+      const formattedData = data?.map(item => ({
+        ...item,
+        exercises: item.exercises ? {
+          id: item.exercises.id,
+          name: item.exercises.name || 'Exercício sem nome',
+          description: item.exercises.description || '',
+          instructions: item.exercises.instructions || '',
+          difficulty_level: item.exercises.difficulty_level || 1,
+          duration_minutes: item.exercises.duration_minutes,
+          image_url: item.exercises.image_url,
+          video_url: item.exercises.video_url
+        } : null
+      })) || [];
+
       if (isMountedRef.current) {
-        setPlanExercises(data || []);
+        setPlanExercises(formattedData);
       }
     } catch (error) {
       console.error('Error in fetchPlanExercises:', error);
@@ -206,7 +239,16 @@ export function usePlanExercises(planId?: string) {
         .insert([exerciseData])
         .select(`
           *,
-          exercises (name, description, instructions)
+          exercises (
+            id,
+            name, 
+            description, 
+            instructions,
+            difficulty_level,
+            duration_minutes,
+            image_url,
+            video_url
+          )
         `)
         .single();
 
@@ -218,6 +260,10 @@ export function usePlanExercises(planId?: string) {
 
       console.log('Plan exercise added successfully:', data);
       toast.success("Exercício adicionado ao plano com sucesso");
+      
+      // Recarregar os exercícios para garantir dados atualizados
+      await fetchPlanExercises();
+      
       return { success: true, data };
     } catch (error) {
       console.error('Error in addPlanExercise:', error);
@@ -266,7 +312,16 @@ export function usePlanExercises(planId?: string) {
         .eq('id', exerciseId)
         .select(`
           *,
-          exercises (name, description, instructions)
+          exercises (
+            id,
+            name, 
+            description, 
+            instructions,
+            difficulty_level,
+            duration_minutes,
+            image_url,
+            video_url
+          )
         `)
         .single();
 
@@ -297,7 +352,16 @@ export function usePlanExercises(planId?: string) {
         .eq('id', exerciseId)
         .select(`
           *,
-          exercises (name, description, instructions)
+          exercises (
+            id,
+            name, 
+            description, 
+            instructions,
+            difficulty_level,
+            duration_minutes,
+            image_url,
+            video_url
+          )
         `)
         .single();
 
