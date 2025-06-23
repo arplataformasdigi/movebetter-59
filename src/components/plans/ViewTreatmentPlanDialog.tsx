@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import {
   Dialog,
@@ -14,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { TreatmentPlan } from "@/hooks/useTreatmentPlans";
 import { usePlanExercises } from "@/hooks/usePlanExercises";
 import { EditPlanExerciseDialog } from "./EditPlanExerciseDialog";
+import { formatDateToBrazilian } from "@/utils/dateUtils";
 import { 
   Eye, 
   User, 
@@ -125,7 +125,7 @@ export function ViewTreatmentPlanDialog({ plan, open, onOpenChange }: ViewTreatm
               <Calendar className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm font-medium">Início:</span>
               <span className="text-sm">
-                {plan.start_date ? new Date(plan.start_date).toLocaleDateString('pt-BR') : 'Não definido'}
+                {plan.start_date ? formatDateToBrazilian(plan.start_date) : 'Não definido'}
               </span>
             </div>
             
@@ -134,7 +134,7 @@ export function ViewTreatmentPlanDialog({ plan, open, onOpenChange }: ViewTreatm
                 <Calendar className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm font-medium">Fim:</span>
                 <span className="text-sm">
-                  {new Date(plan.end_date).toLocaleDateString('pt-BR')}
+                  {formatDateToBrazilian(plan.end_date)}
                 </span>
               </div>
             )}
@@ -283,7 +283,7 @@ export function ViewTreatmentPlanDialog({ plan, open, onOpenChange }: ViewTreatm
                             {planEx.completed_at && (
                               <div className="flex items-center gap-1">
                                 <span className="font-medium">Concluído:</span>
-                                <span>{new Date(planEx.completed_at).toLocaleDateString('pt-BR')}</span>
+                                <span>{formatDateToBrazilian(planEx.completed_at.split('T')[0])}</span>
                               </div>
                             )}
                           </div>

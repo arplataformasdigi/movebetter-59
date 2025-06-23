@@ -4,8 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Dumbbell, Clock, Search, Filter } from "lucide-react";
+import { Dumbbell, Clock, Search } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -32,25 +31,18 @@ interface ExerciseSelectorProps {
 
 export function ExerciseSelector({ exercises, selectedExerciseId, onExerciseSelect }: ExerciseSelectorProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
   const [difficultyFilter, setDifficultyFilter] = useState("all");
-
-  const categories = useMemo(() => {
-    const cats = exercises.map(ex => ex.category).filter(Boolean);
-    return Array.from(new Set(cats));
-  }, [exercises]);
 
   const filteredExercises = useMemo(() => {
     return exercises.filter(exercise => {
       const matchesSearch = exercise.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            exercise.description?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = categoryFilter === "all" || exercise.category === categoryFilter;
       const matchesDifficulty = difficultyFilter === "all" || 
                                exercise.difficulty_level?.toString() === difficultyFilter;
       
-      return matchesSearch && matchesCategory && matchesDifficulty;
+      return matchesSearch && matchesDifficulty;
     });
-  }, [exercises, searchTerm, categoryFilter, difficultyFilter]);
+  }, [exercises, searchTerm, difficultyFilter]);
 
   const selectedExercise = exercises.find(ex => ex.id === selectedExerciseId);
 
@@ -69,39 +61,21 @@ export function ExerciseSelector({ exercises, selectedExerciseId, onExerciseSele
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <Label>Categoria</Label>
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder="Todas as categorias" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas as categorias</SelectItem>
-              {categories.map((category) => (
-                <SelectItem key={category} value={category!}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Label>Dificuldade</Label>
-          <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder="Todas as dificuldades" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas as dificuldades</SelectItem>
-              <SelectItem value="1">Nível 1</SelectItem>
-              <SelectItem value="2">Nível 2</SelectItem>
-              <SelectItem value="3">Nível 3</SelectItem>
-              <SelectItem value="4">Nível 4</SelectItem>
-              <SelectItem value="5">Nível 5</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      <div>
+        <Label>Dificuldade</Label>
+        <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
+          <SelectTrigger>
+            <SelectValue placeholder="Todas as dificuldades" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas as dificuldades</SelectItem>
+            <SelectItem value="1">Nível 1</SelectItem>
+            <SelectItem value="2">Nível 2</SelectItem>
+            <SelectItem value="3">Nível 3</SelectItem>
+            <SelectItem value="4">Nível 4</SelectItem>
+            <SelectItem value="5">Nível 5</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="max-h-60 overflow-y-auto space-y-2">
@@ -132,11 +106,6 @@ export function ExerciseSelector({ exercises, selectedExerciseId, onExerciseSele
                       )}
                     </div>
                     <div className="flex flex-col gap-1 ml-3">
-                      {exercise.category && (
-                        <Badge variant="outline" className="text-xs">
-                          {exercise.category}
-                        </Badge>
-                      )}
                       {exercise.difficulty_level && (
                         <Badge variant="secondary" className="text-xs">
                           Nível {exercise.difficulty_level}
@@ -176,11 +145,6 @@ export function ExerciseSelector({ exercises, selectedExerciseId, onExerciseSele
               </div>
             )}
             <div className="flex gap-4 text-sm">
-              {selectedExercise.category && (
-                <span className="flex items-center gap-1">
-                  <Badge variant="outline">{selectedExercise.category}</Badge>
-                </span>
-              )}
               {selectedExercise.difficulty_level && (
                 <span>Nível: {selectedExercise.difficulty_level}/5</span>
               )}

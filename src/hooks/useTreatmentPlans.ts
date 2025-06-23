@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -24,7 +24,7 @@ export function useTreatmentPlans() {
   const [treatmentPlans, setTreatmentPlans] = useState<TreatmentPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchTreatmentPlans = async () => {
+  const fetchTreatmentPlans = useCallback(async () => {
     try {
       console.log('Fetching treatment plans from Supabase...');
       setIsLoading(true);
@@ -55,11 +55,84 @@ export function useTreatmentPlans() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchTreatmentPlans();
-  }, []);
+
+    // Setup realtime subscription
+    const channel = supabase
+      .channel('treatment_plans_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'treatment_plans'
+        },
+        async (payload) => {
+          console.log('New treatment plan inserted:', payload);
+          
+          // Fetch the new plan with patient data
+          const { data: newPlan } = await supabase
+            .from('treatment_plans')
+            .select(`
+              *,
+              patients (name)
+            `)
+            .eq('id', payload.new.id)
+            .single();
+
+          if (newPlan) {
+            setTreatmentPlans(prev => [newPlan, ...prev]);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'treatment_plans'
+        },
+        async (payload) => {
+          console.log('Treatment plan updated:', payload);
+          
+          // Fetch the updated plan with patient data
+          const { data: updatedPlan } = await supabase
+            .from('treatment_plans')
+            .select(`
+              *,
+              patients (name)
+            `)
+            .eq('id', payload.new.id)
+            .single();
+
+          if (updatedPlan) {
+            setTreatmentPlans(prev => 
+              prev.map(plan => plan.id === updatedPlan.id ? updatedPlan : plan)
+            );
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'treatment_plans'
+        },
+        (payload) => {
+          console.log('Treatment plan deleted:', payload);
+          setTreatmentPlans(prev => prev.filter(plan => plan.id !== payload.old.id));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchTreatmentPlans]);
 
   const addTreatmentPlan = async (planData: Omit<TreatmentPlan, 'id' | 'created_at' | 'updated_at' | 'patients'>) => {
     try {
@@ -81,7 +154,6 @@ export function useTreatmentPlans() {
       }
 
       console.log('Treatment plan added successfully:', data);
-      setTreatmentPlans(prev => [data, ...prev]);
       toast.success("Trilha adicionada com sucesso");
       return { success: true, data };
     } catch (error) {
@@ -112,7 +184,6 @@ export function useTreatmentPlans() {
       }
 
       console.log('Treatment plan updated successfully:', data);
-      setTreatmentPlans(prev => prev.map(p => p.id === id ? data : p));
       toast.success("Trilha atualizada com sucesso");
       return { success: true, data };
     } catch (error) {
@@ -151,7 +222,6 @@ export function useTreatmentPlans() {
       }
 
       console.log('Treatment plan deleted successfully');
-      setTreatmentPlans(prev => prev.filter(p => p.id !== id));
       toast.success("Trilha removida com sucesso");
       return { success: true };
     } catch (error) {

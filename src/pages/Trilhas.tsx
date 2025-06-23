@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,7 @@ import { AddExercisesToPlanDialog } from "@/components/plans/AddExercisesToPlanD
 import { useTreatmentPlans } from "@/hooks/useTreatmentPlans";
 import { usePlanExercises } from "@/hooks/usePlanExercises";
 import { useExercises } from "@/hooks/useExercises";
+import { formatDateToBrazilian } from "@/utils/dateUtils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -130,7 +130,7 @@ export default function Trilhas() {
                   <div className="flex items-center text-sm text-muted-foreground">
                     <Calendar className="h-4 w-4 mr-2" />
                     <span>
-                      {plan.start_date ? new Date(plan.start_date).toLocaleDateString('pt-BR') : 'Data não definida'}
+                      {plan.start_date ? formatDateToBrazilian(plan.start_date) : 'Data não definida'}
                     </span>
                   </div>
 

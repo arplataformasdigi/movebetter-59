@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -26,7 +26,7 @@ export function usePlanExercises(planId?: string) {
   const [planExercises, setPlanExercises] = useState<PlanExercise[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchPlanExercises = async () => {
+  const fetchPlanExercises = useCallback(async () => {
     if (!planId) {
       setIsLoading(false);
       return;
@@ -59,11 +59,90 @@ export function usePlanExercises(planId?: string) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [planId]);
 
   useEffect(() => {
     fetchPlanExercises();
-  }, [planId]);
+
+    if (!planId) return;
+
+    // Setup realtime subscription for plan exercises
+    const channel = supabase
+      .channel(`plan_exercises_${planId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'plan_exercises',
+          filter: `treatment_plan_id=eq.${planId}`
+        },
+        async (payload) => {
+          console.log('New plan exercise inserted:', payload);
+          
+          // Fetch the new exercise with exercise data
+          const { data: newExercise } = await supabase
+            .from('plan_exercises')
+            .select(`
+              *,
+              exercises (name, description, instructions)
+            `)
+            .eq('id', payload.new.id)
+            .single();
+
+          if (newExercise) {
+            setPlanExercises(prev => [...prev, newExercise].sort((a, b) => a.day_number - b.day_number));
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'plan_exercises',
+          filter: `treatment_plan_id=eq.${planId}`
+        },
+        async (payload) => {
+          console.log('Plan exercise updated:', payload);
+          
+          // Fetch the updated exercise with exercise data
+          const { data: updatedExercise } = await supabase
+            .from('plan_exercises')
+            .select(`
+              *,
+              exercises (name, description, instructions)
+            `)
+            .eq('id', payload.new.id)
+            .single();
+
+          if (updatedExercise) {
+            setPlanExercises(prev => 
+              prev.map(ex => ex.id === updatedExercise.id ? updatedExercise : ex)
+                  .sort((a, b) => a.day_number - b.day_number)
+            );
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'plan_exercises',
+          filter: `treatment_plan_id=eq.${planId}`
+        },
+        (payload) => {
+          console.log('Plan exercise deleted:', payload);
+          setPlanExercises(prev => prev.filter(ex => ex.id !== payload.old.id));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [planId, fetchPlanExercises]);
 
   const addPlanExercise = async (exerciseData: Omit<PlanExercise, 'id' | 'created_at' | 'exercises'>) => {
     try {
@@ -85,7 +164,6 @@ export function usePlanExercises(planId?: string) {
       }
 
       console.log('Plan exercise added successfully:', data);
-      setPlanExercises(prev => [...prev, data]);
       toast.success("Exercício adicionado ao plano com sucesso");
       return { success: true, data };
     } catch (error) {
@@ -111,7 +189,6 @@ export function usePlanExercises(planId?: string) {
       }
 
       console.log('Plan exercise removed successfully');
-      setPlanExercises(prev => prev.filter(ex => ex.id !== exerciseId));
       toast.success("Exercício removido com sucesso");
       return { success: true };
     } catch (error) {
@@ -147,9 +224,6 @@ export function usePlanExercises(planId?: string) {
       }
 
       console.log('Exercise completion updated successfully');
-      setPlanExercises(prev => prev.map(ex => 
-        ex.id === exerciseId ? data : ex
-      ));
       
       toast.success(isCompleted ? "Exercício marcado como concluído" : "Exercício marcado como pendente");
       return { success: true, data };
@@ -181,9 +255,6 @@ export function usePlanExercises(planId?: string) {
       }
 
       console.log('Plan exercise updated successfully');
-      setPlanExercises(prev => prev.map(ex => 
-        ex.id === exerciseId ? data : ex
-      ));
       
       toast.success("Exercício atualizado com sucesso");
       return { success: true, data };
