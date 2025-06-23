@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,8 +11,8 @@ import { CreatePackageDialog } from "@/components/packages/CreatePackageDialog";
 import { EditPackageDialog } from "@/components/packages/EditPackageDialog";
 import { SellPackageDialog } from "@/components/packages/SellPackageDialog";
 import { DeletePackageDialog } from "@/components/packages/DeletePackageDialog";
-import { usePackages } from "@/hooks/usePackages";
-import { usePackageProposals } from "@/hooks/usePackageProposals";
+import { usePackagesRealtime } from "@/hooks/usePackagesRealtime";
+import { usePackageProposalsRealtime } from "@/hooks/usePackageProposalsRealtime";
 import { useCreditCardRates } from "@/hooks/useCreditCardRates";
 import { usePatients } from "@/hooks/usePatients";
 
@@ -23,8 +24,8 @@ export default function Packages() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [newRate, setNewRate] = useState({ name: "", rate: 0 });
 
-  const { packages, isLoading: packagesLoading, updatePackage, deletePackage: removePackage } = usePackages();
-  const { proposals, isLoading: proposalsLoading, addProposal, deleteProposal } = usePackageProposals();
+  const { packages, isLoading: packagesLoading, updatePackage, deletePackage: removePackage } = usePackagesRealtime();
+  const { proposals, isLoading: proposalsLoading, addProposal, deleteProposal } = usePackageProposalsRealtime();
   const { rates, isLoading: ratesLoading, addRate, deleteRate } = useCreditCardRates();
   const { patients, isLoading: patientsLoading } = usePatients();
 
@@ -172,7 +173,7 @@ Data: ${new Date().toLocaleDateString("pt-BR")}
             <Package className="mr-2 h-8 w-8" /> Pacotes
           </h1>
           <p className="text-muted-foreground">
-            Gerencie pacotes de fisioterapia e vendas.
+            Gerencie pacotes de fisioterapia e vendas com atualizações em tempo real.
           </p>
         </div>
       </div>

@@ -159,6 +159,7 @@ export function usePackages() {
 
   return {
     packages,
+    setPackages,
     isLoading,
     fetchPackages,
     addPackage,

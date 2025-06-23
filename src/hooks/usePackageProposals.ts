@@ -148,6 +148,7 @@ export function usePackageProposals() {
 
   return {
     proposals,
+    setProposals,
     isLoading,
     fetchProposals,
     addProposal,
