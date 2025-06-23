@@ -118,15 +118,43 @@ export function ViewTreatmentPlanDialog({ plan, open, onOpenChange }: ViewTreatm
 
   const updatePatientScore = async (patientId: string) => {
     try {
-      // Update patient scores
-      const { error } = await supabase.rpc('update_patient_score', {
-        p_patient_id: patientId,
-        p_points_to_add: 10, // 10 points per completed exercise
-        p_exercises_completed: 1
-      });
+      // Check if patient_scores record exists
+      const { data: existingScore } = await supabase
+        .from('patient_scores')
+        .select('*')
+        .eq('patient_id', patientId)
+        .single();
 
-      if (error) {
-        console.error('Error updating patient score:', error);
+      if (existingScore) {
+        // Update existing record
+        const { error } = await supabase
+          .from('patient_scores')
+          .update({
+            total_points: existingScore.total_points + 10,
+            completed_exercises: existingScore.completed_exercises + 1,
+            last_activity_date: new Date().toISOString().split('T')[0],
+            updated_at: new Date().toISOString()
+          })
+          .eq('patient_id', patientId);
+
+        if (error) {
+          console.error('Error updating patient score:', error);
+        }
+      } else {
+        // Create new record
+        const { error } = await supabase
+          .from('patient_scores')
+          .insert({
+            patient_id: patientId,
+            total_points: 10,
+            completed_exercises: 1,
+            last_activity_date: new Date().toISOString().split('T')[0],
+            is_tracks_active: true
+          });
+
+        if (error) {
+          console.error('Error creating patient score:', error);
+        }
       }
     } catch (error) {
       console.error('Error in updatePatientScore:', error);
