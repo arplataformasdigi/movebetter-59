@@ -136,7 +136,7 @@ export default function Financial() {
         </TabsContent>
 
         <TabsContent value="reports" className="space-y-6">
-          <FinancialReports transactions={transformedTransactions} />
+          <FinancialReports transactions={transactions} />
         </TabsContent>
       </Tabs>
 
