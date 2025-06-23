@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -12,7 +11,7 @@ export interface FinancialTransaction {
   transaction_date: string;
   due_date?: string;
   payment_date?: string;
-  payment_status: 'pending' | 'paid' | 'overdue';
+  payment_status: 'pending' | 'paid' | 'overdue' | 'cancelled';
   notes?: string;
   created_by: string;
   created_at: string;
