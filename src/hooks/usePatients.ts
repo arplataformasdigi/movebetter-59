@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -24,7 +23,7 @@ export function usePatients() {
   const [isLoading, setIsLoading] = useState(true);
   const channelRef = useRef<any>(null);
   const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const isSubscribedRef = useRef(false);
+  const isInitializedRef = useRef(false);
 
   const fetchPatients = async () => {
     try {
@@ -65,23 +64,21 @@ export function usePatients() {
     }, 500);
   };
 
-  useEffect(() => {
-    // Initial fetch
-    fetchPatients();
+  const setupRealtimeSubscription = () => {
+    // Prevent multiple subscriptions
+    if (channelRef.current || isInitializedRef.current) {
+      console.log('Subscription already exists, skipping setup');
+      return;
+    }
 
-    // Only set up realtime subscription if not already subscribed
-    if (!isSubscribedRef.current) {
-      // Cleanup any existing channel first
-      if (channelRef.current) {
-        console.log('Removing existing channel');
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
+    console.log('Setting up realtime subscription...');
+    isInitializedRef.current = true;
 
-      // Create unique channel name to avoid conflicts
-      const channelName = `patients_realtime_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      console.log('Creating new channel:', channelName);
-      
+    // Create unique channel name
+    const channelName = `patients_realtime_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    console.log('Creating new channel:', channelName);
+    
+    try {
       const channel = supabase
         .channel(channelName)
         .on(
@@ -98,25 +95,44 @@ export function usePatients() {
         )
         .subscribe((status) => {
           console.log('Channel subscription status:', status);
-          if (status === 'SUBSCRIBED') {
-            isSubscribedRef.current = true;
-          }
         });
 
       channelRef.current = channel;
+    } catch (error) {
+      console.error('Error setting up realtime subscription:', error);
+      isInitializedRef.current = false;
     }
+  };
 
-    return () => {
-      console.log('Cleaning up channel subscription');
-      if (fetchTimeoutRef.current) {
-        clearTimeout(fetchTimeoutRef.current);
-      }
-      if (channelRef.current) {
+  const cleanupSubscription = () => {
+    console.log('Cleaning up subscription...');
+    
+    if (fetchTimeoutRef.current) {
+      clearTimeout(fetchTimeoutRef.current);
+      fetchTimeoutRef.current = null;
+    }
+    
+    if (channelRef.current) {
+      try {
         supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-        isSubscribedRef.current = false;
+        console.log('Channel removed successfully');
+      } catch (error) {
+        console.error('Error removing channel:', error);
       }
-    };
+      channelRef.current = null;
+    }
+    
+    isInitializedRef.current = false;
+  };
+
+  useEffect(() => {
+    // Initial fetch
+    fetchPatients();
+
+    // Setup realtime subscription
+    setupRealtimeSubscription();
+
+    return cleanupSubscription;
   }, []); // Empty dependency array to run only once
 
   const addPatient = async (patientData: Omit<Patient, 'id' | 'created_at'>) => {
