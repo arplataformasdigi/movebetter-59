@@ -6,17 +6,21 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Settings } from "lucide-react";
-import { usePatientAccess } from "@/hooks/usePatientAccess";
+import { PatientAccess } from "@/hooks/usePatientAccess";
 
 interface PatientAccessDialogProps {
   patientId: string;
   patientName: string;
+  patientAccess: PatientAccess[];
+  onCreateAccess: (patientId: string, allowedPages: string[]) => Promise<{ success: boolean; data?: any; error?: any }>;
+  onUpdateAccess: (id: string, updates: Partial<PatientAccess>) => Promise<{ success: boolean; data?: any; error?: any }>;
+  onDeleteAccess: (id: string) => Promise<{ success: boolean; error?: any }>;
+  onClose: () => void;
 }
 
 const availablePages = [
@@ -27,10 +31,16 @@ const availablePages = [
   { id: "evolution", name: "Evolução", description: "Acompanhar progresso do tratamento" },
 ];
 
-export function PatientAccessDialog({ patientId, patientName }: PatientAccessDialogProps) {
-  const [open, setOpen] = useState(false);
+export function PatientAccessDialog({ 
+  patientId, 
+  patientName, 
+  patientAccess, 
+  onCreateAccess, 
+  onUpdateAccess, 
+  onDeleteAccess, 
+  onClose 
+}: PatientAccessDialogProps) {
   const [selectedPages, setSelectedPages] = useState<string[]>([]);
-  const { createPatientAccess, updatePatientAccess, patientAccess } = usePatientAccess();
 
   const existingAccess = patientAccess.find(pa => pa.patient_id === patientId);
 
@@ -50,29 +60,23 @@ export function PatientAccessDialog({ patientId, patientName }: PatientAccessDia
 
   const handleSave = async () => {
     if (existingAccess) {
-      const result = await updatePatientAccess(existingAccess.id, {
+      const result = await onUpdateAccess(existingAccess.id, {
         allowed_pages: selectedPages,
         is_active: true
       });
       if (result.success) {
-        setOpen(false);
+        onClose();
       }
     } else {
-      const result = await createPatientAccess(patientId, selectedPages);
+      const result = await onCreateAccess(patientId, selectedPages);
       if (result.success) {
-        setOpen(false);
+        onClose();
       }
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Settings className="h-4 w-4 mr-1" />
-          Permissões
-        </Button>
-      </DialogTrigger>
+    <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Gerenciar Permissões de Acesso</DialogTitle>
@@ -114,7 +118,7 @@ export function PatientAccessDialog({ patientId, patientName }: PatientAccessDia
         </div>
 
         <div className="flex justify-end space-x-2 mt-6">
-          <Button variant="outline" onClick={() => setOpen(false)}>
+          <Button variant="outline" onClick={onClose}>
             Cancelar
           </Button>
           <Button onClick={handleSave}>
