@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -23,6 +24,7 @@ export interface PatientPackage {
 export function usePatientPackages() {
   const [patientPackages, setPatientPackages] = useState<PatientPackage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const channelRef = useRef<any>(null);
 
   const fetchPatientPackages = async () => {
     try {
@@ -53,8 +55,14 @@ export function usePatientPackages() {
   useEffect(() => {
     fetchPatientPackages();
 
+    // Cleanup previous channel if it exists
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
     // Setup realtime subscription with unique channel name
-    const channelName = `patient_packages_changes_${Date.now()}`;
+    const channelName = `patient_packages_changes_${Date.now()}_${Math.random()}`;
     const channel = supabase
       .channel(channelName)
       .on(
@@ -70,8 +78,13 @@ export function usePatientPackages() {
       )
       .subscribe();
 
+    channelRef.current = channel;
+
     return () => {
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
   }, []);
 

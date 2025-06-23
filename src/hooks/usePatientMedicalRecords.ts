@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -26,6 +27,7 @@ export interface MedicalRecord {
 export function usePatientMedicalRecords(patientId?: string) {
   const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const channelRef = useRef<any>(null);
 
   const fetchMedicalRecords = async () => {
     if (!patientId) return;
@@ -64,8 +66,14 @@ export function usePatientMedicalRecords(patientId?: string) {
     fetchMedicalRecords();
 
     if (patientId) {
+      // Cleanup previous channel if it exists
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+
       // Setup realtime subscription with unique channel name including patientId
-      const channelName = `medical_records_changes_${patientId}_${Date.now()}`;
+      const channelName = `medical_records_changes_${patientId}_${Date.now()}_${Math.random()}`;
       const channel = supabase
         .channel(channelName)
         .on(
@@ -81,8 +89,13 @@ export function usePatientMedicalRecords(patientId?: string) {
         )
         .subscribe();
 
+      channelRef.current = channel;
+
       return () => {
-        supabase.removeChannel(channel);
+        if (channelRef.current) {
+          supabase.removeChannel(channelRef.current);
+          channelRef.current = null;
+        }
       };
     }
   }, [patientId]);
