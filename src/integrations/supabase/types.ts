@@ -578,57 +578,6 @@ export type Database = {
           },
         ]
       }
-      patient_packages: {
-        Row: {
-          assigned_date: string | null
-          created_at: string | null
-          expiry_date: string | null
-          final_price: number | null
-          id: string
-          package_id: string | null
-          patient_id: string | null
-          sessions_used: number | null
-          status: string | null
-        }
-        Insert: {
-          assigned_date?: string | null
-          created_at?: string | null
-          expiry_date?: string | null
-          final_price?: number | null
-          id?: string
-          package_id?: string | null
-          patient_id?: string | null
-          sessions_used?: number | null
-          status?: string | null
-        }
-        Update: {
-          assigned_date?: string | null
-          created_at?: string | null
-          expiry_date?: string | null
-          final_price?: number | null
-          id?: string
-          package_id?: string | null
-          patient_id?: string | null
-          sessions_used?: number | null
-          status?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "patient_packages_package_id_fkey"
-            columns: ["package_id"]
-            isOneToOne: false
-            referencedRelation: "packages"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "patient_packages_patient_id_fkey"
-            columns: ["patient_id"]
-            isOneToOne: false
-            referencedRelation: "patients"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       patient_pre_evaluations: {
         Row: {
           alcool: string

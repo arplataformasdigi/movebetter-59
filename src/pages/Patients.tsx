@@ -5,15 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Users, Plus, Search, Pencil, Trash, Eye, FileText, Activity } from "lucide-react";
+import { Users, Plus, Search, Pencil, Trash, Eye, FileText } from "lucide-react";
 import { AddPatientDialog } from "@/components/patients/AddPatientDialog";
 import { EditPatientDialog } from "@/components/patients/EditPatientDialog";
 import { DeletePatientDialog } from "@/components/patients/DeletePatientDialog";
 import { PatientDetails } from "@/components/patients/PatientDetails";
-import { AssignPackageDialog } from "@/components/patients/AssignPackageDialog";
 import { PatientAccessDialog } from "@/components/patients/PatientAccessDialog";
 import { usePatients } from "@/hooks/usePatients";
-import { usePackagesData } from "@/hooks/usePackagesData";
 import { usePatientAccess } from "@/hooks/usePatientAccess";
 
 export default function Patients() {
@@ -24,12 +22,10 @@ export default function Patients() {
   const [deletingPatient, setDeletingPatient] = useState<{ id: string; name: string } | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [assignPackageOpen, setAssignPackageOpen] = useState(false);
   const [addPatientOpen, setAddPatientOpen] = useState(false);
   const [accessDialogPatient, setAccessDialogPatient] = useState<{ id: string; name: string } | null>(null);
 
   const { patients, isLoading, addPatient, updatePatient, deletePatient } = usePatients();
-  const { packages } = usePackagesData();
   const { patientAccess, createPatientAccess, updatePatientAccess, deletePatientAccess } = usePatientAccess();
 
   const handleAddPatient = async (patientData: any) => {
@@ -90,12 +86,6 @@ export default function Patients() {
     setDetailsOpen(true);
   };
 
-  const openAssignPackageDialog = (patient: any) => {
-    closeAllDialogs();
-    setSelectedPatient(patient);
-    setAssignPackageOpen(true);
-  };
-
   const openAccessDialog = (patient: any) => {
     closeAllDialogs();
     setAccessDialogPatient({ id: patient.id, name: patient.name });
@@ -109,7 +99,6 @@ export default function Patients() {
   const closeAllDialogs = () => {
     setDetailsOpen(false);
     setEditDialogOpen(false);
-    setAssignPackageOpen(false);
     setAccessDialogPatient(null);
     setDeletingPatient(null);
     setSelectedPatient(null);
@@ -228,14 +217,6 @@ export default function Patients() {
                           <Button 
                             variant="ghost" 
                             size="sm" 
-                            onClick={() => openAssignPackageDialog(patient)}
-                            title="Atribuir pacote"
-                          >
-                            <Activity className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
                             onClick={() => openDeleteDialog(patient)}
                             className="text-red-600 hover:text-red-700"
                             title="Excluir"
@@ -285,15 +266,6 @@ export default function Patients() {
           patientName={deletingPatient.name}
           onConfirm={() => handleDeletePatient(deletingPatient.id)}
           onClose={() => setDeletingPatient(null)}
-        />
-      )}
-
-      {assignPackageOpen && selectedPatient && (
-        <AssignPackageDialog
-          patientId={selectedPatient.id}
-          patientName={selectedPatient.name}
-          packages={packages}
-          onClose={() => setAssignPackageOpen(false)}
         />
       )}
 
