@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { PatientAccess } from "@/hooks/usePatientAccess";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PatientAuthContextType {
   patientUser: PatientAccess | null;
@@ -34,23 +35,22 @@ export function PatientAuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // Aqui vamos fazer a autenticação via uma função edge
-      const response = await fetch('/api/patient-auth', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      // Usar a função edge do Supabase para autenticação
+      const { data, error } = await supabase.functions.invoke('patient-auth', {
         body: JSON.stringify({ email, password }),
       });
 
-      const result = await response.json();
+      if (error) {
+        console.error('Erro na função edge:', error);
+        return { success: false, error: 'Erro interno do servidor' };
+      }
 
-      if (result.success) {
-        setPatientUser(result.data);
-        localStorage.setItem('patientAuth', JSON.stringify(result.data));
+      if (data.success) {
+        setPatientUser(data.data);
+        localStorage.setItem('patientAuth', JSON.stringify(data.data));
         return { success: true };
       } else {
-        return { success: false, error: result.error };
+        return { success: false, error: data.error };
       }
     } catch (error) {
       console.error('Erro no login do paciente:', error);

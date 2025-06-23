@@ -35,7 +35,7 @@ interface PatientAccessDialogProps {
 export function PatientAccessDialog({
   patientId,
   patientName,
-  patientAccess,
+  patientAccess = [], // Provide default empty array
   onCreateAccess,
   onUpdateAccess,
   onDeleteAccess,
@@ -45,7 +45,8 @@ export function PatientAccessDialog({
   const [editingAccess, setEditingAccess] = useState<PatientAccess | null>(null);
   const [showPassword, setShowPassword] = useState(false);
 
-  const currentAccess = patientAccess.find(access => access.patient_id === patientId);
+  // Safely find current access with null checks
+  const currentAccess = patientAccess?.find(access => access?.patient_id === patientId) || null;
 
   const form = useForm<AccessFormValues>({
     resolver: zodResolver(accessSchema),
@@ -59,9 +60,9 @@ export function PatientAccessDialog({
   useEffect(() => {
     if (editingAccess) {
       form.reset({
-        email: editingAccess.email,
+        email: editingAccess.email || "",
         password: "",
-        is_active: editingAccess.is_active,
+        is_active: editingAccess.is_active ?? true,
       });
     } else {
       form.reset({
@@ -103,14 +104,16 @@ export function PatientAccessDialog({
   };
 
   const handleEdit = (access: PatientAccess) => {
+    if (!access) return;
     setEditingAccess(access);
     setIsCreating(true);
   };
 
   const handleDelete = async (access: PatientAccess) => {
-    if (window.confirm("Tem certeza que deseja remover este acesso?")) {
-      await onDeleteAccess(access.id);
+    if (!access || !window.confirm("Tem certeza que deseja remover este acesso?")) {
+      return;
     }
+    await onDeleteAccess(access.id);
   };
 
   const handleCancelEdit = () => {
@@ -161,11 +164,11 @@ export function PatientAccessDialog({
               <CardContent>
                 <div className="space-y-2">
                   <div>
-                    <span className="font-medium">Email:</span> {currentAccess.email}
+                    <span className="font-medium">Email:</span> {currentAccess.email || "N/A"}
                   </div>
                   <div>
                     <span className="font-medium">Criado em:</span>{" "}
-                    {new Date(currentAccess.created_at).toLocaleDateString('pt-BR')}
+                    {currentAccess.created_at ? new Date(currentAccess.created_at).toLocaleDateString('pt-BR') : "N/A"}
                   </div>
                 </div>
               </CardContent>
