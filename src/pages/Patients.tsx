@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Users, Plus, Search, Pencil, Trash, Eye, FileText } from "lucide-react";
+import { Users, Plus, Search, Pencil, Trash, FileText, Smartphone } from "lucide-react";
 import { AddPatientDialog } from "@/components/patients/AddPatientDialog";
 import { EditPatientDialog } from "@/components/patients/EditPatientDialog";
 import { DeletePatientDialog } from "@/components/patients/DeletePatientDialog";
@@ -194,9 +194,9 @@ export default function Patients() {
                             variant="ghost" 
                             size="sm" 
                             onClick={() => openDetailsDialog(patient)}
-                            title="Ver detalhes"
+                            title="Ver prontuário"
                           >
-                            <Eye className="h-4 w-4" />
+                            <FileText className="h-4 w-4" />
                           </Button>
                           <Button 
                             variant="ghost" 
@@ -212,7 +212,7 @@ export default function Patients() {
                             onClick={() => openAccessDialog(patient)}
                             title="Gerenciar acesso"
                           >
-                            <FileText className="h-4 w-4" />
+                            <Smartphone className="h-4 w-4" />
                           </Button>
                           <Button 
                             variant="ghost" 

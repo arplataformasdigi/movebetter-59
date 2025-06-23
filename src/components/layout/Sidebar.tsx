@@ -9,7 +9,6 @@ import {
   Trophy,
   User,
   CreditCard,
-  Smartphone,
   Package,
   DollarSign
 } from "lucide-react";
@@ -52,12 +51,6 @@ const sidebarItems: SidebarItem[] = [
     title: "Pacotes",
     icon: Package,
     href: "/pacotes",
-    roles: ["admin"],
-  },
-  {
-    title: "Aplicativo",
-    icon: Smartphone,
-    href: "/aplicativo",
     roles: ["admin"],
   },
   {

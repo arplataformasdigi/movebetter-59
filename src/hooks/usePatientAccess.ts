@@ -62,6 +62,18 @@ export function usePatientAccess() {
         return { success: false };
       }
 
+      // Verificar se já existe acesso para este paciente
+      const { data: existingAccess } = await supabase
+        .from('patient_app_access')
+        .select('id')
+        .eq('patient_id', patientId)
+        .single();
+
+      if (existingAccess) {
+        toast.error("Já existe um acesso configurado para este paciente");
+        return { success: false };
+      }
+
       // Hash da senha
       const saltRounds = 10;
       const password_hash = await bcrypt.hash(password, saltRounds);
@@ -84,7 +96,11 @@ export function usePatientAccess() {
 
       if (error) {
         console.error('Error creating patient access:', error);
-        toast.error("Erro ao criar acesso do paciente");
+        if (error.code === '23505') {
+          toast.error("Já existe um acesso configurado para este paciente");
+        } else {
+          toast.error("Erro ao criar acesso do paciente");
+        }
         return { success: false, error };
       }
 
@@ -93,6 +109,7 @@ export function usePatientAccess() {
       return { success: true, data };
     } catch (error) {
       console.error('Error in createPatientAccess:', error);
+      toast.error("Erro inesperado ao criar acesso");
       return { success: false, error };
     }
   };

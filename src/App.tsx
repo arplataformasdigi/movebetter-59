@@ -24,7 +24,6 @@ import PatientPlans from "./pages/patient/PatientPlans";
 import PatientMedicalRecords from "./pages/patient/PatientMedicalRecords";
 import PersonalData from "./pages/PersonalData";
 import Subscription from "./pages/Subscription";
-import AppPage from "./pages/App";
 import Packages from "./pages/Packages";
 import Financial from "./pages/Financial";
 import PatientAuth from "./pages/PatientAuth";
@@ -84,12 +83,6 @@ const App = () => {
                 <Route path="/pacotes" element={
                   <ProtectedRoute allowedRoles={["admin"]}>
                     <AppLayout><Packages /></AppLayout>
-                  </ProtectedRoute>
-                } />
-
-                <Route path="/aplicativo" element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <AppLayout><AppPage /></AppLayout>
                   </ProtectedRoute>
                 } />
 
