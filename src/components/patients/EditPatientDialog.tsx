@@ -10,7 +10,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,7 +24,6 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { usePatients, Patient } from "@/hooks/usePatients";
-import { Pencil } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(3, { message: "Nome deve ter pelo menos 3 caracteres" }),
@@ -39,10 +37,10 @@ type FormValues = z.infer<typeof formSchema>;
 
 interface EditPatientDialogProps {
   patient: Patient;
+  onClose: () => void;
 }
 
-export function EditPatientDialog({ patient }: EditPatientDialogProps) {
-  const [open, setOpen] = React.useState(false);
+export function EditPatientDialog({ patient, onClose }: EditPatientDialogProps) {
   const { updatePatient } = usePatients();
   
   const form = useForm<FormValues>({
@@ -52,7 +50,7 @@ export function EditPatientDialog({ patient }: EditPatientDialogProps) {
       email: patient.email || "",
       phone: patient.phone || "",
       cpf: patient.cpf || "",
-      status: patient.status === "completed" ? "active" : patient.status, // Map completed to active
+      status: patient.status === "completed" ? "active" : patient.status,
     },
   });
 
@@ -69,17 +67,12 @@ export function EditPatientDialog({ patient }: EditPatientDialogProps) {
     
     if (result.success) {
       toast.success("Paciente atualizado com sucesso");
-      setOpen(false);
+      onClose();
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-          <Pencil className="h-4 w-4" />
-        </Button>
-      </DialogTrigger>
+    <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
           <DialogTitle>Editar Paciente</DialogTitle>
@@ -163,6 +156,9 @@ export function EditPatientDialog({ patient }: EditPatientDialogProps) {
               )}
             />
             <DialogFooter>
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancelar
+              </Button>
               <Button type="submit">Salvar Alterações</Button>
             </DialogFooter>
           </form>

@@ -6,7 +6,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
 interface Package {
@@ -32,6 +30,7 @@ interface AssignPackageDialogProps {
   patientName: string;
   packages: Package[];
   onAssignPackage: (assignment: any) => void;
+  onClose: () => void;
   isLoading?: boolean;
 }
 
@@ -40,9 +39,9 @@ export function AssignPackageDialog({
   patientName, 
   packages, 
   onAssignPackage, 
+  onClose,
   isLoading = false 
 }: AssignPackageDialogProps) {
-  const [open, setOpen] = useState(false);
   const [packageId, setPackageId] = useState("");
 
   const selectedPackage = packages.find(pkg => pkg.id === packageId);
@@ -70,27 +69,27 @@ export function AssignPackageDialog({
 
     onAssignPackage(assignment);
     toast.success("Pacote atribuído com sucesso!");
-    setOpen(false);
+    onClose();
     setPackageId("");
   };
 
   if (isLoading) {
     return (
-      <Button variant="outline" size="sm" disabled>
-        <Plus className="mr-1 h-3 w-3" />
-        Carregando...
-      </Button>
+      <Dialog open={true} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Carregando...</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-center p-6">
+            <div className="text-lg">Carregando pacotes...</div>
+          </div>
+        </DialogContent>
+      </Dialog>
     );
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Plus className="mr-1 h-3 w-3" />
-          Atribuir
-        </Button>
-      </DialogTrigger>
+    <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
           <DialogTitle>Atribuir Pacote</DialogTitle>
@@ -115,7 +114,7 @@ export function AssignPackageDialog({
           </div>
 
           <div className="flex justify-end space-x-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button type="button" variant="outline" onClick={onClose}>
               Cancelar
             </Button>
             <Button type="submit">

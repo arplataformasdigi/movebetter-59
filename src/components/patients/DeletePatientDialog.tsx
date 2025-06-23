@@ -7,35 +7,23 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
 
 interface DeletePatientDialogProps {
   patientName: string;
   onConfirm: () => void;
+  onClose: () => void;
 }
 
-export function DeletePatientDialog({ patientName, onConfirm }: DeletePatientDialogProps) {
-  const [open, setOpen] = React.useState(false);
-
+export function DeletePatientDialog({ patientName, onConfirm, onClose }: DeletePatientDialogProps) {
   const handleConfirm = () => {
     onConfirm();
-    setOpen(false);
+    onClose();
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 p-0"
-        >
-          <Trash2 className="h-4 w-4 text-red-600" />
-        </Button>
-      </DialogTrigger>
+    <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Confirmar Exclusão</DialogTitle>
@@ -45,7 +33,7 @@ export function DeletePatientDialog({ patientName, onConfirm }: DeletePatientDia
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>
+          <Button variant="outline" onClick={onClose}>
             Cancelar
           </Button>
           <Button variant="destructive" onClick={handleConfirm}>

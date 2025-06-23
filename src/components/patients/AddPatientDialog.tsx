@@ -10,7 +10,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,8 +33,11 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export function AddPatientDialog() {
-  const [open, setOpen] = React.useState(false);
+interface AddPatientDialogProps {
+  onClose: () => void;
+}
+
+export function AddPatientDialog({ onClose }: AddPatientDialogProps) {
   const { addPatient } = usePatients();
   
   const form = useForm<FormValues>({
@@ -62,17 +64,12 @@ export function AddPatientDialog() {
     if (result.success) {
       toast.success("Paciente adicionado com sucesso");
       form.reset();
-      setOpen(false);
+      onClose();
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="bg-movebetter-primary hover:bg-movebetter-primary/90">
-          Adicionar Paciente
-        </Button>
-      </DialogTrigger>
+    <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
           <DialogTitle>Adicionar Novo Paciente</DialogTitle>
@@ -135,6 +132,9 @@ export function AddPatientDialog() {
               )}
             />
             <DialogFooter>
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancelar
+              </Button>
               <Button type="submit">Adicionar</Button>
             </DialogFooter>
           </form>

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Users, Plus, Search, Pencil, Trash, Eye, FileText, Activity } from "lucide-react";
 import { AddPatientDialog } from "@/components/patients/AddPatientDialog";
 import { EditPatientDialog } from "@/components/patients/EditPatientDialog";
@@ -78,22 +79,41 @@ export default function Patients() {
   };
 
   const openEditDialog = (patient: any) => {
+    closeAllDialogs();
     setEditingPatient(patient);
     setEditDialogOpen(true);
   };
 
   const openDetailsDialog = (patient: any) => {
+    closeAllDialogs();
     setSelectedPatient(patient);
     setDetailsOpen(true);
   };
 
   const openAssignPackageDialog = (patient: any) => {
+    closeAllDialogs();
     setSelectedPatient(patient);
     setAssignPackageOpen(true);
   };
 
   const openAccessDialog = (patient: any) => {
+    closeAllDialogs();
     setAccessDialogPatient({ id: patient.id, name: patient.name });
+  };
+
+  const openDeleteDialog = (patient: any) => {
+    closeAllDialogs();
+    setDeletingPatient({ id: patient.id, name: patient.name });
+  };
+
+  const closeAllDialogs = () => {
+    setDetailsOpen(false);
+    setEditDialogOpen(false);
+    setAssignPackageOpen(false);
+    setAccessDialogPatient(null);
+    setDeletingPatient(null);
+    setSelectedPatient(null);
+    setEditingPatient(null);
   };
 
   if (isLoading) {
@@ -152,103 +172,111 @@ export default function Patients() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredPatients.length > 0 ? (
-              filteredPatients.map((patient) => (
-                <Card key={patient.id}>
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <CardTitle className="text-lg">{patient.name}</CardTitle>
-                      <Badge className={getStatusColor(patient.status)}>
-                        {getStatusLabel(patient.status)}
-                      </Badge>
-                    </div>
-                    {patient.email && (
-                      <CardDescription>{patient.email}</CardDescription>
-                    )}
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {patient.phone && (
-                        <div className="flex justify-between text-sm">
-                          <span>Telefone:</span>
-                          <span className="font-medium">{patient.phone}</span>
+          {filteredPatients.length > 0 ? (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Telefone</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Cadastrado em</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredPatients.map((patient) => (
+                    <TableRow key={patient.id}>
+                      <TableCell className="font-medium">{patient.name}</TableCell>
+                      <TableCell>{patient.email || "-"}</TableCell>
+                      <TableCell>{patient.phone || "-"}</TableCell>
+                      <TableCell>
+                        <Badge className={getStatusColor(patient.status)}>
+                          {getStatusLabel(patient.status)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {new Date(patient.created_at).toLocaleDateString('pt-BR')}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end space-x-1">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => openDetailsDialog(patient)}
+                            title="Ver detalhes"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => openEditDialog(patient)}
+                            title="Editar"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => openAccessDialog(patient)}
+                            title="Gerenciar acesso"
+                          >
+                            <FileText className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => openAssignPackageDialog(patient)}
+                            title="Atribuir pacote"
+                          >
+                            <Activity className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => openDeleteDialog(patient)}
+                            className="text-red-600 hover:text-red-700"
+                            title="Excluir"
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
                         </div>
-                      )}
-                      {patient.birth_date && (
-                        <div className="flex justify-between text-sm">
-                          <span>Nascimento:</span>
-                          <span className="font-medium">
-                            {new Date(patient.birth_date).toLocaleDateString('pt-BR')}
-                          </span>
-                        </div>
-                      )}
-                      <div className="flex justify-between text-sm">
-                        <span>Cadastrado em:</span>
-                        <span className="font-medium">
-                          {new Date(patient.created_at).toLocaleDateString('pt-BR')}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex flex-wrap gap-2 mt-4">
-                      <Button variant="outline" size="sm" onClick={() => openDetailsDialog(patient)}>
-                        <Eye className="h-4 w-4 mr-1" /> Detalhes
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => openEditDialog(patient)}>
-                        <Pencil className="h-4 w-4 mr-1" /> Editar
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => openAccessDialog(patient)}>
-                        <FileText className="h-4 w-4 mr-1" /> Acesso
-                      </Button>
-                    </div>
-                    
-                    <div className="flex justify-between mt-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => openAssignPackageDialog(patient)}
-                      >
-                        <Activity className="h-4 w-4 mr-1" /> Pacote
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="text-red-600 border-red-200 hover:bg-red-50"
-                        onClick={() => setDeletingPatient({ id: patient.id, name: patient.name })}
-                      >
-                        <Trash className="h-4 w-4 mr-1" /> Excluir
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            ) : (
-              <div className="col-span-full text-center py-8">
-                <div className="text-gray-500 mb-2">
-                  {patients.length === 0 ? "Nenhum paciente cadastrado ainda" : "Nenhum paciente encontrado com os filtros atuais"}
-                </div>
-                {patients.length === 0 && (
-                  <Button onClick={() => setAddPatientOpen(true)}>
-                    <Plus className="mr-2 h-4 w-4" /> Adicionar Primeiro Paciente
-                  </Button>
-                )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <div className="text-gray-500 mb-2">
+                {patients.length === 0 ? "Nenhum paciente cadastrado ainda" : "Nenhum paciente encontrado com os filtros atuais"}
               </div>
-            )}
-          </div>
+              {patients.length === 0 && (
+                <Button onClick={() => setAddPatientOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" /> Adicionar Primeiro Paciente
+                </Button>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {selectedPatient && (
+      {/* Dialogs */}
+      {detailsOpen && selectedPatient && (
         <PatientDetails
           patient={selectedPatient}
           onUpdatePatient={handleEditPatient}
+          onClose={() => setDetailsOpen(false)}
         />
       )}
 
-      {editingPatient && (
+      {editDialogOpen && editingPatient && (
         <EditPatientDialog
           patient={editingPatient}
+          onClose={() => setEditDialogOpen(false)}
         />
       )}
 
@@ -256,10 +284,11 @@ export default function Patients() {
         <DeletePatientDialog
           patientName={deletingPatient.name}
           onConfirm={() => handleDeletePatient(deletingPatient.id)}
+          onClose={() => setDeletingPatient(null)}
         />
       )}
 
-      {selectedPatient && (
+      {assignPackageOpen && selectedPatient && (
         <AssignPackageDialog
           patientId={selectedPatient.id}
           patientName={selectedPatient.name}
@@ -268,6 +297,7 @@ export default function Patients() {
             console.log('Package assigned:', assignment);
             setAssignPackageOpen(false);
           }}
+          onClose={() => setAssignPackageOpen(false)}
         />
       )}
 
@@ -283,7 +313,11 @@ export default function Patients() {
         />
       )}
 
-      <AddPatientDialog />
+      {addPatientOpen && (
+        <AddPatientDialog 
+          onClose={() => setAddPatientOpen(false)}
+        />
+      )}
     </div>
   );
 }
