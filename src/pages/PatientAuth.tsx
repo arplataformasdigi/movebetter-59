@@ -75,9 +75,9 @@ export default function PatientAuth() {
         <Card className="border-none shadow-lg">
           <CardHeader className="space-y-1 text-center">
             <div className="flex items-center justify-center mb-4">
-              <Link to="/" className="text-sm text-muted-foreground hover:text-primary flex items-center">
+              <Link to="/auth" className="text-sm text-muted-foreground hover:text-primary flex items-center">
                 <ArrowLeft className="h-4 w-4 mr-1" />
-                Voltar ao início
+                Área do Administrador
               </Link>
             </div>
             <CardTitle className="text-2xl font-bold">Área do Paciente</CardTitle>

@@ -1,20 +1,41 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { RegisterForm } from "@/components/auth/RegisterForm";
+import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+
 export default function Auth() {
-  const [activeTab, setActiveTab] = useState<"login" | "register">("login");
-  return <div className="min-h-screen flex items-center justify-center bg-indigo-50">
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-indigo-50">
       <div className="w-full max-w-md">
         <Card className="border-none shadow-lg">
           <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-2xl font-bold">Fisio Smart Care</CardTitle>
-            <CardDescription>Gestão inteligente para atendimento domiciliar</CardDescription>
+            <div className="flex items-center justify-center mb-4">
+              <Link to="/paciente-login" className="text-sm text-muted-foreground hover:text-primary flex items-center">
+                Acesso do Paciente
+                <ArrowRight className="h-4 w-4 ml-1" />
+              </Link>
+            </div>
+            <CardTitle className="text-2xl font-bold">MoveBetter</CardTitle>
+            <CardDescription>Entre em sua conta ou crie uma nova</CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="login" value={activeTab} onValueChange={value => setActiveTab(value as "login" | "register")}>
-              <TabsList className="grid w-full grid-cols-2 mb-6">
+            <Tabs defaultValue="login" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="login">Entrar</TabsTrigger>
                 <TabsTrigger value="register">Cadastrar</TabsTrigger>
               </TabsList>
@@ -28,5 +49,6 @@ export default function Auth() {
           </CardContent>
         </Card>
       </div>
-    </div>;
+    </div>
+  );
 }

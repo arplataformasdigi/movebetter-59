@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,7 +7,9 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppLayout } from "./components/layout/AppLayout";
 import { PatientLayout } from "./components/layout/PatientLayout";
 import { AuthProvider } from "./contexts/AuthContext";
+import { PatientAuthProvider } from "./contexts/PatientAuthContext";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
+import { PatientProtectedRoute } from "./components/auth/PatientProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import Patients from "./pages/Patients";
 import NotFound from "./pages/NotFound";
@@ -24,7 +27,6 @@ import Subscription from "./pages/Subscription";
 import AppPage from "./pages/App";
 import Packages from "./pages/Packages";
 import Financial from "./pages/Financial";
-import { PatientAuthProvider } from "./contexts/PatientAuthContext";
 import PatientAuth from "./pages/PatientAuth";
 
 const queryClient = new QueryClient();
@@ -42,7 +44,7 @@ const App = () => {
             <Sonner />
             <BrowserRouter>
               <Routes>
-                {/* Rota de autenticação */}
+                {/* Rota de autenticação para administradores */}
                 <Route path="/auth" element={<Auth />} />
                 
                 {/* Rota de autenticação para pacientes */}
@@ -115,35 +117,35 @@ const App = () => {
                   </ProtectedRoute>
                 } />
 
-                {/* Rotas para pacientes */}
+                {/* Rotas protegidas para pacientes */}
                 <Route path="/paciente" element={
-                  <ProtectedRoute allowedRoles={["patient"]}>
+                  <PatientProtectedRoute>
                     <PatientLayout><PatientDashboard /></PatientLayout>
-                  </ProtectedRoute>
+                  </PatientProtectedRoute>
                 } />
 
                 <Route path="/paciente/trilhas" element={
-                  <ProtectedRoute allowedRoles={["patient"]}>
+                  <PatientProtectedRoute>
                     <PatientLayout><PatientPlans /></PatientLayout>
-                  </ProtectedRoute>
+                  </PatientProtectedRoute>
                 } />
 
                 <Route path="/paciente/agenda" element={
-                  <ProtectedRoute allowedRoles={["patient"]}>
+                  <PatientProtectedRoute>
                     <PatientLayout><PatientAppointments /></PatientLayout>
-                  </ProtectedRoute>
+                  </PatientProtectedRoute>
                 } />
 
                 <Route path="/paciente/evolucao" element={
-                  <ProtectedRoute allowedRoles={["patient"]}>
+                  <PatientProtectedRoute>
                     <PatientLayout><PatientMedicalRecords /></PatientLayout>
-                  </ProtectedRoute>
+                  </PatientProtectedRoute>
                 } />
 
                 <Route path="/paciente/dados-pessoais" element={
-                  <ProtectedRoute allowedRoles={["patient"]}>
+                  <PatientProtectedRoute>
                     <PatientLayout><PersonalData /></PatientLayout>
-                  </ProtectedRoute>
+                  </PatientProtectedRoute>
                 } />
 
                 {/* Página 404 */}
