@@ -16,20 +16,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { usePatientPackages } from "@/hooks/usePatientPackages";
 
 interface Package {
   id: string;
   name: string;
   price: number;
   services: string[];
-  validity: number;
+  validity_days?: number;
 }
 
 interface AssignPackageDialogProps {
   patientId: string;
   patientName: string;
   packages: Package[];
-  onAssignPackage: (assignment: any) => void;
   onClose: () => void;
   isLoading?: boolean;
 }
@@ -38,15 +38,16 @@ export function AssignPackageDialog({
   patientId, 
   patientName, 
   packages, 
-  onAssignPackage, 
   onClose,
   isLoading = false 
 }: AssignPackageDialogProps) {
   const [packageId, setPackageId] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const { assignPackage } = usePatientPackages();
 
   const selectedPackage = packages.find(pkg => pkg.id === packageId);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!packageId) {
@@ -54,23 +55,39 @@ export function AssignPackageDialog({
       return;
     }
 
-    const assignment = {
-      id: Date.now().toString(),
-      patientId,
-      patientName,
-      packageId: packageId,
-      packageName: selectedPackage?.name || "",
-      packagePrice: selectedPackage?.price || 0,
-      finalPrice: selectedPackage?.price || 0,
-      assignedDate: new Date().toLocaleDateString("pt-BR"),
-      expiryDate: new Date(Date.now() + (selectedPackage?.validity || 1) * 30 * 24 * 60 * 60 * 1000).toLocaleDateString("pt-BR"),
-      status: "active",
-    };
+    if (!selectedPackage) {
+      toast.error("Pacote selecionado não encontrado");
+      return;
+    }
 
-    onAssignPackage(assignment);
-    toast.success("Pacote atribuído com sucesso!");
-    onClose();
-    setPackageId("");
+    setSubmitting(true);
+
+    try {
+      const assignment = {
+        patient_id: patientId,
+        package_id: packageId,
+        final_price: selectedPackage.price,
+        status: 'active' as const,
+        assigned_date: new Date().toISOString().split('T')[0],
+        expiry_date: selectedPackage.validity_days 
+          ? new Date(Date.now() + selectedPackage.validity_days * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+          : null,
+        sessions_used: 0
+      };
+
+      const result = await assignPackage(assignment);
+      
+      if (result.success) {
+        toast.success(`Pacote "${selectedPackage.name}" atribuído a ${patientName} com sucesso!`);
+        onClose();
+        setPackageId("");
+      }
+    } catch (error) {
+      console.error('Error assigning package:', error);
+      toast.error("Erro inesperado ao atribuir pacote");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (isLoading) {
@@ -113,12 +130,22 @@ export function AssignPackageDialog({
             </Select>
           </div>
 
+          {selectedPackage && (
+            <div className="p-3 bg-gray-50 rounded-md text-sm">
+              <p><strong>Pacote:</strong> {selectedPackage.name}</p>
+              <p><strong>Preço:</strong> R$ {selectedPackage.price.toFixed(2)}</p>
+              {selectedPackage.validity_days && (
+                <p><strong>Validade:</strong> {selectedPackage.validity_days} dias</p>
+              )}
+            </div>
+          )}
+
           <div className="flex justify-end space-x-2">
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
               Cancelar
             </Button>
-            <Button type="submit">
-              Atribuir Pacote
+            <Button type="submit" disabled={submitting}>
+              {submitting ? "Atribuindo..." : "Atribuir Pacote"}
             </Button>
           </div>
         </form>

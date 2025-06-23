@@ -293,10 +293,6 @@ export default function Patients() {
           patientId={selectedPatient.id}
           patientName={selectedPatient.name}
           packages={packages}
-          onAssignPackage={(assignment) => {
-            console.log('Package assigned:', assignment);
-            setAssignPackageOpen(false);
-          }}
           onClose={() => setAssignPackageOpen(false)}
         />
       )}
