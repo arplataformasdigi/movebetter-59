@@ -32,6 +32,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -44,12 +50,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ClipboardList, Edit, Trash2, Download } from "lucide-react";
+import { ClipboardList, Edit, Trash2, Download, Plus } from "lucide-react";
 import { usePatientPreEvaluations, PreEvaluation } from "@/hooks/usePatientPreEvaluations";
 
 // Simplified PDF generation function
 const generatePreEvaluationPDF = (evaluation: PreEvaluation, patientName: string) => {
-  // Simple PDF generation using browser print
   const printWindow = window.open('', '_blank');
   
   if (!printWindow) {
@@ -87,11 +92,23 @@ const generatePreEvaluationPDF = (evaluation: PreEvaluation, patientName: string
       </div>
 
       <div class="section">
-        <div class="section-title">Informações da Pré-avaliação</div>
+        <div class="section-title">Informações Gerais</div>
         <div class="field">
           <span class="field-label">Profissão:</span>
           <span class="field-value">${evaluation.profissao}</span>
         </div>
+        <div class="field">
+          <span class="field-label">Atividade Física:</span>
+          <span class="field-value">${evaluation.atividade_fisica}</span>
+        </div>
+        <div class="field">
+          <span class="field-label">Hobby:</span>
+          <span class="field-value">${evaluation.hobby}</span>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Queixa e Dor</div>
         <div class="field">
           <span class="field-label">Queixa Principal:</span>
           <span class="field-value">${evaluation.queixa_principal}</span>
@@ -103,6 +120,10 @@ const generatePreEvaluationPDF = (evaluation: PreEvaluation, patientName: string
         <div class="field">
           <span class="field-label">Descrição da Dor:</span>
           <span class="field-value">${evaluation.descricao_dor}</span>
+        </div>
+        <div class="field">
+          <span class="field-label">Escala da Dor:</span>
+          <span class="field-value">${evaluation.escala_dor}</span>
         </div>
       </div>
 
@@ -230,87 +251,12 @@ export function PatientPreEvaluation({ patientId, patientName }: PatientPreEvalu
 
   function onSubmit(values: FormValues) {
     if (editingEvaluation) {
-      // For updates, ensure all required fields are present
-      const updateData: Partial<PreEvaluation> = {
-        ...values,
-        // Ensure all required fields have values
-        alcool: values.alcool || "Não informado",
-        doencas_familiares: values.doencas_familiares || "Não informado",
-        condicoes_similares: values.condicoes_similares || "Não informado",
-        alimentacao: values.alimentacao || "Não informado",
-        padrao_sono: values.padrao_sono || "Não informado",
-        fumante: values.fumante || "Não informado",
-        ingestao_agua: values.ingestao_agua || "Não informado",
-        tempo_sentado: values.tempo_sentado || "Não informado",
-        exercicios_casa: values.exercicios_casa || "Não informado",
-        dificuldade_dia: values.dificuldade_dia || "Não informado",
-        dispositivo_auxilio: values.dispositivo_auxilio || "Não informado",
-        dificuldade_equilibrio: values.dificuldade_equilibrio || "Não informado",
-        limitacao_movimento: values.limitacao_movimento || "Não informado",
-        alivio_dor: values.alivio_dor || "Não informado",
-        piora_dor: values.piora_dor || "Não informado",
-        interferencia_dor: values.interferencia_dor || "Não informado",
-        irradiacao_dor: values.irradiacao_dor || "Não informado",
-        escala_dor: values.escala_dor || "Não informado",
-        descricao_dor: values.descricao_dor || "Não informado",
-        tratamento_anterior: values.tratamento_anterior || "Não informado",
-        inicio_problema: values.inicio_problema || "Não informado",
-        tempo_problema: values.tempo_problema || "Não informado",
-        queixa_principal: values.queixa_principal || "Não informado",
-        hobby: values.hobby || "Não informado",
-        atividade_fisica: values.atividade_fisica || "Não informado",
-        profissao: values.profissao || "Não informado",
-        diagnostico_medico: values.diagnostico_medico || "Não informado",
-        exames_recentes: values.exames_recentes || "Não informado",
-        condicoes_saude: values.condicoes_saude || "Não informado",
-        cirurgias: values.cirurgias || "Não informado",
-      };
-      
-      updatePreEvaluation(editingEvaluation.id, updateData);
+      updatePreEvaluation(editingEvaluation.id, values);
       setEditingEvaluation(null);
     } else {
-      // For new evaluations, create the complete object
       const evaluationData = {
         patient_id: patientId,
-        profissao: values.profissao,
-        atividade_fisica: values.atividade_fisica,
-        hobby: values.hobby,
-        queixa_principal: values.queixa_principal,
-        tempo_problema: values.tempo_problema,
-        inicio_problema: values.inicio_problema,
-        tratamento_anterior: values.tratamento_anterior,
-        descricao_dor: values.descricao_dor,
-        escala_dor: values.escala_dor,
-        irradiacao_dor: values.irradiacao_dor,
-        piora_dor: values.piora_dor,
-        alivio_dor: values.alivio_dor,
-        interferencia_dor: values.interferencia_dor,
-        diagnostico_medico: values.diagnostico_medico,
-        exames_recentes: values.exames_recentes,
-        condicoes_saude: values.condicoes_saude,
-        cirurgias: values.cirurgias,
-        medicamentos: values.medicamentos,
-        alergias: values.alergias,
-        doencas_familiares: values.doencas_familiares,
-        condicoes_similares: values.condicoes_similares,
-        alimentacao: values.alimentacao,
-        padrao_sono: values.padrao_sono,
-        alcool: values.alcool,
-        fumante: values.fumante,
-        ingestao_agua: values.ingestao_agua,
-        tempo_sentado: values.tempo_sentado,
-        nivel_estresse: values.nivel_estresse,
-        questoes_emocionais: values.questoes_emocionais,
-        impacto_qualidade_vida: values.impacto_qualidade_vida,
-        expectativas_tratamento: values.expectativas_tratamento,
-        exercicios_casa: values.exercicios_casa,
-        restricoes: values.restricoes,
-        dificuldade_dia: values.dificuldade_dia,
-        dispositivo_auxilio: values.dispositivo_auxilio,
-        dificuldade_equilibrio: values.dificuldade_equilibrio,
-        limitacao_movimento: values.limitacao_movimento,
-        info_adicional: values.info_adicional,
-        duvidas_fisioterapia: values.duvidas_fisioterapia,
+        ...values,
       };
       
       addPreEvaluation(evaluationData);
@@ -391,10 +337,11 @@ export function PatientPreEvaluation({ patientId, patientName }: PatientPreEvalu
         }}>
           <DialogTrigger asChild>
             <Button size="sm">
-              {editingEvaluation ? "Editar Pré-avaliação" : "Nova Pré-avaliação"}
+              <Plus className="h-4 w-4 mr-2" />
+              Nova Pré-avaliação
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingEvaluation ? "Editar Pré-avaliação" : "Nova Pré-avaliação"}
@@ -407,63 +354,697 @@ export function PatientPreEvaluation({ patientId, patientName }: PatientPreEvalu
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="profissao"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Profissão</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Profissão" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="atividade_fisica"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Atividade Física</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Atividade física praticada" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <Tabs defaultValue="dados-gerais" className="w-full">
+                  <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="dados-gerais">Dados Gerais</TabsTrigger>
+                    <TabsTrigger value="dor-sintomas">Dor e Sintomas</TabsTrigger>
+                    <TabsTrigger value="saude-historico">Saúde e Histórico</TabsTrigger>
+                    <TabsTrigger value="estilo-vida">Estilo de Vida</TabsTrigger>
+                  </TabsList>
 
-                <FormField
-                  control={form.control}
-                  name="hobby"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Hobby</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Hobbies e interesses" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <TabsContent value="dados-gerais" className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="profissao"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Profissão</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Profissão" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="atividade_fisica"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Atividade Física</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Atividade física praticada" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
 
-                <FormField
-                  control={form.control}
-                  name="queixa_principal"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Queixa Principal</FormLabel>
-                      <FormControl>
-                        <Textarea placeholder="Descreva a queixa principal" className="h-20" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    <FormField
+                      control={form.control}
+                      name="hobby"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Hobby</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Hobbies e interesses" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="queixa_principal"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Queixa Principal</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="Descreva a queixa principal" className="h-20" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="tempo_problema"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Tempo do Problema</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Ex: 3 meses, 1 ano" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="inicio_problema"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Como Iniciou o Problema</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Ex: gradualmente, após acidente" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <FormField
+                      control={form.control}
+                      name="tratamento_anterior"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tratamento Anterior</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="Descreva tratamentos já realizados" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="dor-sintomas" className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="descricao_dor"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Descrição da Dor</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="Como é a dor? (queimação, pontada, etc.)" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="escala_dor"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Escala da Dor (0-10)</FormLabel>
+                            <FormControl>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecione de 0 a 10" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {[...Array(11)].map((_, i) => (
+                                    <SelectItem key={i} value={i.toString()}>
+                                      {i} - {i === 0 ? "Sem dor" : i <= 3 ? "Leve" : i <= 6 ? "Moderada" : i <= 8 ? "Intensa" : "Insuportável"}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="irradiacao_dor"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Irradiação da Dor</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Para onde a dor se espalha?" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="piora_dor"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>O que Piora a Dor</FormLabel>
+                            <FormControl>
+                              <Textarea placeholder="Atividades ou situações que pioram" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="alivio_dor"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>O que Alivia a Dor</FormLabel>
+                            <FormControl>
+                              <Textarea placeholder="Atividades ou situações que aliviam" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <FormField
+                      control={form.control}
+                      name="interferencia_dor"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Como a Dor Interfere no Dia a Dia</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="Impacto nas atividades diárias" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="dificuldade_dia"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Principais Dificuldades</FormLabel>
+                            <FormControl>
+                              <Textarea placeholder="Atividades mais difíceis de realizar" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="limitacao_movimento"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Limitações de Movimento</FormLabel>
+                            <FormControl>
+                              <Textarea placeholder="Movimentos limitados ou dolorosos" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="dificuldade_equilibrio"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Dificuldade de Equilíbrio</FormLabel>
+                            <FormControl>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecione uma opção" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="nenhuma">Nenhuma</SelectItem>
+                                  <SelectItem value="leve">Leve</SelectItem>
+                                  <SelectItem value="moderada">Moderada</SelectItem>
+                                  <SelectItem value="severa">Severa</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="dispositivo_auxilio"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Usa Dispositivos de Auxílio</FormLabel>
+                            <FormControl>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecione uma opção" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="nenhum">Nenhum</SelectItem>
+                                  <SelectItem value="bengala">Bengala</SelectItem>
+                                  <SelectItem value="muletas">Muletas</SelectItem>
+                                  <SelectItem value="andador">Andador</SelectItem>
+                                  <SelectItem value="cadeira-rodas">Cadeira de rodas</SelectItem>
+                                  <SelectItem value="outros">Outros</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="saude-historico" className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="diagnostico_medico"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Diagnóstico Médico</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="Diagnóstico fornecido pelo médico" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="exames_recentes"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Exames Recentes</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="Exames realizados (raio-x, ressonância, etc.)" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="condicoes_saude"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Outras Condições de Saúde</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="Diabetes, hipertensão, etc." {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="cirurgias"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Cirurgias Anteriores</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="Cirurgias realizadas e quando" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="medicamentos"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Medicamentos em Uso</FormLabel>
+                            <FormControl>
+                              <Textarea placeholder="Medicamentos atuais" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="alergias"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Alergias</FormLabel>
+                            <FormControl>
+                              <Textarea placeholder="Alergias conhecidas" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="doencas_familiares"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Doenças na Família</FormLabel>
+                            <FormControl>
+                              <Textarea placeholder="Histórico familiar de doenças" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="condicoes_similares"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Condições Similares na Família</FormLabel>
+                            <FormControl>
+                              <Textarea placeholder="Família com problemas similares" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="estilo-vida" className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="alimentacao"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Alimentação</FormLabel>
+                            <FormControl>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Como avalia sua alimentação?" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="excelente">Excelente</SelectItem>
+                                  <SelectItem value="boa">Boa</SelectItem>
+                                  <SelectItem value="regular">Regular</SelectItem>
+                                  <SelectItem value="ruim">Ruim</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="padrao_sono"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Padrão de Sono</FormLabel>
+                            <FormControl>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Como é seu sono?" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="excelente">Excelente</SelectItem>
+                                  <SelectItem value="bom">Bom</SelectItem>
+                                  <SelectItem value="regular">Regular</SelectItem>
+                                  <SelectItem value="ruim">Ruim</SelectItem>
+                                  <SelectItem value="insonia">Insônia</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="alcool"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Consumo de Álcool</FormLabel>
+                            <FormControl>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Frequência" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="nunca">Nunca</SelectItem>
+                                  <SelectItem value="raramente">Raramente</SelectItem>
+                                  <SelectItem value="socialmente">Socialmente</SelectItem>
+                                  <SelectItem value="frequentemente">Frequentemente</SelectItem>
+                                  <SelectItem value="diariamente">Diariamente</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="fumante"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Fumante</FormLabel>
+                            <FormControl>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecione" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="nao">Não</SelectItem>
+                                  <SelectItem value="sim">Sim</SelectItem>
+                                  <SelectItem value="ex-fumante">Ex-fumante</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="ingestao_agua"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Ingestão de Água (litros/dia)</FormLabel>
+                            <FormControl>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Quantidade" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="menos-1">Menos de 1L</SelectItem>
+                                  <SelectItem value="1-2">1-2L</SelectItem>
+                                  <SelectItem value="2-3">2-3L</SelectItem>
+                                  <SelectItem value="mais-3">Mais de 3L</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <FormField
+                      control={form.control}
+                      name="tempo_sentado"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tempo Sentado por Dia</FormLabel>
+                          <FormControl>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Horas por dia" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="menos-2">Menos de 2 horas</SelectItem>
+                                <SelectItem value="2-4">2-4 horas</SelectItem>
+                                <SelectItem value="4-6">4-6 horas</SelectItem>
+                                <SelectItem value="6-8">6-8 horas</SelectItem>
+                                <SelectItem value="mais-8">Mais de 8 horas</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="nivel_estresse"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Nível de Estresse (0-10)</FormLabel>
+                            <FormControl>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecione de 0 a 10" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {[...Array(11)].map((_, i) => (
+                                    <SelectItem key={i} value={i.toString()}>
+                                      {i} - {i === 0 ? "Nenhum" : i <= 3 ? "Baixo" : i <= 6 ? "Moderado" : i <= 8 ? "Alto" : "Muito Alto"}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="exercicios_casa"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Disponibilidade para Exercícios em Casa</FormLabel>
+                            <FormControl>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecione" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="sim-muito">Sim, muito interessado</SelectItem>
+                                  <SelectItem value="sim-moderado">Sim, moderadamente</SelectItem>
+                                  <SelectItem value="talvez">Talvez</SelectItem>
+                                  <SelectItem value="nao-tempo">Não tenho tempo</SelectItem>
+                                  <SelectItem value="nao-interesse">Não tenho interesse</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <FormField
+                      control={form.control}
+                      name="questoes_emocionais"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Questões Emocionais</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="Ansiedade, depressão, ou outras questões emocionais" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="impacto_qualidade_vida"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Impacto na Qualidade de Vida</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="Como o problema afeta sua qualidade de vida" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="expectativas_tratamento"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Expectativas do Tratamento</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="O que espera do tratamento fisioterapêutico" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="restricoes"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Restrições Especiais</FormLabel>
+                            <FormControl>
+                              <Textarea placeholder="Restrições médicas ou físicas" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="info_adicional"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Informações Adicionais</FormLabel>
+                            <FormControl>
+                              <Textarea placeholder="Outras informações relevantes" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <FormField
+                      control={form.control}
+                      name="duvidas_fisioterapia"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Dúvidas sobre Fisioterapia</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="Dúvidas ou preocupações sobre o tratamento" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </TabsContent>
+                </Tabs>
                 
                 <DialogFooter>
                   <Button type="submit">
@@ -478,15 +1059,17 @@ export function PatientPreEvaluation({ patientId, patientName }: PatientPreEvalu
 
       {preEvaluations.length === 0 ? (
         <Card>
-          <CardContent className="p-4 text-center text-muted-foreground">
-            Nenhuma pré-avaliação encontrada para este paciente.
+          <CardContent className="p-6 text-center text-muted-foreground">
+            <ClipboardList className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
+            <h3 className="text-lg font-medium mb-2">Nenhuma pré-avaliação encontrada</h3>
+            <p className="text-sm">Clique em "Nova Pré-avaliação" para começar.</p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-3">
           {preEvaluations.map((evaluation) => (
             <Card key={evaluation.id}>
-              <CardHeader className="pb-2">
+              <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
                   <div>
                     <CardTitle className="text-base flex items-center gap-2">
@@ -494,7 +1077,7 @@ export function PatientPreEvaluation({ patientId, patientName }: PatientPreEvalu
                       Pré-avaliação de {format(new Date(evaluation.created_at), "dd 'de' MMMM 'de' yyyy", {locale: ptBR})}
                     </CardTitle>
                     <CardDescription>
-                      {format(new Date(evaluation.created_at), "HH:mm", {locale: ptBR})}
+                      Criada às {format(new Date(evaluation.created_at), "HH:mm", {locale: ptBR})}
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-1">
@@ -550,12 +1133,11 @@ export function PatientPreEvaluation({ patientId, patientName }: PatientPreEvalu
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="pb-2 space-y-2">
+              <CardContent className="pb-3 space-y-2">
                 <div className="grid grid-cols-1 gap-2 text-sm">
                   <div><span className="font-medium">Profissão:</span> {evaluation.profissao}</div>
                   <div><span className="font-medium">Queixa Principal:</span> {evaluation.queixa_principal}</div>
                   <div><span className="font-medium">Tempo do Problema:</span> {evaluation.tempo_problema}</div>
-                  <div><span className="font-medium">Descrição da Dor:</span> {evaluation.descricao_dor}</div>
                   <div><span className="font-medium">Escala da Dor:</span> {evaluation.escala_dor}</div>
                   {evaluation.medicamentos && (
                     <div><span className="font-medium">Medicamentos:</span> {evaluation.medicamentos}</div>

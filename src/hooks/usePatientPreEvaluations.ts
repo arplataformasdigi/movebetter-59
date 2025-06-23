@@ -53,6 +53,7 @@ export function usePatientPreEvaluations(patientId?: string) {
   const [preEvaluations, setPreEvaluations] = useState<PreEvaluation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const channelRef = useRef<any>(null);
+  const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchPreEvaluations = async () => {
     if (!patientId) return;
@@ -71,6 +72,7 @@ export function usePatientPreEvaluations(patientId?: string) {
         return;
       }
 
+      console.log('Pre-evaluations fetched:', data);
       setPreEvaluations(data || []);
     } catch (error) {
       console.error('Error in fetchPreEvaluations:', error);
@@ -78,6 +80,15 @@ export function usePatientPreEvaluations(patientId?: string) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const debouncedFetch = () => {
+    if (fetchTimeoutRef.current) {
+      clearTimeout(fetchTimeoutRef.current);
+    }
+    fetchTimeoutRef.current = setTimeout(() => {
+      fetchPreEvaluations();
+    }, 500);
   };
 
   useEffect(() => {
@@ -91,7 +102,7 @@ export function usePatientPreEvaluations(patientId?: string) {
       }
 
       // Setup realtime subscription with unique channel name including patientId
-      const channelName = `pre_evaluations_changes_${patientId}_${Date.now()}_${Math.random()}`;
+      const channelName = `pre_evaluations_${patientId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const channel = supabase
         .channel(channelName)
         .on(
@@ -101,8 +112,9 @@ export function usePatientPreEvaluations(patientId?: string) {
             schema: 'public',
             table: 'patient_pre_evaluations'
           },
-          () => {
-            fetchPreEvaluations();
+          (payload) => {
+            console.log('Pre-evaluation realtime event:', payload);
+            debouncedFetch();
           }
         )
         .subscribe();
@@ -110,6 +122,9 @@ export function usePatientPreEvaluations(patientId?: string) {
       channelRef.current = channel;
 
       return () => {
+        if (fetchTimeoutRef.current) {
+          clearTimeout(fetchTimeoutRef.current);
+        }
         if (channelRef.current) {
           supabase.removeChannel(channelRef.current);
           channelRef.current = null;
@@ -120,6 +135,7 @@ export function usePatientPreEvaluations(patientId?: string) {
 
   const addPreEvaluation = async (evaluationData: Omit<PreEvaluation, 'id' | 'created_at' | 'updated_at'>) => {
     try {
+      console.log('Adding pre-evaluation:', evaluationData);
       const { data, error } = await supabase
         .from('patient_pre_evaluations')
         .insert([evaluationData])
@@ -132,6 +148,7 @@ export function usePatientPreEvaluations(patientId?: string) {
         return { success: false, error };
       }
 
+      console.log('Pre-evaluation added successfully:', data);
       toast.success("Pré-avaliação adicionada com sucesso");
       return { success: true, data };
     } catch (error) {
@@ -143,9 +160,10 @@ export function usePatientPreEvaluations(patientId?: string) {
 
   const updatePreEvaluation = async (evaluationId: string, updates: Partial<PreEvaluation>) => {
     try {
+      console.log('Updating pre-evaluation:', evaluationId, updates);
       const { data, error } = await supabase
         .from('patient_pre_evaluations')
-        .update(updates)
+        .update({ ...updates, updated_at: new Date().toISOString() })
         .eq('id', evaluationId)
         .select()
         .single();
@@ -156,6 +174,7 @@ export function usePatientPreEvaluations(patientId?: string) {
         return { success: false, error };
       }
 
+      console.log('Pre-evaluation updated successfully:', data);
       toast.success("Pré-avaliação atualizada com sucesso");
       return { success: true, data };
     } catch (error) {
@@ -167,6 +186,7 @@ export function usePatientPreEvaluations(patientId?: string) {
 
   const deletePreEvaluation = async (evaluationId: string) => {
     try {
+      console.log('Deleting pre-evaluation:', evaluationId);
       const { error } = await supabase
         .from('patient_pre_evaluations')
         .delete()
@@ -178,6 +198,7 @@ export function usePatientPreEvaluations(patientId?: string) {
         return { success: false, error };
       }
 
+      console.log('Pre-evaluation deleted successfully');
       toast.success("Pré-avaliação excluída com sucesso");
       return { success: true };
     } catch (error) {

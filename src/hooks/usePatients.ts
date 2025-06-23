@@ -23,6 +23,7 @@ export function usePatients() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const channelRef = useRef<any>(null);
+  const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchPatients = async () => {
     try {
@@ -54,17 +55,29 @@ export function usePatients() {
     }
   };
 
+  const debouncedFetch = () => {
+    if (fetchTimeoutRef.current) {
+      clearTimeout(fetchTimeoutRef.current);
+    }
+    fetchTimeoutRef.current = setTimeout(() => {
+      fetchPatients();
+    }, 500);
+  };
+
   useEffect(() => {
     fetchPatients();
 
     // Cleanup previous channel if it exists
     if (channelRef.current) {
+      console.log('Removing existing channel');
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
     }
 
     // Setup realtime subscription with unique channel name
-    const channelName = `patients_changes_${Date.now()}_${Math.random()}`;
+    const channelName = `patients_realtime_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    console.log('Creating new channel:', channelName);
+    
     const channel = supabase
       .channel(channelName)
       .on(
@@ -74,15 +87,22 @@ export function usePatients() {
           schema: 'public',
           table: 'patients'
         },
-        () => {
-          fetchPatients();
+        (payload) => {
+          console.log('Realtime event received:', payload);
+          debouncedFetch();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Channel subscription status:', status);
+      });
 
     channelRef.current = channel;
 
     return () => {
+      console.log('Cleaning up channel subscription');
+      if (fetchTimeoutRef.current) {
+        clearTimeout(fetchTimeoutRef.current);
+      }
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
@@ -122,7 +142,7 @@ export function usePatients() {
       
       const { data, error } = await supabase
         .from('patients')
-        .update(updates)
+        .update({ ...updates, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select()
         .single();
