@@ -43,7 +43,7 @@ const App = () => {
             <Sonner />
             <BrowserRouter>
               <Routes>
-                {/* Rota de autenticação para administradores */}
+                {/* Rota de autenticação para administradores - agora dentro do AuthProvider */}
                 <Route path="/auth" element={<Auth />} />
                 
                 {/* Rota de autenticação para pacientes */}
