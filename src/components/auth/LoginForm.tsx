@@ -22,8 +22,8 @@ export function LoginForm() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, user, isAuthenticated } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
+  const { login, user, isAuthenticated, isLoading } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<LoginFormValues>({
@@ -36,17 +36,17 @@ export function LoginForm() {
 
   // Redirect authenticated users
   React.useEffect(() => {
-    if (isAuthenticated && user) {
+    if (isAuthenticated && user && !isLoading) {
       console.log('User authenticated, redirecting...', user.role);
       const from = location.state?.from || (user.role === 'patient' ? '/paciente' : '/');
       navigate(from, { replace: true });
     }
-  }, [isAuthenticated, user, navigate, location.state]);
+  }, [isAuthenticated, user, navigate, location.state, isLoading]);
 
   const onSubmit = async (data: LoginFormValues) => {
-    if (isLoading) return;
+    if (isSubmitting || isLoading) return;
     
-    setIsLoading(true);
+    setIsSubmitting(true);
     console.log('Submitting login for:', data.email);
     
     try {
@@ -70,14 +70,14 @@ export function LoginForm() {
           description: errorMessage,
           variant: "destructive",
         });
-        setIsLoading(false);
+        setIsSubmitting(false);
       } else {
         console.log('Login successful, waiting for auth state update...');
         toast({
           title: "Login realizado com sucesso!",
           description: "Bem-vindo ao Fisio Smart Care",
         });
-        // Don't set loading to false here, let the auth context handle it
+        // Não definir submitting como false aqui, deixar o useEffect handle
       }
     } catch (error) {
       console.error('Unexpected login error:', error);
@@ -86,7 +86,7 @@ export function LoginForm() {
         description: "Ocorreu um erro inesperado. Tente novamente.",
         variant: "destructive",
       });
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -140,8 +140,12 @@ export function LoginForm() {
           )}
         />
 
-        <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? "Entrando..." : "Entrar"}
+        <Button 
+          type="submit" 
+          className="w-full" 
+          disabled={isSubmitting || isLoading}
+        >
+          {isSubmitting || isLoading ? "Entrando..." : "Entrar"}
         </Button>
       </form>
     </Form>

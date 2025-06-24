@@ -27,77 +27,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let mounted = true;
     let authSubscription: any;
 
-    const initializeAuth = async () => {
-      try {
-        console.log('🚀 AUTH INITIALIZATION STARTED');
-        
-        // Set up auth listener first
-        authSubscription = supabase.auth.onAuthStateChange(async (event, newSession) => {
-          if (!mounted) return;
-          
-          console.log('🔔 AUTH STATE CHANGE:', event, !!newSession);
-          
-          if (event === 'SIGNED_OUT') {
-            setSession(null);
-            setUser(null);
-            setIsLoading(false);
-            return;
-          }
-          
-          if (newSession) {
-            setSession(newSession);
-            await handleUserSession(newSession);
-          } else {
-            setSession(null);
-            setUser(null);
-            setIsLoading(false);
-          }
-        });
-
-        // Get initial session
-        const { data: { session: initialSession } } = await supabase.auth.getSession();
-        
-        if (!mounted) return;
-        
-        if (initialSession) {
-          console.log('📱 Found initial session');
-          setSession(initialSession);
-          await handleUserSession(initialSession);
-        } else {
-          console.log('📱 No initial session');
-          setIsLoading(false);
-        }
-        
-        setIsInitialized(true);
-        console.log('✅ AUTH INITIALIZATION COMPLETED');
-        
-      } catch (error) {
-        console.error('💥 Auth initialization error:', error);
-        if (mounted) {
-          setIsLoading(false);
-          setIsInitialized(true);
-        }
-      }
-    };
-
-    const handleUserSession = async (sessionData: Session) => {
+    const handleUserSession = async (sessionData: Session | null) => {
       if (!mounted) return;
       
-      console.log('👤 Processing user session');
+      console.log('👤 Processing user session:', !!sessionData);
+      
+      if (!sessionData) {
+        setUser(null);
+        setSession(null);
+        setIsLoading(false);
+        return;
+      }
+
+      setSession(sessionData);
       
       try {
-        // Try to fetch profile with shorter timeout
-        const profile = await Promise.race([
-          fetchUserProfile(sessionData.user.id),
-          new Promise<null>((_, reject) => 
-            setTimeout(() => reject(new Error('Profile timeout')), 2000)
-          )
-        ]);
+        // Tentar buscar perfil do usuário
+        console.log('🔍 Fetching user profile...');
+        const profile = await fetchUserProfile(sessionData.user.id);
         
         if (!mounted) return;
         
         if (profile) {
-          console.log('✅ Profile loaded from database');
+          console.log('✅ Profile loaded from database:', profile.name);
           setUser(profile);
         } else {
           console.log('⚠️ No profile found, creating default');
@@ -117,10 +69,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    // Only initialize once
-    if (!isInitialized) {
-      initializeAuth();
-    }
+    const initializeAuth = async () => {
+      try {
+        console.log('🚀 AUTH INITIALIZATION STARTED');
+        
+        // Configurar listener de auth primeiro
+        authSubscription = supabase.auth.onAuthStateChange(async (event, newSession) => {
+          if (!mounted) return;
+          
+          console.log('🔔 AUTH STATE CHANGE:', event, !!newSession);
+          
+          if (event === 'SIGNED_OUT') {
+            setSession(null);
+            setUser(null);
+            setIsLoading(false);
+            return;
+          }
+          
+          await handleUserSession(newSession);
+        });
+
+        // Buscar sessão inicial
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
+        
+        console.log('📱 Initial session check:', !!initialSession);
+        await handleUserSession(initialSession);
+        
+        setIsInitialized(true);
+        console.log('✅ AUTH INITIALIZATION COMPLETED');
+        
+      } catch (error) {
+        console.error('💥 Auth initialization error:', error);
+        if (mounted) {
+          setIsLoading(false);
+          setIsInitialized(true);
+        }
+      }
+    };
+
+    initializeAuth();
 
     // Cleanup
     return () => {
@@ -130,30 +119,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         authSubscription.data.subscription.unsubscribe();
       }
     };
-  }, [isInitialized]);
+  }, []);
 
-  // Safety timeout to prevent infinite loading
+  // Safety timeout reduzido para 3 segundos
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (isLoading && isInitialized) {
         console.warn('⚠️ Force stopping loading state');
         setIsLoading(false);
       }
-    }, 5000);
+    }, 3000);
 
     return () => clearTimeout(timeout);
   }, [isLoading, isInitialized]);
 
   const login = async (email: string, password: string) => {
+    console.log('🔐 Starting login process for:', email);
     setIsLoading(true);
+    
     try {
       const result = await loginUser(email, password);
+      
       if (result.error) {
+        console.error('❌ Login failed:', result.error);
         setIsLoading(false);
+        return result;
       }
+      
+      console.log('✅ Login successful, waiting for auth state change...');
+      // Não definir isLoading como false aqui, deixar o auth state change handle
       return result;
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('💥 Login error:', error);
       setIsLoading(false);
       return { error };
     }
@@ -215,5 +212,4 @@ export const useAuth = () => {
   return context;
 };
 
-// Re-export types for backward compatibility
 export type { UserRole, UserProfile } from "@/types/auth";
