@@ -27,8 +27,9 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { User, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { FormLoadingSkeleton } from "@/components/ui/loading-skeleton";
 
-// Interface local que estende o tipo do profile para incluir cpf_cnpj
+// Interface local que estende o tipo do profile para incluir todos os campos
 interface ExtendedProfile {
   id: string;
   name: string;
@@ -37,6 +38,12 @@ interface ExtendedProfile {
   crefito?: string;
   phone?: string;
   cpf_cnpj?: string;
+  cep?: string;
+  street?: string;
+  number?: string;
+  neighborhood?: string;
+  city?: string;
+  state?: string;
   created_at: string;
   updated_at: string;
 }
@@ -69,6 +76,7 @@ export default function PersonalData() {
   const { toast } = useToast();
   const { user, logout } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [isDataLoading, setIsDataLoading] = useState(true);
   const [cpfCnpjSaved, setCpfCnpjSaved] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -79,8 +87,8 @@ export default function PersonalData() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: user?.name || "",
-      email: user?.email || "",
+      name: "",
+      email: "",
       cpfCnpj: "",
       conselho: "",
       whatsapp: "",
@@ -97,6 +105,9 @@ export default function PersonalData() {
     const loadUserData = async () => {
       if (user?.id) {
         try {
+          console.log('📊 Loading user data for PersonalData...');
+          setIsDataLoading(true);
+          
           const { data: profile, error } = await supabase
             .from('profiles')
             .select('*')
@@ -104,40 +115,76 @@ export default function PersonalData() {
             .single();
 
           if (profile && !error) {
+            console.log('✅ Profile data loaded:', profile);
             const extendedProfile = profile as ExtendedProfile;
-            // Pré-preencher dados do perfil
+            
+            // Pré-preencher todos os dados do perfil
             form.setValue("name", extendedProfile.name || "");
             form.setValue("email", extendedProfile.email || "");
             form.setValue("whatsapp", extendedProfile.phone || "");
             form.setValue("conselho", extendedProfile.crefito || "");
+            
+            // Campos de endereço
+            form.setValue("cep", extendedProfile.cep || "");
+            form.setValue("street", extendedProfile.street || "");
+            form.setValue("number", extendedProfile.number || "");
+            form.setValue("neighborhood", extendedProfile.neighborhood || "");
+            form.setValue("city", extendedProfile.city || "");
+            form.setValue("state", extendedProfile.state || "");
             
             // Se houver CPF salvo, marcar como bloqueado
             if (extendedProfile.cpf_cnpj) {
               form.setValue("cpfCnpj", extendedProfile.cpf_cnpj);
               setCpfCnpjSaved(true);
             }
+          } else {
+            console.error('❌ Error loading profile:', error);
           }
         } catch (error) {
-          console.error('Erro ao carregar dados do usuário:', error);
+          console.error('💥 Exception loading user data:', error);
+        } finally {
+          setIsDataLoading(false);
         }
       }
     };
 
     loadUserData();
-  }, [user, form]);
+
+    // Configurar subscription realtime para atualizar dados automaticamente
+    const channel = supabase
+      .channel('profile-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${user?.id}`
+        },
+        (payload) => {
+          console.log('🔄 Profile updated via realtime:', payload);
+          toast({
+            title: "Dados atualizados",
+            description: "Seus dados foram sincronizados automaticamente",
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, form, toast]);
 
   const formatCpfCnpj = (value: string) => {
-    // Remove tudo que não é dígito
     const numbers = value.replace(/\D/g, "");
     
     if (numbers.length <= 11) {
-      // CPF: xxx.xxx.xxx-xx
       if (numbers.length <= 3) return numbers;
       if (numbers.length <= 6) return numbers.replace(/(\d{3})(\d{1,3})/, "$1.$2");
       if (numbers.length <= 9) return numbers.replace(/(\d{3})(\d{3})(\d{1,3})/, "$1.$2.$3");
       return numbers.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, "$1.$2.$3-$4");
     } else {
-      // CNPJ: xx.xxx.xxx/xxxx-xx
       if (numbers.length <= 2) return numbers;
       if (numbers.length <= 5) return numbers.replace(/(\d{2})(\d{1,3})/, "$1.$2");
       if (numbers.length <= 8) return numbers.replace(/(\d{2})(\d{3})(\d{1,3})/, "$1.$2.$3");
@@ -160,12 +207,14 @@ export default function PersonalData() {
     }
 
     setIsSearchingCep(true);
+    console.log('🌐 Fetching address for CEP:', cleanCep);
     
     try {
       const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
       const data: ViaCEPResponse = await response.json();
       
       if (!data.erro) {
+        console.log('✅ Address found:', data);
         form.setValue("street", data.logradouro);
         form.setValue("neighborhood", data.bairro);
         form.setValue("city", data.localidade);
@@ -177,6 +226,7 @@ export default function PersonalData() {
         });
         return true;
       } else {
+        console.log('❌ CEP not found');
         toast({
           title: "CEP não encontrado",
           description: "O CEP informado não foi encontrado",
@@ -185,6 +235,7 @@ export default function PersonalData() {
         return false;
       }
     } catch (error) {
+      console.error('💥 Error fetching CEP:', error);
       toast({
         title: "Erro",
         description: "Erro ao buscar o CEP",
@@ -215,12 +266,20 @@ export default function PersonalData() {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
+    console.log('💾 Saving profile data:', values);
     
     try {
       const updateData: any = {
         name: values.name,
         phone: values.whatsapp,
         crefito: values.conselho,
+        // Novos campos de endereço
+        cep: values.cep,
+        street: values.street,
+        number: values.number,
+        neighborhood: values.neighborhood,
+        city: values.city,
+        state: values.state,
       };
 
       // Só adiciona CPF/CNPJ se não estiver salvo ainda
@@ -228,6 +287,8 @@ export default function PersonalData() {
         updateData.cpf_cnpj = values.cpfCnpj;
         setCpfCnpjSaved(true);
       }
+
+      console.log('📤 Updating profile with data:', updateData);
 
       const { error } = await supabase
         .from('profiles')
@@ -238,12 +299,13 @@ export default function PersonalData() {
         throw error;
       }
 
+      console.log('✅ Profile updated successfully');
       toast({
         title: "Dados atualizados",
         description: "Suas informações foram atualizadas com sucesso",
       });
     } catch (error) {
-      console.error('Erro ao atualizar dados:', error);
+      console.error('❌ Error updating profile:', error);
       toast({
         title: "Erro",
         description: "Erro ao atualizar os dados",
@@ -285,6 +347,7 @@ export default function PersonalData() {
     }
 
     setIsPasswordLoading(true);
+    console.log('🔒 Changing password...');
 
     try {
       const { error } = await supabase.auth.updateUser({
@@ -295,6 +358,7 @@ export default function PersonalData() {
         throw error;
       }
 
+      console.log('✅ Password changed successfully');
       toast({
         title: "Sucesso",
         description: "Sua senha foi alterada com sucesso",
@@ -304,7 +368,7 @@ export default function PersonalData() {
       setNewPassword("");
       setConfirmNewPassword("");
     } catch (error: any) {
-      console.error('Erro ao alterar senha:', error);
+      console.error('❌ Error changing password:', error);
       toast({
         title: "Erro",
         description: error.message || "Erro ao alterar a senha",
@@ -317,12 +381,14 @@ export default function PersonalData() {
 
   const handleDeleteAccount = async () => {
     try {
+      console.log('🗑️ Deleting account...');
       toast({
         title: "Conta excluída",
         description: "Sua conta foi excluída com sucesso",
       });
       logout();
     } catch (error) {
+      console.error('❌ Error deleting account:', error);
       toast({
         title: "Erro",
         description: "Erro ao excluir a conta",
@@ -330,6 +396,28 @@ export default function PersonalData() {
       });
     }
   };
+
+  if (isDataLoading) {
+    return (
+      <div className="container mx-auto py-10 space-y-6">
+        <h1 className="text-3xl font-bold mb-6">Meus Dados</h1>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5 text-movebetter-primary" />
+              Informações Pessoais
+            </CardTitle>
+            <CardDescription>
+              Carregando seus dados...
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <FormLoadingSkeleton />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-10 space-y-6">
