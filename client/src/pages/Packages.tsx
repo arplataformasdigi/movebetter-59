@@ -40,13 +40,17 @@ export default function Packages() {
   const handleCreateProposal = async (proposalData: any) => {
     console.log('Creating proposal with data:', proposalData);
     
-    const result = await addProposal(proposalData);
-    if (result?.success) {
-      console.log('Proposal created successfully, downloading PDF...');
-      // Após criar a proposta com sucesso, oferecer o download do PDF
-      handleDownloadPDF(proposalData);
-    } else {
-      console.error('Failed to create proposal:', result?.error);
+    try {
+      const result = await addProposal(proposalData);
+      if (result && result.id) {
+        console.log('Proposal created successfully, downloading PDF...');
+        // Após criar a proposta com sucesso, oferecer o download do PDF
+        handleDownloadPDF(result);
+      } else {
+        console.error('Failed to create proposal - no result');
+      }
+    } catch (error) {
+      console.error('Failed to create proposal:', error);
     }
   };
 
@@ -104,7 +108,9 @@ Data: ${new Date().toLocaleDateString("pt-BR")}
   };
 
   const handleDeleteProposal = async (proposalId: string) => {
-    await deleteProposal(proposalId);
+    if (confirm('Tem certeza que deseja excluir esta proposta?')) {
+      await deleteProposal(proposalId);
+    }
   };
 
   const handleAddCreditCardRate = async () => {
@@ -353,8 +359,8 @@ Data: ${new Date().toLocaleDateString("pt-BR")}
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Gerador de Proposta</CardTitle>
-                  <CardDescription>Crie propostas para pacientes</CardDescription>
+                  <CardTitle>Propostas Aprovadas</CardTitle>
+                  <CardDescription>Gerencie propostas de pacientes com status aprovado</CardDescription>
                 </div>
                 <SellPackageDialog 
                   packages={transformedPackages}
@@ -371,7 +377,9 @@ Data: ${new Date().toLocaleDateString("pt-BR")}
                     <CardContent className="pt-6">
                       <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-center">
                         <div>
-                          <p className="font-medium">{proposal.patient_name}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium">{proposal.patient_name}</p>
+                          </div>
                         </div>
                         <div>
                           <p className="font-medium">{proposal.package_name || proposal.packages?.name || 'Pacote não encontrado'}</p>
@@ -384,7 +392,12 @@ Data: ${new Date().toLocaleDateString("pt-BR")}
                           )}
                         </div>
                         <div>
-                          <p className="font-medium">Total: R$ {proposal.final_price.toFixed(2)}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold text-green-600">R$ {proposal.final_price.toFixed(2)}</p>
+                            <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                              Aprovada
+                            </span>
+                          </div>
                           <p className="text-sm">{getPaymentMethodLabel(proposal.payment_method)}</p>
                           {proposal.installments > 1 && (
                             <p className="text-sm">{proposal.installments}x de R$ {(proposal.final_price / proposal.installments).toFixed(2)}</p>
@@ -398,10 +411,11 @@ Data: ${new Date().toLocaleDateString("pt-BR")}
                           <Button
                             variant="outline"
                             size="sm"
-                            className="text-green-600 hover:text-green-700"
-                            onClick={() => handleApproveProposal(proposal.id)}
+                            className="text-blue-600 hover:text-blue-700"
+                            onClick={() => handleDownloadPDF(proposal)}
                           >
-                            Aprovar
+                            <Download className="h-4 w-4 mr-1" />
+                            PDF
                           </Button>
                           <Button
                             variant="outline"
@@ -418,7 +432,11 @@ Data: ${new Date().toLocaleDateString("pt-BR")}
                 ))}
                 {proposals.length === 0 && (
                   <div className="text-center py-8 text-gray-500">
-                    Nenhuma proposta criada ainda
+                    <div className="mb-4">
+                      <Package className="h-12 w-12 mx-auto text-gray-300 mb-2" />
+                      <p>Nenhuma proposta aprovada ainda</p>
+                      <p className="text-sm">Use o gerador acima para criar sua primeira proposta</p>
+                    </div>
                   </div>
                 )}
               </div>

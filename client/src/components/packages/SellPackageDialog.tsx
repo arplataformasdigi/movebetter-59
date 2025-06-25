@@ -173,11 +173,11 @@ export function SellPackageDialog({ open, onOpenChange, onProposalAdded }: SellP
         
         toast.success("Proposta criada e aprovada com sucesso!");
         
-        // Auto-close after 2 seconds
+        // Auto-close after 3 seconds
         setTimeout(() => {
           resetForm();
           setOpen(false);
-        }, 2000);
+        }, 3000);
         
       } else {
         console.error("Failed to create proposal - no result or ID");

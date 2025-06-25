@@ -150,6 +150,7 @@ Changelog:
 - June 25, 2025. Fixed real-time CRUD operations - implemented Supabase subscriptions in all hooks (appointments, transactions, exercises, packages)
 - June 25, 2025. Updated Dashboard to use realtime hooks for automatic data updates without page refresh
 - June 25, 2025. COMPLETED MAJOR UPDATES: Real-time packages & treatment plans, evolution system with discharge restrictions, ranking with real patient data, save buttons added to personal data forms, patient proposal generation system restored
+- June 25, 2025. Fixed proposal system: proposals now persist as "approved", PDF download available permanently, compact form design, improved treatment plans real-time updates
 ```
 
 ## User Preferences
