@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-
+import { supabase } from '@/integrations/supabase/client';
 
 interface Activity {
   id: string;
@@ -17,30 +17,15 @@ export function useRecentActivities() {
 
   const fetchRecentActivities = async () => {
     try {
-      console.log('🔄 Fetching recent activities...');
+      console.log('Fetching recent activities...');
       setIsLoading(true);
       setError(null);
 
-      // Create timeout promise
-      const createTimeoutPromise = (ms: number) => 
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Query timeout')), ms)
-        );
-
-      // Fetch data with timeouts
+      // Fetch data without timeouts
       const [appointmentsResult, patientsResult, plansResult] = await Promise.allSettled([
-        Promise.race([
-          supabase.from('appointments').select('id, created_at, session_type, patient_id').order('created_at', { ascending: false }).limit(5),
-          createTimeoutPromise(3000)
-        ]),
-        Promise.race([
-          supabase.from('patients').select('id, name, created_at').order('created_at', { ascending: false }).limit(3),
-          createTimeoutPromise(3000)
-        ]),
-        Promise.race([
-          supabase.from('treatment_plans').select('id, name, created_at, patient_id').order('created_at', { ascending: false }).limit(3),
-          createTimeoutPromise(3000)
-        ])
+        supabase.from('appointments').select('id, created_at, session_type, patient_id').order('created_at', { ascending: false }).limit(5),
+        supabase.from('patients').select('id, name, created_at').order('created_at', { ascending: false }).limit(3),
+        supabase.from('treatment_plans').select('id, name, created_at, patient_id').order('created_at', { ascending: false }).limit(3)
       ]);
 
       // Process results safely
@@ -116,7 +101,7 @@ export function useRecentActivities() {
       console.log('✅ Recent activities loaded:', sortedActivities.length);
 
     } catch (error) {
-      console.error('💥 Error fetching recent activities:', error);
+      console.error('Error fetching recent activities:', error);
       setError('Erro ao carregar atividades recentes');
       setActivities([]);
     } finally {

@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
-
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface DashboardStats {
   activePatients: number;
@@ -24,32 +25,14 @@ export function useDashboardData() {
       setIsLoading(true);
       setError(null);
 
-      console.log('📊 Fetching dashboard data...');
+      console.log('Fetching dashboard data...');
 
-      // Create timeout for each query
-      const createTimeoutPromise = (ms: number) => 
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Query timeout')), ms)
-        );
-
-      // Fetch all data with individual timeouts
+      // Fetch all data in parallel
       const [patientsResult, appointmentsResult, scoresResult, plansResult] = await Promise.allSettled([
-        Promise.race([
-          supabase.from('patients').select('id', { count: 'exact' }).eq('status', 'active'),
-          createTimeoutPromise(3000)
-        ]),
-        Promise.race([
-          supabase.from('appointments').select('id', { count: 'exact' }).eq('status', 'completed'),
-          createTimeoutPromise(3000)
-        ]),
-        Promise.race([
-          supabase.from('patient_scores').select('total_points'),
-          createTimeoutPromise(3000)
-        ]),
-        Promise.race([
-          supabase.from('treatment_plans').select('progress_percentage').eq('is_active', true),
-          createTimeoutPromise(3000)
-        ])
+        supabase.from('patients').select('id', { count: 'exact' }).eq('status', 'active'),
+        supabase.from('appointments').select('id', { count: 'exact' }).eq('status', 'completed'),
+        supabase.from('patient_scores').select('total_points'),
+        supabase.from('treatment_plans').select('progress_percentage').eq('is_active', true)
       ]);
 
       let activeCount = 0;
