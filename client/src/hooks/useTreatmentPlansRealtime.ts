@@ -1,17 +1,19 @@
-
 import { useState, useEffect, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 
 export interface TreatmentPlan {
   id: string;
+  patient_id: string;
   name: string;
   description?: string;
-  patient_id?: string;
-  start_date?: string;
+  start_date: string;
   end_date?: string;
-  progress_percentage: number;
-  is_active: boolean;
+  status: 'active' | 'completed' | 'paused';
+  total_exercises?: number;
+  completed_exercises?: number;
+  progress_percentage?: number;
+  notes?: string;
   created_by?: string;
   created_at: string;
   updated_at: string;
@@ -28,8 +30,6 @@ export function useTreatmentPlansRealtime() {
   const fetchTreatmentPlans = async () => {
     try {
       console.log('Fetching treatment plans from Supabase...');
-      setIsLoading(true);
-      
       const { data, error } = await supabase
         .from('treatment_plans')
         .select(`
@@ -40,19 +40,15 @@ export function useTreatmentPlansRealtime() {
 
       if (error) {
         console.error('Error fetching treatment plans:', error);
-        toast.error("Erro ao carregar trilhas: " + error.message);
-        return;
-      }
-
-      console.log('Treatment plans fetched successfully:', data);
-      setTreatmentPlans(data || []);
-      
-      if (data?.length === 0) {
-        console.log('No treatment plans found in database');
+        toast.error("Erro ao carregar trilhas");
+        setTreatmentPlans([]);
+      } else {
+        console.log('Treatment plans fetched successfully:', data);
+        setTreatmentPlans(data || []);
       }
     } catch (error) {
       console.error('Error in fetchTreatmentPlans:', error);
-      toast.error("Erro inesperado ao carregar as trilhas");
+      setTreatmentPlans([]);
     } finally {
       setIsLoading(false);
     }
@@ -61,14 +57,10 @@ export function useTreatmentPlansRealtime() {
   useEffect(() => {
     fetchTreatmentPlans();
 
-    // Cleanup previous channel if it exists
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
-    }
+    // Set up realtime subscription
+    const channelName = `treatment_plans_realtime_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    console.log('Setting up treatment plans realtime subscription with channel:', channelName);
 
-    // Setup realtime subscription
-    const channelName = `treatment_plans_realtime_${Date.now()}`;
     const channel = supabase
       .channel(channelName)
       .on(
@@ -78,23 +70,11 @@ export function useTreatmentPlansRealtime() {
           schema: 'public',
           table: 'treatment_plans'
         },
-        async (payload) => {
-          console.log('New treatment plan inserted:', payload);
-          
-          // Fetch the new plan with patient data
-          const { data: newPlan } = await supabase
-            .from('treatment_plans')
-            .select(`
-              *,
-              patients (name)
-            `)
-            .eq('id', payload.new.id)
-            .single();
-
-          if (newPlan) {
-            setTreatmentPlans(prev => [newPlan, ...prev]);
-            toast.success("Nova trilha adicionada!");
-          }
+        (payload) => {
+          console.log('New treatment plan detected:', payload);
+          const newPlan = payload.new as TreatmentPlan;
+          setTreatmentPlans(prev => [newPlan, ...prev]);
+          toast.success("Nova trilha adicionada!");
         }
       )
       .on(
@@ -104,25 +84,13 @@ export function useTreatmentPlansRealtime() {
           schema: 'public',
           table: 'treatment_plans'
         },
-        async (payload) => {
-          console.log('Treatment plan updated:', payload);
-          
-          // Fetch the updated plan with patient data
-          const { data: updatedPlan } = await supabase
-            .from('treatment_plans')
-            .select(`
-              *,
-              patients (name)
-            `)
-            .eq('id', payload.new.id)
-            .single();
-
-          if (updatedPlan) {
-            setTreatmentPlans(prev => 
-              prev.map(plan => plan.id === updatedPlan.id ? updatedPlan : plan)
-            );
-            toast.success("Trilha atualizada!");
-          }
+        (payload) => {
+          console.log('Updated treatment plan detected:', payload);
+          const updatedPlan = payload.new as TreatmentPlan;
+          setTreatmentPlans(prev => prev.map(plan => 
+            plan.id === updatedPlan.id ? updatedPlan : plan
+          ));
+          toast.success("Trilha atualizada!");
         }
       )
       .on(
@@ -133,26 +101,30 @@ export function useTreatmentPlansRealtime() {
           table: 'treatment_plans'
         },
         (payload) => {
-          console.log('Treatment plan deleted:', payload);
-          setTreatmentPlans(prev => prev.filter(plan => plan.id !== payload.old.id));
-          toast.success("Trilha removida!");
+          console.log('Deleted treatment plan detected:', payload);
+          const deletedPlan = payload.old as TreatmentPlan;
+          setTreatmentPlans(prev => prev.filter(plan => plan.id !== deletedPlan.id));
+          toast.info("Trilha removida!");
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Treatment plans channel subscription status:', status);
+      });
 
     channelRef.current = channel;
 
     return () => {
       if (channelRef.current) {
+        console.log('Cleaning up treatment plans realtime subscription');
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
     };
   }, []);
 
-  const addTreatmentPlan = async (planData: Omit<TreatmentPlan, 'id' | 'created_at' | 'updated_at' | 'patients'>) => {
+  const createTreatmentPlan = async (planData: Omit<TreatmentPlan, 'id' | 'created_at' | 'updated_at' | 'patients'>) => {
     try {
-      console.log('Adding treatment plan:', planData);
+      console.log('Creating treatment plan with data:', planData);
       
       const { data, error } = await supabase
         .from('treatment_plans')
@@ -164,24 +136,23 @@ export function useTreatmentPlansRealtime() {
         .single();
 
       if (error) {
-        console.error('Error adding treatment plan:', error);
-        toast.error("Erro ao adicionar trilha: " + error.message);
+        console.error('Error creating treatment plan:', error);
+        toast.error("Erro ao criar trilha: " + error.message);
         return { success: false, error };
       }
 
-      console.log('Treatment plan added successfully:', data);
+      console.log('Treatment plan created successfully:', data);
+      toast.success("Trilha criada com sucesso!");
       return { success: true, data };
     } catch (error) {
-      console.error('Error in addTreatmentPlan:', error);
-      toast.error("Erro inesperado ao adicionar trilha");
+      console.error('Error in createTreatmentPlan:', error);
+      toast.error("Erro ao criar trilha");
       return { success: false, error };
     }
   };
 
   const updateTreatmentPlan = async (id: string, updates: Partial<TreatmentPlan>) => {
     try {
-      console.log('Updating treatment plan:', id, updates);
-      
       const { data, error } = await supabase
         .from('treatment_plans')
         .update(updates)
@@ -194,36 +165,19 @@ export function useTreatmentPlansRealtime() {
 
       if (error) {
         console.error('Error updating treatment plan:', error);
-        toast.error("Erro ao atualizar trilha: " + error.message);
+        toast.error("Erro ao atualizar trilha");
         return { success: false, error };
       }
 
-      console.log('Treatment plan updated successfully:', data);
       return { success: true, data };
     } catch (error) {
       console.error('Error in updateTreatmentPlan:', error);
-      toast.error("Erro inesperado ao atualizar trilha");
       return { success: false, error };
     }
   };
 
   const deleteTreatmentPlan = async (id: string) => {
     try {
-      console.log('Deleting treatment plan:', id);
-      
-      // First delete related plan exercises
-      const { error: exercisesError } = await supabase
-        .from('plan_exercises')
-        .delete()
-        .eq('treatment_plan_id', id);
-
-      if (exercisesError) {
-        console.error('Error deleting plan exercises:', exercisesError);
-        toast.error("Erro ao deletar exercícios da trilha: " + exercisesError.message);
-        return { success: false, error: exercisesError };
-      }
-
-      // Then delete the treatment plan
       const { error } = await supabase
         .from('treatment_plans')
         .delete()
@@ -231,25 +185,22 @@ export function useTreatmentPlansRealtime() {
 
       if (error) {
         console.error('Error deleting treatment plan:', error);
-        toast.error("Erro ao deletar trilha: " + error.message);
+        toast.error("Erro ao excluir trilha");
         return { success: false, error };
       }
 
-      console.log('Treatment plan deleted successfully');
       return { success: true };
     } catch (error) {
       console.error('Error in deleteTreatmentPlan:', error);
-      toast.error("Erro inesperado ao deletar trilha");
       return { success: false, error };
     }
   };
 
   return {
     treatmentPlans,
-    setTreatmentPlans,
     isLoading,
     fetchTreatmentPlans,
-    addTreatmentPlan,
+    createTreatmentPlan,
     updateTreatmentPlan,
     deleteTreatmentPlan,
   };
