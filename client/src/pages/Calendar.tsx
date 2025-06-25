@@ -48,7 +48,7 @@ export default function CalendarPage() {
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
 
-  const { appointments, isLoading: isLoadingAppointments, cancelAppointment, completeAppointment } = useAppointmentsRealtime();
+  const { appointments, isLoading: isLoadingAppointments, createAppointment, cancelAppointment, completeAppointment } = useAppointmentsRealtime();
   const { patients, isLoading: isLoadingPatients } = useRealtimePatients();
 
   // Debug: Log appointments data

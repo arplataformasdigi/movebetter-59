@@ -171,7 +171,7 @@ export function useAppointmentsRealtime() {
     };
   }, []);
 
-  const addAppointment = async (appointmentData: Omit<Appointment, 'id' | 'created_at' | 'updated_at' | 'patients'>) => {
+  const createAppointment = async (appointmentData: Omit<Appointment, 'id' | 'created_at' | 'updated_at' | 'patients'>) => {
     try {
       console.log('Adding appointment with data:', appointmentData);
       
