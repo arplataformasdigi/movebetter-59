@@ -88,6 +88,30 @@ export function usePatientEvolutions(patientId?: string) {
   }, [patientId]);
 
   const addEvolution = async (evolutionData: Omit<Evolution, 'id' | 'created_at' | 'updated_at'>) => {
+    // Verificar se o paciente tem alta e se a evolução está vinculada a um prontuário ativo
+    const { data: patient } = await supabase
+      .from('patients')
+      .select('status')
+      .eq('id', evolutionData.patient_id)
+      .single();
+    
+    if (patient?.status !== 'active') {
+      toast.error("Não é possível adicionar evolução para paciente com alta");
+      return { success: false, error: "Patient not active" };
+    }
+    
+    // Verificar se existe prontuário ativo
+    const { data: medicalRecord } = await supabase
+      .from('patient_medical_records')
+      .select('id, status')
+      .eq('id', evolutionData.medical_record_id)
+      .eq('status', 'active')
+      .single();
+    
+    if (!medicalRecord) {
+      toast.error("Prontuário não encontrado ou inativo");
+      return { success: false, error: "Medical record not found or inactive" };
+    }
     try {
       // Check if the medical record is still active
       const { data: medicalRecord, error: recordError } = await supabase
