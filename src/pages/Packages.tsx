@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,7 +13,7 @@ import { DeletePackageDialog } from "@/components/packages/DeletePackageDialog";
 import { usePackagesRealtime } from "@/hooks/usePackagesRealtime";
 import { usePackageProposalsRealtime } from "@/hooks/usePackageProposalsRealtime";
 import { useCreditCardRates } from "@/hooks/useCreditCardRates";
-import { usePatients } from "@/hooks/usePatients";
+import { useRealtimePatients } from "@/hooks/useRealtimePatients";
 
 export default function Packages() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -27,7 +26,7 @@ export default function Packages() {
   const { packages, isLoading: packagesLoading, updatePackage, deletePackage: removePackage } = usePackagesRealtime();
   const { proposals, isLoading: proposalsLoading, addProposal, deleteProposal } = usePackageProposalsRealtime();
   const { rates, isLoading: ratesLoading, addRate, deleteRate } = useCreditCardRates();
-  const { patients, isLoading: patientsLoading } = usePatients();
+  const { patients, isLoading: patientsLoading } = useRealtimePatients();
 
   const handleEditPackage = async (updatedPackage: any) => {
     await updatePackage(updatedPackage.id, updatedPackage);
@@ -430,12 +429,12 @@ Data: ${new Date().toLocaleDateString("pt-BR")}
         <TabsContent value="reports" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Relatórios de Vendas</CardTitle>
-              <CardDescription>Visualize estatísticas de vendas dos pacotes</CardDescription>
+              <CardTitle>Relatórios</CardTitle>
+              <CardDescription>Visualize estatísticas</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="text-center py-8 text-gray-500">
-                Relatórios de vendas em desenvolvimento
+                Relatórios em desenvolvimento
               </div>
             </CardContent>
           </Card>
