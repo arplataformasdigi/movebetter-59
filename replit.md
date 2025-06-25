@@ -144,6 +144,9 @@ Changelog:
 - June 25, 2025. Successfully loading real data from 16 populated Supabase tables (5 patients, 4 sessions, 180 points)
 - June 25, 2025. Completed full system correction - all components, contexts and pages now properly import Supabase client
 - June 25, 2025. System fully operational with real data: profile data loading, authentication working, all features functional
+- June 25, 2025. Implemented ViaCEP integration for automatic address lookup when entering CEP
+- June 25, 2025. Added password change functionality through Supabase Auth with complete validation
+- June 25, 2025. Enhanced address management with full address fields (CEP, street, number, complement, neighborhood, city, state)
 ```
 
 ## User Preferences

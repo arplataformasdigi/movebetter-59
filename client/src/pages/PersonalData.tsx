@@ -352,10 +352,10 @@ export default function PersonalData() {
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!currentPassword || !newPassword || !confirmNewPassword) {
+    if (!newPassword || !confirmNewPassword) {
       toast({
         title: "Erro",
-        description: "Todos os campos de senha são obrigatórios",
+        description: "Preencha todos os campos de senha",
         variant: "destructive",
       });
       return;
@@ -380,7 +380,7 @@ export default function PersonalData() {
     }
 
     setIsPasswordLoading(true);
-    console.log('🔒 Changing password...');
+    console.log('Changing password...');
 
     try {
       const { error } = await supabase.auth.updateUser({
@@ -391,7 +391,7 @@ export default function PersonalData() {
         throw error;
       }
 
-      console.log('✅ Password changed successfully');
+      console.log('Password changed successfully');
       toast({
         title: "Sucesso",
         description: "Sua senha foi alterada com sucesso",
@@ -401,7 +401,7 @@ export default function PersonalData() {
       setNewPassword("");
       setConfirmNewPassword("");
     } catch (error: any) {
-      console.error('❌ Error changing password:', error);
+      console.error('Error changing password:', error);
       toast({
         title: "Erro",
         description: error.message || "Erro ao alterar a senha",
@@ -713,14 +713,14 @@ export default function PersonalData() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-medium" htmlFor="current-password">
-                Senha Atual
+                Senha Atual (opcional)
               </label>
               <Input
                 id="current-password"
                 type="password"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
-                required
+                placeholder="Deixe em branco se não souber a atual"
               />
             </div>
 
