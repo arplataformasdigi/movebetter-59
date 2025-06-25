@@ -407,7 +407,7 @@ export default function PersonalData() {
 
       console.log('Password changed successfully');
       toast({
-        title: "Sucesso",
+        title: "Senha alterada",
         description: "Sua senha foi alterada com sucesso",
       });
       
@@ -692,13 +692,25 @@ export default function PersonalData() {
                 </div>
               </div>
 
-              <Button 
-                type="submit" 
-                className="bg-movebetter-primary hover:bg-movebetter-primary/90"
-                disabled={isLoading}
-              >
-                {isLoading ? "Salvando..." : "Salvar Alterações"}
-              </Button>
+              <div className="flex gap-4">
+                <Button 
+                  type="submit" 
+                  className="bg-movebetter-primary hover:bg-movebetter-primary/90 flex-1"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Salvando..." : "Salvar Dados Pessoais"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    form.reset();
+                  }}
+                  disabled={isLoading}
+                >
+                  Cancelar
+                </Button>
+              </div>
             </form>
           </Form>
         </CardContent>
@@ -759,13 +771,27 @@ export default function PersonalData() {
           </CardContent>
           
           <CardFooter>
-            <Button
-              type="submit"
-              className="bg-movebetter-primary hover:bg-movebetter-primary/90"
-              disabled={isPasswordLoading}
-            >
-              {isPasswordLoading ? "Alterando..." : "Alterar Senha"}
-            </Button>
+            <div className="flex gap-4 w-full">
+              <Button
+                type="submit"
+                className="bg-movebetter-primary hover:bg-movebetter-primary/90 flex-1"
+                disabled={isPasswordLoading}
+              >
+                {isPasswordLoading ? "Alterando..." : "Salvar Nova Senha"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setCurrentPassword("");
+                  setNewPassword("");
+                  setConfirmNewPassword("");
+                }}
+                disabled={isPasswordLoading}
+              >
+                Limpar
+              </Button>
+            </div>
           </CardFooter>
         </form>
       </Card>
