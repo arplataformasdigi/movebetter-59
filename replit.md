@@ -147,6 +147,8 @@ Changelog:
 - June 25, 2025. Implemented ViaCEP integration for automatic address lookup when entering CEP
 - June 25, 2025. Added password change functionality through Supabase Auth with complete validation
 - June 25, 2025. Enhanced address management with full address fields (CEP, street, number, complement, neighborhood, city, state)
+- June 25, 2025. Fixed real-time CRUD operations - implemented Supabase subscriptions in all hooks (appointments, transactions, exercises, packages)
+- June 25, 2025. Updated Dashboard to use realtime hooks for automatic data updates without page refresh
 ```
 
 ## User Preferences
