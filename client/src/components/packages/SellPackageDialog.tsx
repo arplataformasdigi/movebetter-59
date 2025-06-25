@@ -167,22 +167,25 @@ export function SellPackageDialog({ open, onOpenChange, onProposalAdded }: SellP
         onProposalAdded?.();
         
         // Automatically download PDF
-        downloadProposalPDF(result);
+        setTimeout(() => {
+          downloadProposalPDF(result);
+        }, 500);
         
         toast.success("Proposta criada e aprovada com sucesso!");
         
-        // Auto-close after 3 seconds
+        // Auto-close after 2 seconds
         setTimeout(() => {
           resetForm();
           setOpen(false);
-        }, 3000);
+        }, 2000);
         
       } else {
-        throw new Error("Failed to create proposal");
+        console.error("Failed to create proposal - no result or ID");
+        toast.error("Erro ao criar proposta");
       }
     } catch (error) {
       console.error('Error creating proposal:', error);
-      toast.error("Erro ao criar proposta");
+      toast.error("Erro ao criar proposta: " + (error.message || "Erro desconhecido"));
     } finally {
       setIsGenerating(false);
     }
