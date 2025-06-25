@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import {
   Dialog,
@@ -73,13 +72,13 @@ export function PatientDetails({ patient, onUpdatePatient, onClose }: PatientDet
               <User className="h-4 w-4" />
               Informações
             </TabsTrigger>
-            <TabsTrigger value="prontuario" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Prontuário
-            </TabsTrigger>
             <TabsTrigger value="pre-avaliacao" className="flex items-center gap-2">
               <ClipboardList className="h-4 w-4" />
               Pré-avaliação
+            </TabsTrigger>
+            <TabsTrigger value="prontuario" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Prontuário
             </TabsTrigger>
             <TabsTrigger value="evolucao" className="flex items-center gap-2">
               <Activity className="h-4 w-4" />
@@ -239,12 +238,12 @@ export function PatientDetails({ patient, onUpdatePatient, onClose }: PatientDet
             </Card>
           </TabsContent>
 
-          <TabsContent value="prontuario" className="mt-6">
-            <PatientMedicalRecord patientId={patient.id} />
-          </TabsContent>
-
           <TabsContent value="pre-avaliacao" className="mt-6">
             <PatientPreEvaluation patientId={patient.id} patientName={patient.name} />
+          </TabsContent>
+
+          <TabsContent value="prontuario" className="mt-6">
+            <PatientMedicalRecord patientId={patient.id} />
           </TabsContent>
 
           <TabsContent value="evolucao" className="mt-6">

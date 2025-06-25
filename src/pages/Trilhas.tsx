@@ -10,9 +10,9 @@ import { AddTreatmentPlanDialog } from "@/components/plans/AddTreatmentPlanDialo
 import { EditTreatmentPlanDialog } from "@/components/plans/EditTreatmentPlanDialog";
 import { ViewTreatmentPlanDialog } from "@/components/plans/ViewTreatmentPlanDialog";
 import { CreateExerciseForPlanDialog } from "@/components/plans/CreateExerciseForPlanDialog";
-import { useTreatmentPlans } from "@/hooks/useTreatmentPlans";
+import { useTreatmentPlansRealtime } from "@/hooks/useTreatmentPlansRealtime";
 import { useExercises } from "@/hooks/useExercises";
-import { usePlanExercises } from "@/hooks/usePlanExercises";
+import { usePlanExercisesRealtime } from "@/hooks/usePlanExercisesRealtime";
 import { formatDateToBrazilian } from "@/utils/dateUtils";
 import {
   AlertDialog,
@@ -35,7 +35,7 @@ export default function Trilhas() {
   const [planToDelete, setPlanToDelete] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { treatmentPlans, isLoading, deleteTreatmentPlan } = useTreatmentPlans();
+  const { treatmentPlans, isLoading, deleteTreatmentPlan } = useTreatmentPlansRealtime();
   const { exercises } = useExercises();
 
   // Filtrar trilhas por nome do paciente
@@ -79,7 +79,7 @@ export default function Trilhas() {
 
   // Custom hook to calculate real-time progress for each plan
   const PlanCard = ({ plan }) => {
-    const { planExercises } = usePlanExercises(plan.id);
+    const { planExercises } = usePlanExercisesRealtime(plan.id);
     
     const totalExercises = planExercises.length;
     const completedExercises = planExercises.filter(ex => ex.is_completed).length;
