@@ -11,14 +11,12 @@ import { Button } from "@/components/ui/button";
 import { Plus, Activity, Edit, X } from "lucide-react";
 import { usePatientMedicalRecords } from "@/hooks/usePatientMedicalRecords";
 import { usePatientEvolutionsRealtime } from "@/hooks/usePatientEvolutionsRealtime";
-import { EvolutionFormDialog } from "./evolution/EvolutionFormDialog";
-import { EvolutionCard } from "./evolution/EvolutionCard";
 
 interface PatientEvolutionProps {
   patientId: string;
 }
 
-export function PatientEvolution({ patentId }: PatientEvolutionProps) {
+export function PatientEvolution({ patientId }: PatientEvolutionProps) {
   const [open, setOpen] = useState(false);
   const [editingEvolution, setEditingEvolution] = useState(null);
   const { getActiveRecord } = usePatientMedicalRecords(patientId);
@@ -103,13 +101,78 @@ export function PatientEvolution({ patentId }: PatientEvolutionProps) {
         </Button>
       </div>
 
-      <EvolutionFormDialog
-        open={open}
-        onOpenChange={handleOpenChange}
-        patientId={patientId}
-        editingEvolution={editingEvolution}
-        onSubmit={handleSubmit}
-      />
+      {/* Simple form dialog for now - will create proper components later if needed */}
+      {open && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{editingEvolution ? 'Editar Evolução' : 'Nova Evolução'}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.target as HTMLFormElement);
+              const values = {
+                queixas_relatos: formData.get('queixas_relatos') as string,
+                conduta_atendimento: formData.get('conduta_atendimento') as string,
+                observacoes: formData.get('observacoes') as string,
+                progress_score: parseInt(formData.get('progress_score') as string) || 5,
+                is_active: true
+              };
+              handleSubmit(values);
+            }} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Queixas e Relatos</label>
+                <textarea 
+                  name="queixas_relatos"
+                  defaultValue={editingEvolution?.queixas_relatos || ''}
+                  className="w-full p-2 border rounded-md" 
+                  rows={3}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Conduta do Atendimento</label>
+                <textarea 
+                  name="conduta_atendimento"
+                  defaultValue={editingEvolution?.conduta_atendimento || ''}
+                  className="w-full p-2 border rounded-md" 
+                  rows={3}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Observações</label>
+                <textarea 
+                  name="observacoes"
+                  defaultValue={editingEvolution?.observacoes || ''}
+                  className="w-full p-2 border rounded-md" 
+                  rows={2}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Pontuação de Progresso (1-10)</label>
+                <input 
+                  type="number" 
+                  name="progress_score"
+                  defaultValue={editingEvolution?.progress_score || 5}
+                  min="1" 
+                  max="10" 
+                  className="w-full p-2 border rounded-md"
+                  required
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button type="submit">
+                  {editingEvolution ? 'Atualizar' : 'Salvar'}
+                </Button>
+                <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
+                  Cancelar
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
 
       {evolutions.length === 0 ? (
         <Card>
@@ -122,12 +185,49 @@ export function PatientEvolution({ patentId }: PatientEvolutionProps) {
       ) : (
         <div className="space-y-3">
           {evolutions.map((evolution) => (
-            <EvolutionCard
-              key={evolution.id}
-              evolution={evolution}
-              onEdit={handleEditEvolution}
-              onClose={handleCloseEvolution}
-            />
+            <Card key={evolution.id}>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base">
+                    Evolução - {new Date(evolution.created_at).toLocaleDateString('pt-BR')}
+                  </CardTitle>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleEditEvolution(evolution)}
+                    >
+                      <Edit className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleCloseEvolution(evolution.id)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Progresso: {evolution.progress_score}/10
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div>
+                    <strong>Queixas:</strong> {evolution.queixas_relatos}
+                  </div>
+                  <div>
+                    <strong>Conduta:</strong> {evolution.conduta_atendimento}
+                  </div>
+                  {evolution.observacoes && (
+                    <div>
+                      <strong>Observações:</strong> {evolution.observacoes}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}
