@@ -21,6 +21,7 @@ import {
 import { toast } from "sonner";
 import { supabase } from '@/integrations/supabase/client';
 import { usePatientMedicalRecords } from '@/hooks/usePatientMedicalRecords';
+import { formatDateToBrazilian } from "@/utils/dateUtils";
 
 interface EvolutionFormProps {
   open: boolean;

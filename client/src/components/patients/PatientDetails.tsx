@@ -26,7 +26,7 @@ import {
 import { Patient } from "@/hooks/usePatients";
 import { PatientMedicalRecord } from "./PatientMedicalRecord";
 import { PatientPreEvaluation } from "./PatientPreEvaluation";
-import { PatientEvolution } from "./PatientEvolution";
+import { PatientEvolutionsList } from "./PatientEvolutionsList";
 
 interface PatientDetailsProps {
   patient: Patient;
@@ -247,7 +247,7 @@ export function PatientDetails({ patient, onUpdatePatient, onClose }: PatientDet
           </TabsContent>
 
           <TabsContent value="evolucao" className="mt-6">
-            <PatientEvolution patientId={patient.id} />
+            <PatientEvolutionsList patientId={patient.id} patientStatus={patient.status || 'active'} />
           </TabsContent>
         </Tabs>
 
