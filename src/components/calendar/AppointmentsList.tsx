@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -6,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CalendarDays, Clock, User, X, Search, Check } from "lucide-react";
-import { Appointment } from "@/hooks/useAppointments";
+import { Appointment } from "@/hooks/useAppointmentsRealtime";
 import { formatDateToBrazilian } from "@/utils/dateUtils";
 import {
   AlertDialog,

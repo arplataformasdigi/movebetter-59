@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
@@ -10,7 +11,7 @@ import { ScheduleAppointmentForm } from "@/components/calendar/ScheduleAppointme
 import { AppointmentDetailsDialog } from "@/components/calendar/AppointmentDetailsDialog";
 import { AppointmentsList } from "@/components/calendar/AppointmentsList";
 import { useAppointmentsRealtime } from "@/hooks/useAppointmentsRealtime";
-import { usePatients } from "@/hooks/usePatients";
+import { useRealtimePatients } from "@/hooks/useRealtimePatients";
 import { formatDateToBrazilian } from "@/utils/dateUtils";
 
 const locales = {
@@ -48,7 +49,7 @@ export default function CalendarPage() {
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
 
   const { appointments, isLoading: isLoadingAppointments, cancelAppointment, completeAppointment } = useAppointmentsRealtime();
-  const { patients, isLoading: isLoadingPatients } = usePatients();
+  const { patients, isLoading: isLoadingPatients } = useRealtimePatients();
 
   // Debug: Log appointments data
   useEffect(() => {

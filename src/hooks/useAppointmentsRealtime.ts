@@ -9,13 +9,16 @@ export interface Appointment {
   appointment_date: string;
   appointment_time: string;
   session_type: string;
-  status: 'scheduled' | 'completed' | 'cancelled';
+  status: 'scheduled' | 'completed' | 'cancelled' | 'no_show';
   notes?: string;
   observations?: string;
   duration_minutes?: number;
   created_by?: string;
   created_at: string;
   updated_at: string;
+  patients?: {
+    name: string;
+  };
 }
 
 export function useAppointmentsRealtime() {
@@ -30,7 +33,10 @@ export function useAppointmentsRealtime() {
       
       const { data, error } = await supabase
         .from('appointments')
-        .select('*')
+        .select(`
+          *,
+          patients (name)
+        `)
         .order('appointment_date', { ascending: true });
 
       if (error) {
@@ -71,19 +77,31 @@ export function useAppointmentsRealtime() {
           schema: 'public',
           table: 'appointments'
         },
-        (payload) => {
+        async (payload) => {
           console.log('New appointment detected:', payload);
-          const newAppointment = payload.new as Appointment;
-          setAppointments(prev => {
-            // Check if appointment already exists to avoid duplicates
-            const exists = prev.find(a => a.id === newAppointment.id);
-            if (exists) return prev;
-            
-            return [...prev, newAppointment].sort((a, b) => 
-              new Date(a.appointment_date).getTime() - new Date(b.appointment_date).getTime()
-            );
-          });
-          toast.success("Novo agendamento criado!");
+          
+          // Fetch the complete appointment with patient relation
+          const { data: newAppointment } = await supabase
+            .from('appointments')
+            .select(`
+              *,
+              patients (name)
+            `)
+            .eq('id', payload.new.id)
+            .single();
+
+          if (newAppointment) {
+            setAppointments(prev => {
+              // Check if appointment already exists to avoid duplicates
+              const exists = prev.find(a => a.id === newAppointment.id);
+              if (exists) return prev;
+              
+              return [...prev, newAppointment].sort((a, b) => 
+                new Date(a.appointment_date).getTime() - new Date(b.appointment_date).getTime()
+              );
+            });
+            toast.success("Novo agendamento criado!");
+          }
         }
       )
       .on(
@@ -93,22 +111,34 @@ export function useAppointmentsRealtime() {
           schema: 'public',
           table: 'appointments'
         },
-        (payload) => {
+        async (payload) => {
           console.log('Updated appointment detected:', payload);
-          const updatedAppointment = payload.new as Appointment;
-          setAppointments(prev => prev.map(a => 
-            a.id === updatedAppointment.id ? updatedAppointment : a
-          ));
           
-          if (payload.old.status !== payload.new.status) {
-            const statusMap = {
-              'scheduled': 'agendado',
-              'completed': 'concluído',
-              'cancelled': 'cancelado'
-            };
-            toast.success(`Agendamento ${statusMap[payload.new.status as keyof typeof statusMap] || payload.new.status}!`);
-          } else {
-            toast.success("Agendamento atualizado!");
+          const { data: updatedAppointment } = await supabase
+            .from('appointments')
+            .select(`
+              *,
+              patients (name)
+            `)
+            .eq('id', payload.new.id)
+            .single();
+
+          if (updatedAppointment) {
+            setAppointments(prev => prev.map(a => 
+              a.id === updatedAppointment.id ? updatedAppointment : a
+            ));
+            
+            if (payload.old.status !== payload.new.status) {
+              const statusMap = {
+                'scheduled': 'agendado',
+                'completed': 'concluído',
+                'cancelled': 'cancelado',
+                'no_show': 'paciente faltou'
+              };
+              toast.success(`Agendamento ${statusMap[payload.new.status as keyof typeof statusMap] || payload.new.status}!`);
+            } else {
+              toast.success("Agendamento atualizado!");
+            }
           }
         }
       )
@@ -141,14 +171,17 @@ export function useAppointmentsRealtime() {
     };
   }, []);
 
-  const addAppointment = async (appointmentData: Omit<Appointment, 'id' | 'created_at' | 'updated_at'>) => {
+  const addAppointment = async (appointmentData: Omit<Appointment, 'id' | 'created_at' | 'updated_at' | 'patients'>) => {
     try {
       console.log('Adding appointment with data:', appointmentData);
       
       const { data, error } = await supabase
         .from('appointments')
         .insert([appointmentData])
-        .select()
+        .select(`
+          *,
+          patients (name)
+        `)
         .single();
 
       if (error) {
@@ -174,7 +207,10 @@ export function useAppointmentsRealtime() {
         .from('appointments')
         .update(updates)
         .eq('id', id)
-        .select()
+        .select(`
+          *,
+          patients (name)
+        `)
         .single();
 
       if (error) {
@@ -190,6 +226,14 @@ export function useAppointmentsRealtime() {
       toast.error("Erro inesperado ao atualizar agendamento");
       return { success: false, error };
     }
+  };
+
+  const cancelAppointment = async (id: string) => {
+    return await updateAppointment(id, { status: 'cancelled' });
+  };
+
+  const completeAppointment = async (id: string) => {
+    return await updateAppointment(id, { status: 'completed' });
   };
 
   const deleteAppointment = async (id: string) => {
@@ -223,6 +267,8 @@ export function useAppointmentsRealtime() {
     fetchAppointments,
     addAppointment,
     updateAppointment,
+    cancelAppointment,
+    completeAppointment,
     deleteAppointment,
   };
 }

@@ -15,7 +15,7 @@ export interface Patient {
   emergency_contact?: string;
   emergency_phone?: string;
   medical_history?: string;
-  status: string;
+  status: 'active' | 'inactive' | 'completed';
   created_by?: string;
   created_at: string;
   updated_at: string;
@@ -158,7 +158,7 @@ export function useRealtimePatients() {
     }
   };
 
-  const updatePatient = async (id: string, updates: Partial<Patient>) => {
+  const updatePatient = async (id: string, updates: Partial<Omit<Patient, 'id' | 'created_at' | 'updated_at'>>) => {
     try {
       console.log('Updating patient with id:', id, 'updates:', updates);
       
