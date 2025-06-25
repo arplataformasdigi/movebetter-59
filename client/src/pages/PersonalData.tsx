@@ -407,8 +407,8 @@ export default function PersonalData() {
 
       console.log('Password changed successfully');
       toast({
-        title: "Senha alterada",
-        description: "Sua senha foi alterada com sucesso",
+        title: "Senha salva",
+        description: "Sua nova senha foi salva no Supabase com sucesso",
       });
       
       setCurrentPassword("");
@@ -704,7 +704,7 @@ export default function PersonalData() {
                   type="button"
                   variant="outline"
                   onClick={() => {
-                    form.reset();
+                    window.location.reload();
                   }}
                   disabled={isLoading}
                 >
