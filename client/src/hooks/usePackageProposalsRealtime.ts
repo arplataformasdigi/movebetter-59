@@ -266,12 +266,47 @@ export function usePackageProposalsRealtime() {
     }
   };
 
+  const approveProposal = async (proposalId: string) => {
+    try {
+      console.log('Approving proposal with ID:', proposalId);
+      
+      const { data, error } = await supabase
+        .from('package_proposals')
+        .update({ 
+          status: 'approved',
+          approved_at: new Date().toISOString(),
+          approved_by: 'current_user'
+        })
+        .eq('id', proposalId)
+        .select(`
+          *,
+          packages (name)
+        `)
+        .single();
+
+      if (error) {
+        console.error('Error approving proposal:', error);
+        toast.error("Erro ao aprovar proposta");
+        return { success: false, error: error.message };
+      }
+
+      console.log('Proposal approved successfully:', data);
+      toast.success("Proposta aprovada com sucesso!");
+      return data;
+    } catch (error) {
+      console.error('Error in approveProposal:', error);
+      toast.error("Erro ao aprovar proposta");
+      return { success: false, error: error.message };
+    }
+  };
+
   return {
     proposals,
     setProposals,
     isLoading,
     fetchProposals,
     addProposal,
+    approveProposal,
     deleteProposal,
   };
 }

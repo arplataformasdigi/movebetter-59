@@ -42,7 +42,8 @@ export function downloadProposalPDF(proposal: ProposalPDFData) {
   yPosition += 10;
   
   doc.setFont('helvetica', 'normal');
-  doc.text(`Paciente: ${proposal.patient_name}`, 20, yPosition);
+  const patientName = proposal.patient_name || proposal.patientName || 'N/A';
+  doc.text(`Paciente: ${patientName}`, 20, yPosition);
   yPosition += 20;
   
   // Dados do pacote
@@ -51,21 +52,24 @@ export function downloadProposalPDF(proposal: ProposalPDFData) {
   yPosition += 10;
   
   doc.setFont('helvetica', 'normal');
-  doc.text(`Pacote: ${proposal.package_name}`, 20, yPosition);
+  doc.text(`Pacote: ${proposal.package_name || proposal.packageName || 'N/A'}`, 20, yPosition);
   yPosition += 8;
-  doc.text(`Valor do Pacote: R$ ${proposal.package_price.toFixed(2)}`, 20, yPosition);
+  doc.text(`Valor do Pacote: R$ ${(proposal.package_price || proposal.packagePrice || 0).toFixed(2)}`, 20, yPosition);
   yPosition += 8;
   
-  if (proposal.transport_cost > 0) {
-    doc.text(`Custo de Transporte: R$ ${proposal.transport_cost.toFixed(2)}`, 20, yPosition);
+  const transportCost = proposal.transport_cost || proposal.transportCost || 0;
+  if (transportCost > 0) {
+    doc.text(`Custo de Transporte: R$ ${transportCost.toFixed(2)}`, 20, yPosition);
     yPosition += 8;
   }
   
-  if (proposal.other_costs > 0) {
-    doc.text(`Outros Custos: R$ ${proposal.other_costs.toFixed(2)}`, 20, yPosition);
+  const otherCosts = proposal.other_costs || proposal.otherCosts || 0;
+  if (otherCosts > 0) {
+    doc.text(`Outros Custos: R$ ${otherCosts.toFixed(2)}`, 20, yPosition);
     yPosition += 8;
-    if (proposal.other_costs_note) {
-      doc.text(`Observação: ${proposal.other_costs_note}`, 20, yPosition);
+    const costsNote = proposal.other_costs_note || proposal.otherCostsNote;
+    if (costsNote) {
+      doc.text(`Observação: ${costsNote}`, 20, yPosition);
       yPosition += 8;
     }
   }
