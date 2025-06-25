@@ -265,7 +265,7 @@ export function useAppointmentsRealtime() {
     setAppointments,
     isLoading,
     fetchAppointments,
-    addAppointment,
+    createAppointment,
     updateAppointment,
     cancelAppointment,
     completeAppointment,

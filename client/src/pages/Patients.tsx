@@ -25,11 +25,11 @@ export default function Patients() {
   const [addPatientOpen, setAddPatientOpen] = useState(false);
   const [accessDialogPatient, setAccessDialogPatient] = useState<{ id: string; name: string } | null>(null);
 
-  const { patients, isLoading, addPatient, updatePatient, deletePatient } = usePatients();
+  const { patients, isLoading, createPatient, updatePatient, deletePatient } = useRealtimePatients();
   const { patientAccess, createPatientAccess, updatePatientAccess, deletePatientAccess } = usePatientAccess();
 
   const handleAddPatient = async (patientData: any) => {
-    const result = await addPatient(patientData);
+    const result = await createPatient(patientData);
     if (result.success) {
       setAddPatientOpen(false);
     }
