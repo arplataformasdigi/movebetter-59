@@ -59,6 +59,10 @@ export default function Packages() {
     downloadProposalPDF(proposalData);
   };
 
+  const handleApproveProposal = async (proposalId: string) => {
+    await approveProposal(proposalId);
+  };
+
 
 
   const handleDeleteProposal = async (proposalId: string) => {
@@ -313,8 +317,8 @@ export default function Packages() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Propostas Aprovadas</CardTitle>
-                  <CardDescription>Gerencie propostas de pacientes com status aprovado</CardDescription>
+                  <CardTitle>Gerenciamento de Propostas</CardTitle>
+                  <CardDescription>Crie e gerencie propostas de pacientes</CardDescription>
                 </div>
                 <SellPackageDialog 
                   packages={transformedPackages}
@@ -347,9 +351,16 @@ export default function Packages() {
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <p className="font-semibold text-green-600">R$ {proposal.final_price.toFixed(2)}</p>
-                            <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                              Aprovada
+                            <p className="font-semibold">R$ {proposal.final_price.toFixed(2)}</p>
+                            <span className={`text-xs px-2 py-1 rounded-full ${
+                              proposal.status === 'approved' 
+                                ? 'bg-green-100 text-green-800' 
+                                : proposal.status === 'pending'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {proposal.status === 'approved' ? 'Aprovada' : 
+                               proposal.status === 'pending' ? 'Pendente' : 'Rejeitada'}
                             </span>
                           </div>
                           <p className="text-sm">{getPaymentMethodLabel(proposal.payment_method)}</p>
@@ -362,15 +373,27 @@ export default function Packages() {
                           <p className="text-sm">Vencimento: {proposal.expiry_date || 'Não definido'}</p>
                         </div>
                         <div className="flex gap-1">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-blue-600 hover:text-blue-700"
-                            onClick={() => handleDownloadPDF(proposal)}
-                          >
-                            <Download className="h-4 w-4 mr-1" />
-                            PDF
-                          </Button>
+                          {proposal.status === 'pending' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-green-600 hover:text-green-700"
+                              onClick={() => handleApproveProposal(proposal.id)}
+                            >
+                              Aprovar
+                            </Button>
+                          )}
+                          {proposal.status === 'approved' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-blue-600 hover:text-blue-700"
+                              onClick={() => handleDownloadPDF(proposal)}
+                            >
+                              <Download className="h-4 w-4 mr-1" />
+                              PDF
+                            </Button>
+                          )}
                           <Button
                             variant="outline"
                             size="sm"
@@ -388,7 +411,7 @@ export default function Packages() {
                   <div className="text-center py-8 text-gray-500">
                     <div className="mb-4">
                       <Package className="h-12 w-12 mx-auto text-gray-300 mb-2" />
-                      <p>Nenhuma proposta aprovada ainda</p>
+                      <p>Nenhuma proposta criada ainda</p>
                       <p className="text-sm">Use o gerador acima para criar sua primeira proposta</p>
                     </div>
                   </div>
@@ -401,13 +424,82 @@ export default function Packages() {
         <TabsContent value="reports" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Relatórios</CardTitle>
-              <CardDescription>Visualize estatísticas</CardDescription>
+              <CardTitle>Relatório de Propostas Aprovadas</CardTitle>
+              <CardDescription>Visualize propostas aprovadas e estatísticas</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-gray-500">
-                Relatórios em desenvolvimento
-              </div>
+              {(() => {
+                const approvedProposals = proposals.filter(p => p.status === 'approved');
+                const totalValue = approvedProposals.reduce((sum, p) => sum + p.final_price, 0);
+                const averageValue = approvedProposals.length > 0 ? totalValue / approvedProposals.length : 0;
+                
+                return (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <Card>
+                        <CardContent className="pt-6">
+                          <div className="text-2xl font-bold">{approvedProposals.length}</div>
+                          <p className="text-sm text-gray-600">Propostas Aprovadas</p>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="pt-6">
+                          <div className="text-2xl font-bold">R$ {totalValue.toFixed(2)}</div>
+                          <p className="text-sm text-gray-600">Valor Total</p>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="pt-6">
+                          <div className="text-2xl font-bold">R$ {averageValue.toFixed(2)}</div>
+                          <p className="text-sm text-gray-600">Valor Médio</p>
+                        </CardContent>
+                      </Card>
+                    </div>
+                    
+                    {approvedProposals.length > 0 ? (
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold">Propostas Aprovadas</h3>
+                        {approvedProposals.map((proposal) => (
+                          <Card key={proposal.id}>
+                            <CardContent className="pt-6">
+                              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div>
+                                  <p className="font-medium">{proposal.patient_name}</p>
+                                  <p className="text-sm text-gray-600">{proposal.package_name}</p>
+                                </div>
+                                <div>
+                                  <p className="font-medium">R$ {proposal.final_price.toFixed(2)}</p>
+                                  <p className="text-sm text-gray-600">{getPaymentMethodLabel(proposal.payment_method)}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm">Aprovada em: {proposal.approved_at ? new Date(proposal.approved_at).toLocaleDateString('pt-BR') : 'N/A'}</p>
+                                  <p className="text-sm">Criada em: {proposal.created_date}</p>
+                                </div>
+                                <div className="flex justify-end">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleDownloadPDF(proposal)}
+                                  >
+                                    <Download className="h-4 w-4 mr-1" />
+                                    PDF
+                                  </Button>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        <Package className="h-12 w-12 mx-auto text-gray-300 mb-2" />
+                        <p>Nenhuma proposta aprovada ainda</p>
+                        <p className="text-sm">Aprove propostas para vê-las aqui</p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
         </TabsContent>

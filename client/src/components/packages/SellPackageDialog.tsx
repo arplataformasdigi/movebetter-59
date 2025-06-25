@@ -159,7 +159,7 @@ export function SellPackageDialog({ open, onOpenChange, onProposalAdded }: SellP
       const result = await addProposal(proposalData);
       
       if (result && result.id) {
-        console.log("Proposal created successfully");
+        console.log("Proposal created successfully with ID:", result.id);
         
         // Store the created proposal and show success state
         setCreatedProposal(result);
@@ -173,15 +173,34 @@ export function SellPackageDialog({ open, onOpenChange, onProposalAdded }: SellP
         
         toast.success("Proposta criada e aprovada com sucesso!");
         
-        // Auto-close after 3 seconds
+        // Auto-close after 2 seconds
         setTimeout(() => {
           resetForm();
           setOpen(false);
-        }, 3000);
+        }, 2000);
         
       } else {
-        console.error("Failed to create proposal - no result or ID");
-        toast.error("Erro ao criar proposta");
+        // Check if result exists but without id property
+        if (result) {
+          console.log("Proposal created but missing ID, treating as success:", result);
+          setCreatedProposal(result);
+          setShowSuccessState(true);
+          onProposalAdded?.();
+          
+          setTimeout(() => {
+            downloadProposalPDF(result);
+          }, 500);
+          
+          toast.success("Proposta criada com sucesso! Aguardando aprovação.");
+          
+          setTimeout(() => {
+            resetForm();
+            setOpen(false);
+          }, 2000);
+        } else {
+          console.error("Failed to create proposal - no result");
+          toast.error("Erro ao criar proposta");
+        }
       }
     } catch (error) {
       console.error('Error creating proposal:', error);

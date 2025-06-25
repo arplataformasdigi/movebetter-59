@@ -17,6 +17,9 @@ export interface PackageProposal {
   final_price: number;
   created_date: string;
   expiry_date?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  approved_at?: string;
+  approved_by?: string;
   created_by?: string;
   created_at: string;
   updated_at: string;
