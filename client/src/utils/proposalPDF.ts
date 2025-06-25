@@ -82,13 +82,16 @@ export function downloadProposalPDF(proposal: ProposalPDFData) {
   yPosition += 10;
   
   doc.setFont('helvetica', 'normal');
-  doc.text(`Método de Pagamento: ${proposal.payment_method.toUpperCase()}`, 20, yPosition);
+  const paymentMethod = proposal.payment_method || proposal.paymentMethod || 'N/A';
+  doc.text(`Método de Pagamento: ${paymentMethod.toUpperCase()}`, 20, yPosition);
   yPosition += 8;
-  doc.text(`Número de Parcelas: ${proposal.installments}x`, 20, yPosition);
+  const installments = proposal.installments || 1;
+  doc.text(`Número de Parcelas: ${installments}x`, 20, yPosition);
   yPosition += 8;
   
-  if (proposal.installments > 1) {
-    const installmentValue = proposal.final_price / proposal.installments;
+  if (installments > 1) {
+    const finalPrice = proposal.final_price || proposal.finalPrice || 0;
+    const installmentValue = finalPrice / installments;
     doc.text(`Valor por Parcela: R$ ${installmentValue.toFixed(2)}`, 20, yPosition);
     yPosition += 8;
   }
@@ -99,7 +102,8 @@ export function downloadProposalPDF(proposal: ProposalPDFData) {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(14);
   doc.setTextColor(0, 128, 0);
-  doc.text(`VALOR TOTAL: R$ ${proposal.final_price.toFixed(2)}`, 20, yPosition);
+  const finalPrice = proposal.final_price || proposal.finalPrice || 0;
+  doc.text(`VALOR TOTAL: R$ ${finalPrice.toFixed(2)}`, 20, yPosition);
   
   yPosition += 20;
   
@@ -107,9 +111,13 @@ export function downloadProposalPDF(proposal: ProposalPDFData) {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(12);
   doc.setTextColor(60, 60, 60);
-  doc.text(`Data da Proposta: ${formatDateForPDF(proposal.created_date)}`, 20, yPosition);
+  const createdDate = proposal.created_date || proposal.purchaseDate || new Date().toLocaleDateString('pt-BR');
+  doc.text(`Data da Proposta: ${formatDateForPDF(createdDate)}`, 20, yPosition);
   yPosition += 8;
-  doc.text(`Validade da Proposta: ${formatDateForPDF(proposal.expiry_date)}`, 20, yPosition);
+  const expiryDate = proposal.expiry_date || proposal.expiryDate;
+  if (expiryDate) {
+    doc.text(`Validade da Proposta: ${formatDateForPDF(expiryDate)}`, 20, yPosition);
+  }
   
   // Footer
   yPosition = 250;
@@ -119,7 +127,8 @@ export function downloadProposalPDF(proposal: ProposalPDFData) {
   doc.text('Esta proposta é válida até a data especificada acima.', 20, yPosition + 10);
   
   // Download do PDF
-  const fileName = `proposta-${proposal.patient_name.replace(/\s+/g, '-').toLowerCase()}-${new Date().getTime()}.pdf`;
+  const patientNameForFile = proposal.patient_name || proposal.patientName || 'cliente';
+  const fileName = `proposta-${patientNameForFile.replace(/\s+/g, '-').toLowerCase()}-${new Date().getTime()}.pdf`;
   doc.save(fileName);
 }
 

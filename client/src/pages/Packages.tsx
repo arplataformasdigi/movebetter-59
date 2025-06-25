@@ -353,14 +353,14 @@ export default function Packages() {
                           <div className="flex items-center gap-2">
                             <p className="font-semibold">R$ {proposal.final_price.toFixed(2)}</p>
                             <span className={`text-xs px-2 py-1 rounded-full ${
-                              proposal.status === 'approved' 
+                              (proposal.status === 'approved') 
                                 ? 'bg-green-100 text-green-800' 
-                                : proposal.status === 'pending'
+                                : (proposal.status === 'pending')
                                 ? 'bg-yellow-100 text-yellow-800'
                                 : 'bg-red-100 text-red-800'
                             }`}>
-                              {proposal.status === 'approved' ? 'Aprovada' : 
-                               proposal.status === 'pending' ? 'Pendente' : 'Rejeitada'}
+                              {(proposal.status === 'approved') ? 'Aprovada' : 
+                               (proposal.status === 'pending') ? 'Pendente' : 'Rejeitada'}
                             </span>
                           </div>
                           <p className="text-sm">{getPaymentMethodLabel(proposal.payment_method)}</p>
@@ -373,7 +373,7 @@ export default function Packages() {
                           <p className="text-sm">Vencimento: {proposal.expiry_date || 'Não definido'}</p>
                         </div>
                         <div className="flex gap-1">
-                          {proposal.status === 'pending' && (
+                          {(!proposal.status || proposal.status === 'pending') && (
                             <Button
                               variant="outline"
                               size="sm"
@@ -383,17 +383,15 @@ export default function Packages() {
                               Aprovar
                             </Button>
                           )}
-                          {proposal.status === 'approved' && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-blue-600 hover:text-blue-700"
-                              onClick={() => handleDownloadPDF(proposal)}
-                            >
-                              <Download className="h-4 w-4 mr-1" />
-                              PDF
-                            </Button>
-                          )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-blue-600 hover:text-blue-700"
+                            onClick={() => handleDownloadPDF(proposal)}
+                          >
+                            <Download className="h-4 w-4 mr-1" />
+                            PDF
+                          </Button>
                           <Button
                             variant="outline"
                             size="sm"

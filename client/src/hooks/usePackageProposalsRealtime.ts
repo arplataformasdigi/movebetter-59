@@ -232,8 +232,8 @@ export function usePackageProposalsRealtime() {
       }
 
       console.log('Proposal added successfully:', data);
-      toast.success("Proposta adicionada com sucesso!");
-      return { success: true, data };
+      toast.success("Proposta criada com sucesso!");
+      return data;
     } catch (error) {
       console.error('Error in addProposal:', error);
       toast.error("Erro inesperado ao adicionar proposta");
