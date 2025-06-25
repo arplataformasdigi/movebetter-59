@@ -35,7 +35,7 @@ export default function Trilhas() {
   const [planToDelete, setPlanToDelete] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { treatmentPlans, isLoading, deleteTreatmentPlan } = useTreatmentPlansRealtime();
+  const { treatmentPlans, isLoading, createTreatmentPlan, updateTreatmentPlan, deleteTreatmentPlan } = useTreatmentPlansRealtime();
   const { exercises } = useExercises();
 
   // Filtrar trilhas por nome do paciente
@@ -233,7 +233,8 @@ export default function Trilhas() {
 
       <AddTreatmentPlanDialog 
         open={isAddDialogOpen} 
-        onOpenChange={setIsAddDialogOpen} 
+        onOpenChange={setIsAddDialogOpen}
+        onPlanAdded={createTreatmentPlan}
       />
       
       <EditTreatmentPlanDialog

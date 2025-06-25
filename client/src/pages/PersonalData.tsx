@@ -692,23 +692,20 @@ export default function PersonalData() {
                 </div>
               </div>
 
-              <div className="flex gap-4">
+              <div className="flex justify-end space-x-2">
                 <Button 
-                  type="submit" 
-                  className="bg-movebetter-primary hover:bg-movebetter-primary/90 flex-1"
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Salvando..." : "Salvar Dados Pessoais"}
-                </Button>
-                <Button
                   type="button"
                   variant="outline"
-                  onClick={() => {
-                    window.location.reload();
-                  }}
+                  onClick={() => form.reset()}
                   disabled={isLoading}
                 >
                   Cancelar
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Salvando..." : "Salvar Dados"}
                 </Button>
               </div>
             </form>

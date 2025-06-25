@@ -44,7 +44,7 @@ interface AddTreatmentPlanDialogProps {
   onOpenChange?: (open: boolean) => void;
 }
 
-export function AddTreatmentPlanDialog({ open, onOpenChange }: AddTreatmentPlanDialogProps) {
+export function AddTreatmentPlanDialog({ open, onOpenChange, onPlanAdded }: AddTreatmentPlanDialogProps) {
   const [internalOpen, setInternalOpen] = React.useState(false);
   const { addTreatmentPlan } = useTreatmentPlans();
   const { patients } = usePatients();

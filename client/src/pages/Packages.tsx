@@ -23,7 +23,7 @@ export default function Packages() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [newRate, setNewRate] = useState({ name: "", rate: 0 });
 
-  const { packages, isLoading: packagesLoading, updatePackage, deletePackage: removePackage } = usePackagesRealtime();
+  const { packages, isLoading: packagesLoading, createPackage, updatePackage, deletePackage: removePackage } = usePackagesRealtime();
   const { proposals, isLoading: proposalsLoading, addProposal, deleteProposal } = usePackageProposalsRealtime();
   const { rates, isLoading: ratesLoading, addRate, deleteRate } = useCreditCardRates();
   const { patients, isLoading: patientsLoading } = useRealtimePatients();
