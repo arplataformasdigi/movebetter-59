@@ -57,6 +57,10 @@ interface ViaCEPResponse {
   bairro: string;
   localidade: string;
   uf: string;
+  ibge?: string;
+  gia?: string;
+  ddd?: string;
+  siafi?: string;
   erro?: boolean;
 }
 
@@ -215,15 +219,21 @@ export default function PersonalData() {
     console.log('Fetching address for CEP:', cleanCep);
     
     try {
-      const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+      const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      });
       
       if (!response.ok) {
-        throw new Error('Network response was not ok');
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const data: ViaCEPResponse = await response.json();
       
-      if (!data.erro) {
+      if (data && !data.erro) {
         console.log('Address found:', data);
         form.setValue("street", data.logradouro || "");
         form.setValue("neighborhood", data.bairro || "");
@@ -236,7 +246,7 @@ export default function PersonalData() {
         });
         return true;
       } else {
-        console.log('CEP not found');
+        console.log('CEP not found or invalid');
         toast({
           title: "CEP não encontrado",
           description: "O CEP informado não foi encontrado",
@@ -248,7 +258,7 @@ export default function PersonalData() {
       console.error('Error fetching CEP:', error);
       toast({
         title: "Erro ao buscar CEP",
-        description: "Verifique sua conexão e tente novamente",
+        description: "Verifique o CEP e sua conexão com a internet",
         variant: "destructive",
       });
       return false;
@@ -262,8 +272,10 @@ export default function PersonalData() {
     const formattedCep = formatCep(value);
     form.setValue("cep", formattedCep);
     
+    // Aguardar um pouco para evitar muitas chamadas
     const cleanCep = value.replace(/\D/g, "");
     if (cleanCep.length === 8) {
+      // Chamar imediatamente quando CEP estiver completo
       await fetchAddressByCep(cleanCep);
     }
   };
