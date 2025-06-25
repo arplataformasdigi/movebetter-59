@@ -113,8 +113,7 @@ export function usePatientEvolutions(patientId?: string) {
       return { success: false, error: "Medical record not found or inactive" };
     }
     try {
-      // Check if the medical record is still active
-      const { data: medicalRecord, error: recordError } = await supabase
+      const { data, error } = await supabase
         .from('patient_medical_records')
         .select('status')
         .eq('id', evolutionData.medical_record_id)

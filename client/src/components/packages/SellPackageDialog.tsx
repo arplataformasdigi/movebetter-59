@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from '@/integrations/supabase/client';
 
 
 interface Package {
