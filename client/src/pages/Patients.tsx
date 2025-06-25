@@ -11,7 +11,7 @@ import { EditPatientDialog } from "@/components/patients/EditPatientDialog";
 import { DeletePatientDialog } from "@/components/patients/DeletePatientDialog";
 import { PatientDetails } from "@/components/patients/PatientDetails";
 import { PatientAccessDialog } from "@/components/patients/PatientAccessDialog";
-import { usePatients } from "@/hooks/usePatients";
+import { useRealtimePatients } from "@/hooks/useRealtimePatients";
 import { usePatientAccess } from "@/hooks/usePatientAccess";
 
 export default function Patients() {

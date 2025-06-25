@@ -61,6 +61,51 @@ export function useAppointments() {
 
   useEffect(() => {
     fetchAppointments();
+
+    // Setup realtime subscription
+    const channel = supabase
+      .channel('appointments-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'appointments'
+        },
+        (payload) => {
+          console.log('New appointment:', payload);
+          fetchAppointments(); // Refresh to get full data with relations
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'appointments'
+        },
+        (payload) => {
+          console.log('Updated appointment:', payload);
+          fetchAppointments(); // Refresh to get full data with relations
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'appointments'
+        },
+        (payload) => {
+          console.log('Deleted appointment:', payload);
+          setAppointments(prev => prev.filter(a => a.id !== payload.old.id));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const addAppointment = async (appointmentData: Omit<Appointment, 'id' | 'created_at' | 'updated_at' | 'patients'>) => {
