@@ -113,6 +113,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Rota para buscar CEP via ViaCEP
+  app.get("/api/cep/:cep", async (req, res) => {
+    try {
+      const { cep } = req.params;
+      const cleanCep = cep.replace(/\D/g, "");
+      
+      if (cleanCep.length !== 8) {
+        return res.status(400).json({ erro: true, message: "CEP deve ter 8 dígitos" });
+      }
+      
+      console.log('Fetching CEP from ViaCEP:', cleanCep);
+      
+      const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+      
+      if (!response.ok) {
+        throw new Error(`ViaCEP API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      console.log('ViaCEP response:', data);
+      
+      res.json(data);
+    } catch (error) {
+      console.error('Error fetching CEP:', error);
+      res.status(500).json({ 
+        erro: true, 
+        message: "Erro ao buscar CEP" 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

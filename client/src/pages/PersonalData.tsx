@@ -228,10 +228,12 @@ export default function PersonalData() {
       });
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
       }
       
       const data: ViaCEPResponse = await response.json();
+      console.log('CEP data received:', data);
       
       if (data && !data.erro) {
         console.log('Address found:', data);
