@@ -183,7 +183,7 @@ export function SellPackageDialog({ open, onOpenChange, onProposalAdded }: SellP
   };
 
   const DialogComponent = (
-    <DialogContent className="sm:max-w-[600px]">
+    <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle className="flex items-center gap-2">
           <Package className="h-5 w-5" />
@@ -255,154 +255,179 @@ export function SellPackageDialog({ open, onOpenChange, onProposalAdded }: SellP
           </div>
         </div>
       ) : (
-        <div className="space-y-6">
-          <div>
-            <Label htmlFor="packageId">Pacote *</Label>
-            <Select value={formData.packageId} onValueChange={(value) => setFormData(prev => ({ ...prev, packageId: value }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Escolha um pacote" />
-              </SelectTrigger>
-              <SelectContent>
-                {packages.map((pkg) => (
-                  <SelectItem key={pkg.id} value={pkg.id}>
-                    {pkg.name} - R$ {pkg.price.toFixed(2)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label htmlFor="patientName">Nome do Paciente *</Label>
-            <Select 
-              value={formData.patientName} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, patientName: value }))}
-              disabled={patientsLoading}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={patientsLoading ? "Carregando pacientes..." : "Selecione o paciente"} />
-              </SelectTrigger>
-              <SelectContent>
-                {patients.map((patient) => (
-                  <SelectItem key={patient.id} value={patient.name}>
-                    {patient.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label htmlFor="transportCost">Custo de Transporte (R$)</Label>
-            <Input
-              id="transportCost"
-              type="number"
-              step="0.01"
-              value={formData.transportCost}
-              onChange={(e) => setFormData(prev => ({ ...prev, transportCost: parseFloat(e.target.value) || 0 }))}
-              placeholder="0.00"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="otherCosts">Outros Custos (R$)</Label>
-            <Input
-              id="otherCosts"
-              type="number"
-              step="0.01"
-              value={formData.otherCosts}
-              onChange={(e) => setFormData(prev => ({ ...prev, otherCosts: parseFloat(e.target.value) || 0 }))}
-              placeholder="0.00"
-            />
-          </div>
-
-          {showOtherCostsNote && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-4">
             <div>
-              <Label htmlFor="otherCostsNote">Observação dos Outros Custos</Label>
-              <Textarea
-                id="otherCostsNote"
-                value={formData.otherCostsNote}
-                onChange={(e) => setFormData(prev => ({ ...prev, otherCostsNote: e.target.value }))}
-                placeholder="Descreva os outros custos..."
-              />
-            </div>
-          )}
-
-          <div>
-            <Label htmlFor="paymentMethod">Forma de Pagamento *</Label>
-            <Select value={formData.paymentMethod} onValueChange={(value) => setFormData(prev => ({ ...prev, paymentMethod: value }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione a forma de pagamento" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pix">PIX</SelectItem>
-                <SelectItem value="cash">Dinheiro</SelectItem>
-                <SelectItem value="credit">Cartão de Crédito</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {showInstallments && (
-            <div>
-              <Label htmlFor="installments">Quantidade de Parcelas</Label>
-              <Select 
-                value={formData.installments.toString()} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, installments: parseInt(value) }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
+              <Label htmlFor="packageId">Pacote *</Label>
+              <Select value={formData.packageId} onValueChange={(value) => setFormData(prev => ({ ...prev, packageId: value }))}>
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="Escolha um pacote" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Array.from({ length: 12 }, (_, i) => i + 1).map((num) => (
-                    <SelectItem key={num} value={num.toString()}>
-                      {num}x
+                  {packages.map((pkg) => (
+                    <SelectItem key={pkg.id} value={pkg.id}>
+                      {pkg.name} - R$ {pkg.price.toFixed(2)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-          )}
 
-          <div>
-            <Label htmlFor="expiryDate">Data de Validade</Label>
-            <Input
-              id="expiryDate"
-              type="date"
-              value={formData.expiryDate}
-              onChange={(e) => setFormData(prev => ({ ...prev, expiryDate: e.target.value }))}
-            />
+            <div>
+              <Label htmlFor="patientName">Nome do Paciente *</Label>
+              <Select 
+                value={formData.patientName} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, patientName: value }))}
+                disabled={patientsLoading}
+              >
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder={patientsLoading ? "Carregando pacientes..." : "Selecione o paciente"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {patients.map((patient) => (
+                    <SelectItem key={patient.id} value={patient.name}>
+                      {patient.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="transportCost">Custo de Transporte (R$)</Label>
+                <Input
+                  id="transportCost"
+                  type="number"
+                  step="0.01"
+                  value={formData.transportCost}
+                  onChange={(e) => setFormData(prev => ({ ...prev, transportCost: parseFloat(e.target.value) || 0 }))}
+                  placeholder="0.00"
+                  className="h-9"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="otherCosts">Outros Custos (R$)</Label>
+                <Input
+                  id="otherCosts"
+                  type="number"
+                  step="0.01"
+                  value={formData.otherCosts}
+                  onChange={(e) => setFormData(prev => ({ ...prev, otherCosts: parseFloat(e.target.value) || 0 }))}
+                  placeholder="0.00"
+                  className="h-9"
+                />
+              </div>
+            </div>
+
+            {showOtherCostsNote && (
+              <div>
+                <Label htmlFor="otherCostsNote">Observação dos Outros Custos</Label>
+                <Textarea
+                  id="otherCostsNote"
+                  value={formData.otherCostsNote}
+                  onChange={(e) => setFormData(prev => ({ ...prev, otherCostsNote: e.target.value }))}
+                  placeholder="Descreva os outros custos..."
+                  className="h-16 resize-none"
+                />
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="paymentMethod">Forma de Pagamento *</Label>
+                <Select value={formData.paymentMethod} onValueChange={(value) => setFormData(prev => ({ ...prev, paymentMethod: value }))}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="Selecione a forma de pagamento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pix">PIX</SelectItem>
+                    <SelectItem value="cash">Dinheiro</SelectItem>
+                    <SelectItem value="credit">Cartão de Crédito</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {showInstallments && (
+                <div>
+                  <Label htmlFor="installments">Quantidade de Parcelas</Label>
+                  <Select 
+                    value={formData.installments.toString()} 
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, installments: parseInt(value) }))}
+                  >
+                    <SelectTrigger className="h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 12 }, (_, i) => i + 1).map((num) => (
+                        <SelectItem key={num} value={num.toString()}>
+                          {num}x
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {!showInstallments && (
+                <div>
+                  <Label htmlFor="expiryDate">Data de Validade</Label>
+                  <Input
+                    id="expiryDate"
+                    type="date"
+                    value={formData.expiryDate}
+                    onChange={(e) => setFormData(prev => ({ ...prev, expiryDate: e.target.value }))}
+                    className="h-9"
+                  />
+                </div>
+              )}
+            </div>
+
+            {showInstallments && (
+              <div>
+                <Label htmlFor="expiryDate">Data de Validade</Label>
+                <Input
+                  id="expiryDate"
+                  type="date"
+                  value={formData.expiryDate}
+                  onChange={(e) => setFormData(prev => ({ ...prev, expiryDate: e.target.value }))}
+                  className="h-9"
+                />
+              </div>
+            )}
           </div>
 
           {selectedPackage && (
-            <div className="space-y-2 p-3 bg-gray-50 rounded-lg">
-              <div className="flex justify-between text-sm">
+            <div className="space-y-1 p-3 bg-gray-50 rounded-lg text-sm">
+              <div className="flex justify-between">
                 <span>Valor do pacote:</span>
                 <span>R$ {selectedPackage.price.toFixed(2)}</span>
               </div>
               {formData.transportCost > 0 && (
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between">
                   <span>Custo de transporte:</span>
                   <span>R$ {formData.transportCost.toFixed(2)}</span>
                 </div>
               )}
               {formData.otherCosts > 0 && (
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between">
                   <span>Outros custos:</span>
                   <span>R$ {formData.otherCosts.toFixed(2)}</span>
                 </div>
               )}
               {formData.paymentMethod === "credit" && (
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between">
                   <span>Taxa do cartão ({getCreditCardRate(formData.installments)}%):</span>
                   <span>R$ {(((selectedPackage.price + formData.transportCost + formData.otherCosts) * getCreditCardRate(formData.installments)) / 100).toFixed(2)}</span>
                 </div>
               )}
-              <div className="flex justify-between font-medium">
+              <div className="flex justify-between font-medium text-base border-t pt-1 mt-2">
                 <span>Valor final:</span>
                 <span>R$ {finalPrice.toFixed(2)}</span>
               </div>
               {showInstallments && formData.installments > 1 && (
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between">
                   <span>Valor por parcela:</span>
                   <span>R$ {(finalPrice / formData.installments).toFixed(2)}</span>
                 </div>
@@ -411,27 +436,27 @@ export function SellPackageDialog({ open, onOpenChange, onProposalAdded }: SellP
           )}
 
           {proposalData && (
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h4 className="font-medium mb-2 flex items-center gap-2">
+            <div className="bg-blue-50 p-3 rounded-lg">
+              <h4 className="font-medium mb-2 flex items-center gap-2 text-sm">
                 <Calculator className="h-4 w-4" />
                 Resumo da Proposta
               </h4>
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
                   <span>Paciente:</span>
-                  <span>{proposalData.patientName}</span>
+                  <span className="font-medium">{proposalData.patientName}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Pacote:</span>
-                  <span>{proposalData.packageName}</span>
+                  <span className="font-medium">{proposalData.packageName}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Valor Final:</span>
-                  <span className="font-semibold">R$ {proposalData.finalPrice.toFixed(2)}</span>
+                  <span className="font-semibold text-blue-700">R$ {proposalData.finalPrice.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Pagamento:</span>
-                  <span>{proposalData.paymentMethod.toUpperCase()} - {proposalData.installments}x</span>
+                  <span className="font-medium">{proposalData.paymentMethod.toUpperCase()} - {proposalData.installments}x</span>
                 </div>
               </div>
             </div>
