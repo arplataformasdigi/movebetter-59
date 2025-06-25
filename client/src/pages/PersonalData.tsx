@@ -677,15 +677,6 @@ export default function PersonalData() {
                   />
                 </div>
               </div>
-                        <FormControl>
-                          <Input {...field} maxLength={2} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
 
               <Button 
                 type="submit" 
