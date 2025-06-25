@@ -140,6 +140,8 @@ MoveBetter is a comprehensive physiotherapy practice management system built wit
 Changelog:
 - June 25, 2025. Initial setup
 - June 25, 2025. Reconnected Supabase with provided credentials (mdubcdedgtesrypicboc project)
+- June 25, 2025. Fixed all Supabase client imports across 30+ hooks - eliminated "supabase is not defined" errors
+- June 25, 2025. Successfully loading real data from 16 populated Supabase tables (5 patients, 4 sessions, 180 points)
 ```
 
 ## User Preferences
