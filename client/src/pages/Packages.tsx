@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Pencil, Trash, Package } from "lucide-react";
+import { Plus, Pencil, Trash, Package, Download } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,6 +14,7 @@ import { usePackagesRealtime } from "@/hooks/usePackagesRealtime";
 import { usePackageProposalsRealtime } from "@/hooks/usePackageProposalsRealtime";
 import { useCreditCardRates } from "@/hooks/useCreditCardRates";
 import { useRealtimePatients } from "@/hooks/useRealtimePatients";
+import { downloadProposalPDF } from "@/utils/proposalPDF";
 
 export default function Packages() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -55,57 +56,10 @@ export default function Packages() {
   };
 
   const handleDownloadPDF = (proposalData: any) => {
-    // Mock admin data - em produção viria do contexto/API
-    const adminData = {
-      name: "Dr. João Silva",
-      email: "joao.silva@fisioclinica.com.br",
-      council: "CREFITO-3 123456-F",
-      phone: "(11) 99999-9999",
-      address: "Rua das Flores, 123 - São Paulo, SP"
-    };
-
-    const selectedPackage = packages.find(pkg => pkg.id === proposalData.packageId);
-    
-    const content = `
-PROPOSTA DE PACOTE - FISIO SMART CARE
-
-Dados do Profissional:
-Nome: ${adminData.name}
-Email: ${adminData.email}
-Conselho: ${adminData.council}
-Telefone: ${adminData.phone}
-Endereço: ${adminData.address}
-
-Dados da Proposta:
-Paciente: ${proposalData.patientName}
-Pacote: ${selectedPackage?.name || ""}
-Valor do Pacote: R$ ${proposalData.packagePrice.toFixed(2)}
-Outros Custos: R$ ${proposalData.otherCosts.toFixed(2)}
-Forma de Pagamento: ${proposalData.paymentMethod === "pix" ? "PIX" : proposalData.paymentMethod === "cash" ? "Dinheiro" : "Cartão de Crédito"}
-${proposalData.installments > 1 ? `Parcelas: ${proposalData.installments}x` : ""}
-Valor Final: R$ ${proposalData.finalPrice.toFixed(2)}
-
-Data: ${new Date().toLocaleDateString("pt-BR")}
-    `.trim();
-
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `proposta-${proposalData.patientName.replace(/\s+/g, '-').toLowerCase()}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    downloadProposalPDF(proposalData);
   };
 
-  const handleApproveProposal = async (proposalId: string) => {
-    const proposal = proposals.find(p => p.id === proposalId);
-    if (proposal) {
-      // Create patient package record here if needed
-      await deleteProposal(proposalId);
-    }
-  };
+
 
   const handleDeleteProposal = async (proposalId: string) => {
     if (confirm('Tem certeza que deseja excluir esta proposta?')) {
