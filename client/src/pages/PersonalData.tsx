@@ -42,6 +42,7 @@ interface ExtendedProfile {
   cep?: string;
   street?: string;
   number?: string;
+  complement?: string;
   neighborhood?: string;
   city?: string;
   state?: string;
@@ -62,15 +63,16 @@ interface ViaCEPResponse {
 const formSchema = z.object({
   name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres" }),
   email: z.string().email({ message: "E-mail inválido" }),
-  cpfCnpj: z.string().min(11, { message: "CPF/CNPJ inválido" }).optional(),
-  conselho: z.string().optional(),
-  whatsapp: z.string().min(10, { message: "WhatsApp inválido" }).optional(),
-  cep: z.string().min(8, { message: "CEP inválido" }).max(9),
-  street: z.string(),
-  number: z.string(),
-  neighborhood: z.string(),
-  city: z.string(),
-  state: z.string().max(2),
+  cpfCnpj: z.string().optional(),
+  phone: z.string().optional(),
+  crefito: z.string().optional(),
+  cep: z.string().optional(),
+  street: z.string().optional(),
+  number: z.string().optional(),
+  complement: z.string().optional(),
+  neighborhood: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
 });
 
 export default function PersonalData() {
@@ -91,11 +93,12 @@ export default function PersonalData() {
       name: "",
       email: "",
       cpfCnpj: "",
-      conselho: "",
-      whatsapp: "",
+      phone: "",
+      crefito: "",
       cep: "",
       street: "",
       number: "",
+      complement: "",
       neighborhood: "",
       city: "",
       state: "",
@@ -122,13 +125,14 @@ export default function PersonalData() {
             // Pré-preencher todos os dados do perfil
             form.setValue("name", extendedProfile.name || "");
             form.setValue("email", extendedProfile.email || "");
-            form.setValue("whatsapp", extendedProfile.phone || "");
-            form.setValue("conselho", extendedProfile.crefito || "");
+            form.setValue("phone", extendedProfile.phone || "");
+            form.setValue("crefito", extendedProfile.crefito || "");
             
             // Campos de endereço
             form.setValue("cep", extendedProfile.cep || "");
             form.setValue("street", extendedProfile.street || "");
             form.setValue("number", extendedProfile.number || "");
+            form.setValue("complement", extendedProfile.complement || "");
             form.setValue("neighborhood", extendedProfile.neighborhood || "");
             form.setValue("city", extendedProfile.city || "");
             form.setValue("state", extendedProfile.state || "");
@@ -208,18 +212,23 @@ export default function PersonalData() {
     }
 
     setIsSearchingCep(true);
-    console.log('🌐 Fetching address for CEP:', cleanCep);
+    console.log('Fetching address for CEP:', cleanCep);
     
     try {
       const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+      
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      
       const data: ViaCEPResponse = await response.json();
       
       if (!data.erro) {
-        console.log('✅ Address found:', data);
-        form.setValue("street", data.logradouro);
-        form.setValue("neighborhood", data.bairro);
-        form.setValue("city", data.localidade);
-        form.setValue("state", data.uf);
+        console.log('Address found:', data);
+        form.setValue("street", data.logradouro || "");
+        form.setValue("neighborhood", data.bairro || "");
+        form.setValue("city", data.localidade || "");
+        form.setValue("state", data.uf || "");
         
         toast({
           title: "Endereço encontrado",
@@ -227,7 +236,7 @@ export default function PersonalData() {
         });
         return true;
       } else {
-        console.log('❌ CEP not found');
+        console.log('CEP not found');
         toast({
           title: "CEP não encontrado",
           description: "O CEP informado não foi encontrado",
@@ -236,10 +245,10 @@ export default function PersonalData() {
         return false;
       }
     } catch (error) {
-      console.error('💥 Error fetching CEP:', error);
+      console.error('Error fetching CEP:', error);
       toast({
-        title: "Erro",
-        description: "Erro ao buscar o CEP",
+        title: "Erro ao buscar CEP",
+        description: "Verifique sua conexão e tente novamente",
         variant: "destructive",
       });
       return false;
@@ -272,12 +281,12 @@ export default function PersonalData() {
     try {
       const updateData: any = {
         name: values.name,
-        phone: values.whatsapp || null,
-        crefito: values.conselho || null,
-        // Campos de endereço - CORRIGIDO: incluir todos os campos
+        phone: values.phone || null,
+        crefito: values.crefito || null,
         cep: values.cep || null,
         street: values.street || null,
         number: values.number || null,
+        complement: values.complement || null,
         neighborhood: values.neighborhood || null,
         city: values.city || null,
         state: values.state || null,
@@ -518,7 +527,7 @@ export default function PersonalData() {
                 {user?.role === "admin" && (
                   <FormField
                     control={form.control}
-                    name="conselho"
+                    name="crefito"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Número do Conselho</FormLabel>
@@ -535,10 +544,10 @@ export default function PersonalData() {
               <div className="grid grid-cols-1 gap-4">
                 <FormField
                   control={form.control}
-                  name="whatsapp"
+                  name="phone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>WhatsApp</FormLabel>
+                      <FormLabel>Telefone/WhatsApp</FormLabel>
                       <FormControl>
                         <Input {...field} placeholder="(00) 00000-0000" />
                       </FormControl>
@@ -643,6 +652,31 @@ export default function PersonalData() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Estado</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="SP" maxLength={2} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="complement"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Complemento</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Apto, Bloco, etc." />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
                         <FormControl>
                           <Input {...field} maxLength={2} />
                         </FormControl>
