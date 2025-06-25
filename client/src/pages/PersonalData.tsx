@@ -219,11 +219,11 @@ export default function PersonalData() {
     console.log('Fetching address for CEP:', cleanCep);
     
     try {
-      const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`, {
+      // Usando proxy através do servidor backend para evitar problemas de CORS
+      const response = await fetch(`/api/cep/${cleanCep}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
-          'Content-Type': 'application/json',
         },
       });
       
@@ -258,7 +258,7 @@ export default function PersonalData() {
       console.error('Error fetching CEP:', error);
       toast({
         title: "Erro ao buscar CEP",
-        description: "Verifique o CEP e sua conexão com a internet",
+        description: "Verifique o CEP digitado",
         variant: "destructive",
       });
       return false;
