@@ -1,215 +1,129 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Session } from "@supabase/supabase-js";
-import { AuthContextType, UserProfile } from "@/types/auth";
-import { createDefaultProfile, fetchUserProfile } from "@/utils/profileUtils";
-import { loginUser, registerUser, logoutUser } from "@/utils/authActions";
+import { authAPI, type User, type LoginResponse } from "@/lib/api";
+
+export type UserRole = "admin" | "patient";
+
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+}
+
+export interface AuthContextType {
+  user: AuthUser | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  register: (data: { name: string; email: string; password: string; cpf?: string }) => Promise<{ success: boolean; error?: string }>;
+  logout: () => void;
+}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  console.log('🏗️ AuthProvider: Component initialized');
-  
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isInitialized, setIsInitialized] = useState(false);
-  
-  console.log('🔄 AuthProvider: State', { 
-    hasUser: !!user, 
-    hasSession: !!session, 
-    isLoading,
-    isInitialized
-  });
 
+  // Check for existing session on mount
   useEffect(() => {
-    let mounted = true;
-    let authSubscription: any;
-
-    const handleUserSession = async (sessionData: Session | null) => {
-      if (!mounted) return;
-      
-      console.log('👤 Processing user session:', !!sessionData);
-      
-      if (!sessionData) {
-        setUser(null);
-        setSession(null);
-        setIsLoading(false);
-        return;
-      }
-
-      setSession(sessionData);
-      
+    const token = localStorage.getItem('auth_token');
+    const userData = localStorage.getItem('auth_user');
+    
+    if (token && userData) {
       try {
-        // Tentar buscar perfil do usuário
-        console.log('🔍 Fetching user profile...');
-        const profile = await fetchUserProfile(sessionData.user.id);
-        
-        if (!mounted) return;
-        
-        if (profile) {
-          console.log('✅ Profile loaded from database:', profile.name);
-          setUser(profile);
-        } else {
-          console.log('⚠️ No profile found, creating default');
-          const defaultProfile = createDefaultProfile(sessionData.user);
-          setUser(defaultProfile);
-        }
+        const parsedUser = JSON.parse(userData);
+        setUser(parsedUser);
       } catch (error) {
-        console.warn('⚠️ Profile fetch failed, using default:', error);
-        if (mounted) {
-          const defaultProfile = createDefaultProfile(sessionData.user);
-          setUser(defaultProfile);
-        }
-      } finally {
-        if (mounted) {
-          setIsLoading(false);
-        }
+        console.error('Error parsing stored user data:', error);
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('auth_user');
       }
-    };
-
-    const initializeAuth = async () => {
-      try {
-        console.log('🚀 AUTH INITIALIZATION STARTED');
-        
-        // Configurar listener de auth primeiro
-        authSubscription = supabase.auth.onAuthStateChange(async (event, newSession) => {
-          if (!mounted) return;
-          
-          console.log('🔔 AUTH STATE CHANGE:', event, !!newSession);
-          
-          if (event === 'SIGNED_OUT') {
-            setSession(null);
-            setUser(null);
-            setIsLoading(false);
-            return;
-          }
-          
-          await handleUserSession(newSession);
-        });
-
-        // Buscar sessão inicial
-        const { data: { session: initialSession } } = await supabase.auth.getSession();
-        
-        if (!mounted) return;
-        
-        console.log('📱 Initial session check:', !!initialSession);
-        await handleUserSession(initialSession);
-        
-        setIsInitialized(true);
-        console.log('✅ AUTH INITIALIZATION COMPLETED');
-        
-      } catch (error) {
-        console.error('💥 Auth initialization error:', error);
-        if (mounted) {
-          setIsLoading(false);
-          setIsInitialized(true);
-        }
-      }
-    };
-
-    initializeAuth();
-
-    // Cleanup
-    return () => {
-      console.log('🧹 Cleaning up auth context');
-      mounted = false;
-      if (authSubscription?.data?.subscription) {
-        authSubscription.data.subscription.unsubscribe();
-      }
-    };
+    }
+    
+    setIsLoading(false);
   }, []);
 
-  // Safety timeout reduzido para 3 segundos
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (isLoading && isInitialized) {
-        console.warn('⚠️ Force stopping loading state');
-        setIsLoading(false);
-      }
-    }, 3000);
-
-    return () => clearTimeout(timeout);
-  }, [isLoading, isInitialized]);
-
   const login = async (email: string, password: string) => {
-    console.log('🔐 Starting login process for:', email);
-    setIsLoading(true);
-    
     try {
-      const result = await loginUser(email, password);
+      const response = await authAPI.login(email, password);
       
-      if (result.error) {
-        console.error('❌ Login failed:', result.error);
-        setIsLoading(false);
-        return result;
+      if (response.success && response.user && response.token) {
+        const authUser: AuthUser = {
+          id: response.user.id,
+          name: response.user.name,
+          email: response.user.email,
+          role: response.user.role as UserRole,
+        };
+        
+        setUser(authUser);
+        localStorage.setItem('auth_token', response.token);
+        localStorage.setItem('auth_user', JSON.stringify(authUser));
+        
+        return { success: true };
+      } else {
+        return { success: false, error: response.error || 'Login failed' };
       }
+    } catch (error) {
+      console.error('Login error:', error);
+      return { success: false, error: 'Network error during login' };
+    }
+  };
+
+  const register = async (data: { name: string; email: string; password: string; cpf?: string }) => {
+    try {
+      const response = await authAPI.register(data);
       
-      console.log('✅ Login successful, waiting for auth state change...');
-      // Não definir isLoading como false aqui, deixar o auth state change handle
-      return result;
+      if (response.success && response.user && response.token) {
+        const authUser: AuthUser = {
+          id: response.user.id,
+          name: response.user.name,
+          email: response.user.email,
+          role: response.user.role as UserRole,
+        };
+        
+        setUser(authUser);
+        localStorage.setItem('auth_token', response.token);
+        localStorage.setItem('auth_user', JSON.stringify(authUser));
+        
+        return { success: true };
+      } else {
+        return { success: false, error: response.error || 'Registration failed' };
+      }
     } catch (error) {
-      console.error('💥 Login error:', error);
-      setIsLoading(false);
-      return { error };
+      console.error('Registration error:', error);
+      return { success: false, error: 'Network error during registration' };
     }
   };
 
-  const register = async (email: string, password: string, name: string, cpf?: string) => {
-    try {
-      return await registerUser(email, password, name, cpf);
-    } catch (error) {
-      console.error('Register error:', error);
-      return { error };
-    }
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_user');
   };
 
-  const logout = async () => {
-    setIsLoading(true);
-    try {
-      setUser(null);
-      setSession(null);
-      await logoutUser();
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const contextValue = {
-    user,
-    session,
-    login,
-    register,
-    logout,
-    isAuthenticated: !!session && !!user,
-    isLoading,
-  };
-
-  console.log('📊 AUTH CONTEXT FINAL STATE:', {
-    hasUser: !!user,
-    hasSession: !!session,
-    isAuthenticated: contextValue.isAuthenticated,
-    isLoading,
-    userRole: user?.role || 'none'
-  });
+  const isAuthenticated = !!user;
 
   return (
-    <AuthContext.Provider value={contextValue}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading,
+        isAuthenticated,
+        login,
+        register,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
 
-export const useAuth = () => {
+export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    console.error('❌ useAuth called outside of AuthProvider');
-    throw new Error("useAuth deve ser usado dentro de um AuthProvider");
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-};
-
-export type { UserRole, UserProfile } from "@/types/auth";
+}
