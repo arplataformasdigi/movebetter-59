@@ -165,6 +165,18 @@ export function SellPackageDialog({ open, onOpenChange, onProposalAdded }: SellP
         setCreatedProposal(result);
         setShowSuccessState(true);
         onProposalAdded?.();
+        
+        // Automatically download PDF
+        downloadProposalPDF(result);
+        
+        toast.success("Proposta criada e aprovada com sucesso!");
+        
+        // Auto-close after 3 seconds
+        setTimeout(() => {
+          resetForm();
+          setOpen(false);
+        }, 3000);
+        
       } else {
         throw new Error("Failed to create proposal");
       }
