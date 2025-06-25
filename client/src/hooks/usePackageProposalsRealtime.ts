@@ -209,6 +209,7 @@ export function usePackageProposalsRealtime() {
         payment_method: proposalData.paymentMethod,
         installments: proposalData.installments || 1,
         final_price: proposalData.finalPrice,
+        status: 'pending',
         created_date: formatDateToISO(proposalData.purchaseDate || getCurrentDate()),
         expiry_date: formatDateToISO(proposalData.expiryDate) || null,
       };

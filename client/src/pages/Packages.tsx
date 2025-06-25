@@ -25,7 +25,7 @@ export default function Packages() {
   const [newRate, setNewRate] = useState({ name: "", rate: 0 });
 
   const { packages, isLoading: packagesLoading, createPackage, updatePackage, deletePackage: removePackage } = usePackagesRealtime();
-  const { proposals, isLoading: proposalsLoading, addProposal, deleteProposal } = usePackageProposalsRealtime();
+  const { proposals, isLoading: proposalsLoading, addProposal, approveProposal, deleteProposal } = usePackageProposalsRealtime();
   const { rates, isLoading: ratesLoading, addRate, deleteRate } = useCreditCardRates();
   const { patients, isLoading: patientsLoading } = useRealtimePatients();
 
