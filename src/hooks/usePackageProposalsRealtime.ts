@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { getCurrentDate } from '@/utils/dateUtils';
 
 export interface PackageProposal {
   id: string;
@@ -165,7 +166,35 @@ export function usePackageProposalsRealtime() {
     try {
       console.log('Adding proposal with data:', proposalData);
       
-      // Map data to Supabase table format
+      // Convert dates to ISO format (YYYY-MM-DD)
+      const formatDateToISO = (dateString: string) => {
+        if (!dateString) return null;
+        
+        // Check if it's already in ISO format
+        if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          return dateString;
+        }
+        
+        // If it's in Brazilian format (DD/MM/YYYY), convert it
+        if (dateString.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+          const [day, month, year] = dateString.split('/');
+          return `${year}-${month}-${day}`;
+        }
+        
+        // If it's a date object or other format, try to parse it
+        try {
+          const date = new Date(dateString);
+          if (!isNaN(date.getTime())) {
+            return date.toISOString().split('T')[0];
+          }
+        } catch (e) {
+          console.error('Error parsing date:', e);
+        }
+        
+        return getCurrentDate(); // fallback to current date
+      };
+
+      // Map data to Supabase table format with proper date formatting
       const supabaseProposal = {
         package_id: proposalData.packageId,
         package_name: proposalData.packageName,
@@ -177,9 +206,11 @@ export function usePackageProposalsRealtime() {
         payment_method: proposalData.paymentMethod,
         installments: proposalData.installments || 1,
         final_price: proposalData.finalPrice,
-        created_date: proposalData.purchaseDate,
-        expiry_date: proposalData.expiryDate || null,
+        created_date: formatDateToISO(proposalData.purchaseDate || getCurrentDate()),
+        expiry_date: formatDateToISO(proposalData.expiryDate) || null,
       };
+
+      console.log('Formatted proposal data for Supabase:', supabaseProposal);
 
       const { data, error } = await supabase
         .from('package_proposals')
