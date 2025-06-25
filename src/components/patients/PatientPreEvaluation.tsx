@@ -7,15 +7,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ClipboardList, Plus } from "lucide-react";
 import { usePatientPreEvaluations, PreEvaluation } from "@/hooks/usePatientPreEvaluations";
 import { PreEvaluationFormDialog } from "./pre-evaluation/PreEvaluationFormDialog";
-import { PreEvaluationCard } from "./pre-evaluation/PreEvaluationCard";
-import { generatePreEvaluationPDF } from "./pre-evaluation/PDFGenerator";
+import { PreEvaluationSummaryCard } from "./pre-evaluation/PreEvaluationSummaryCard";
+import { generateCompletePreEvaluationPDF } from "./pre-evaluation/EnhancedPDFGenerator";
 import { PreEvaluationFormValues } from "./pre-evaluation/types";
 
 interface PatientPreEvaluationProps {
@@ -103,7 +100,7 @@ export function PatientPreEvaluation({ patientId, patientName }: PatientPreEvalu
   };
 
   const handleDownloadPDF = (evaluation: PreEvaluation) => {
-    generatePreEvaluationPDF(evaluation, patientName);
+    generateCompletePreEvaluationPDF(evaluation, patientName);
   };
 
   const handleOpenChange = (isOpen: boolean) => {
@@ -146,7 +143,7 @@ export function PatientPreEvaluation({ patientId, patientName }: PatientPreEvalu
       ) : (
         <div className="space-y-3">
           {preEvaluations.map((evaluation) => (
-            <PreEvaluationCard
+            <PreEvaluationSummaryCard
               key={evaluation.id}
               evaluation={evaluation}
               onEdit={handleEditEvaluation}

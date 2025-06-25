@@ -271,15 +271,16 @@ export default function PersonalData() {
     try {
       const updateData: any = {
         name: values.name,
-        phone: values.whatsapp,
-        crefito: values.conselho,
-        // Novos campos de endereço
-        cep: values.cep,
-        street: values.street,
-        number: values.number,
-        neighborhood: values.neighborhood,
-        city: values.city,
-        state: values.state,
+        phone: values.whatsapp || null,
+        crefito: values.conselho || null,
+        // Campos de endereço - CORRIGIDO: incluir todos os campos
+        cep: values.cep || null,
+        street: values.street || null,
+        number: values.number || null,
+        neighborhood: values.neighborhood || null,
+        city: values.city || null,
+        state: values.state || null,
+        updated_at: new Date().toISOString(),
       };
 
       // Só adiciona CPF/CNPJ se não estiver salvo ainda
@@ -296,6 +297,7 @@ export default function PersonalData() {
         .eq('id', user?.id);
 
       if (error) {
+        console.error('❌ Error updating profile:', error);
         throw error;
       }
 
@@ -304,6 +306,27 @@ export default function PersonalData() {
         title: "Dados atualizados",
         description: "Suas informações foram atualizadas com sucesso",
       });
+      
+      // Recarregar dados para mostrar alterações imediatamente
+      const { data: updatedProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+        
+      if (updatedProfile) {
+        const extendedProfile = updatedProfile as ExtendedProfile;
+        form.setValue("name", extendedProfile.name || "");
+        form.setValue("whatsapp", extendedProfile.phone || "");
+        form.setValue("conselho", extendedProfile.crefito || "");
+        form.setValue("cep", extendedProfile.cep || "");
+        form.setValue("street", extendedProfile.street || "");
+        form.setValue("number", extendedProfile.number || "");
+        form.setValue("neighborhood", extendedProfile.neighborhood || "");
+        form.setValue("city", extendedProfile.city || "");
+        form.setValue("state", extendedProfile.state || "");
+      }
+      
     } catch (error) {
       console.error('❌ Error updating profile:', error);
       toast({

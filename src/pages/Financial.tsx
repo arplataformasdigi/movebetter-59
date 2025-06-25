@@ -2,16 +2,13 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, DollarSign, TrendingUp, TrendingDown, PieChart, Trash } from "lucide-react";
+import { Plus, DollarSign } from "lucide-react";
 import { TransactionFormDialog } from "@/components/financial/TransactionFormDialog";
 import { TransactionList } from "@/components/financial/TransactionList";
 import { FinancialSummary } from "@/components/financial/FinancialSummary";
 import { CategoryManager } from "@/components/financial/CategoryManager";
 import { FinancialReports } from "@/components/financial/FinancialReports";
-import { CategoryAnalysis } from "@/components/financial/CategoryAnalysis";
 import { useFinancialTransactionsRealtime } from "@/hooks/useFinancialTransactionsRealtime";
 import { FinancialTransaction } from "@/hooks/useFinancialTransactions";
 
@@ -103,24 +100,23 @@ export default function Financial() {
       </div>
 
       <Tabs defaultValue="summary" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="summary">Resumo</TabsTrigger>
-          <TabsTrigger value="transactions">Transações</TabsTrigger>
           <TabsTrigger value="categories">Categorias</TabsTrigger>
-          <TabsTrigger value="analysis">Análises</TabsTrigger>
           <TabsTrigger value="reports">Relatórios</TabsTrigger>
         </TabsList>
 
         <TabsContent value="summary" className="space-y-6">
           <FinancialSummary transactions={transformedTransactions} />
-        </TabsContent>
-
-        <TabsContent value="transactions" className="space-y-6">
-          <TransactionList
-            transactions={transformedTransactions}
-            onEdit={openEditDialog}
-            onDeleteTransaction={handleDeleteTransaction}
-          />
+          
+          <div className="mt-8">
+            <h2 className="text-xl font-semibold mb-4">Transações Recentes</h2>
+            <TransactionList
+              transactions={transformedTransactions}
+              onEdit={openEditDialog}
+              onDeleteTransaction={handleDeleteTransaction}
+            />
+          </div>
         </TabsContent>
 
         <TabsContent value="categories" className="space-y-6">
@@ -129,10 +125,6 @@ export default function Financial() {
             onAddCategory={addCategory}
             onDeleteCategory={deleteCategory}
           />
-        </TabsContent>
-
-        <TabsContent value="analysis" className="space-y-6">
-          <CategoryAnalysis transactions={transformedTransactions} />
         </TabsContent>
 
         <TabsContent value="reports" className="space-y-6">
