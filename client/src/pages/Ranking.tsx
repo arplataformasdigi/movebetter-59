@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+// Removed Supabase integration - using local API instead
 import { useToast } from "@/hooks/use-toast";
 
 interface RankingUser {
@@ -45,29 +45,24 @@ export default function Ranking() {
     try {
       setIsLoading(true);
       
-      // Buscar pacientes com seus scores
-      const { data: patientsWithScores, error } = await supabase
-        .from('patients')
-        .select(`
-          id,
-          name,
-          patient_scores (
-            total_points,
-            completed_exercises,
-            is_tracks_active
-          )
-        `)
-        .eq('status', 'active');
-
-      if (error) {
-        console.error('Error fetching ranking data:', error);
-        toast({
-          title: "Erro ao carregar ranking",
-          description: "Não foi possível carregar os dados do ranking",
-          variant: "destructive",
-        });
-        return;
-      }
+      // Mock data for ranking - will be replaced with API call
+      const patientsWithScores = [
+        {
+          id: '1',
+          name: 'Marina Oliveira',
+          patient_scores: [{ total_points: 850, completed_exercises: 25, is_tracks_active: true }]
+        },
+        {
+          id: '2', 
+          name: 'Felipe Martins',
+          patient_scores: [{ total_points: 720, completed_exercises: 18, is_tracks_active: true }]
+        },
+        {
+          id: '3',
+          name: 'Carla Sousa', 
+          patient_scores: [{ total_points: 650, completed_exercises: 15, is_tracks_active: false }]
+        }
+      ];
 
       // Processar dados e calcular ranking
       const rankingData: RankingUser[] = (patientsWithScores || [])

@@ -1,49 +1,50 @@
 import type { Request, Response } from "express";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import { storage } from "../storage";
-import { profiles } from "../../db/schema";
-
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
+import { supabase } from "../lib/supabase";
 
 export async function registerUser(req: Request, res: Response) {
   try {
     const { name, email, password, cpf } = req.body;
 
-    // Check if user already exists
-    const existingUser = await storage.getProfileByEmail(email);
-    if (existingUser) {
-      return res.status(400).json({ error: "User already exists" });
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create user profile
-    const newUser = await storage.createProfile({
-      id: crypto.randomUUID(),
-      name,
+    // Create user with Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email,
-      role: "admin",
-      cpf_cnpj: cpf,
+      password,
+      user_metadata: {
+        name,
+        cpf,
+        role: 'admin',
+      },
     });
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { userId: newUser.id, email: newUser.email, role: newUser.role },
-      JWT_SECRET,
-      { expiresIn: "24h" }
-    );
+    if (authError) {
+      return res.status(400).json({ error: authError.message });
+    }
+
+    // Create profile in database
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .insert({
+        id: authData.user.id,
+        name,
+        email,
+        role: 'admin',
+        cpf_cnpj: cpf,
+      })
+      .select()
+      .single();
+
+    if (profileError) {
+      console.error('Profile creation error:', profileError);
+    }
 
     res.status(201).json({
       success: true,
       user: {
-        id: newUser.id,
-        name: newUser.name,
-        email: newUser.email,
-        role: newUser.role,
+        id: authData.user.id,
+        name,
+        email,
+        role: 'admin',
       },
-      token,
     });
   } catch (error) {
     console.error("Registration error:", error);
@@ -55,31 +56,31 @@ export async function loginUser(req: Request, res: Response) {
   try {
     const { email, password } = req.body;
 
-    // Find user by email
-    const user = await storage.getProfileByEmail(email);
-    if (!user) {
-      return res.status(401).json({ error: "Invalid credentials" });
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      return res.status(401).json({ error: error.message });
     }
 
-    // For demo purposes, we'll accept any password since we migrated from Supabase
-    // In production, you would verify the hashed password
-    
-    // Generate JWT token
-    const token = jwt.sign(
-      { userId: user.id, email: user.email, role: user.role },
-      JWT_SECRET,
-      { expiresIn: "24h" }
-    );
+    // Get user profile
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', data.user.id)
+      .single();
 
     res.json({
       success: true,
       user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
+        id: data.user.id,
+        name: profile?.name || data.user.user_metadata?.name || data.user.email,
+        email: data.user.email,
+        role: profile?.role || data.user.user_metadata?.role || 'admin',
       },
-      token,
+      session: data.session,
     });
   } catch (error) {
     console.error("Login error:", error);
@@ -91,11 +92,27 @@ export async function patientAuth(req: Request, res: Response) {
   try {
     const { email, password } = req.body;
 
-    // This would be implemented based on the patient app access table
-    // For now, return a simple response
+    // Buscar acesso do paciente
+    const { data: patientAccess, error } = await supabase
+      .from('patient_app_access')
+      .select(`
+        *,
+        patients (
+          name,
+          email
+        )
+      `)
+      .eq('email', email)
+      .eq('is_active', true)
+      .single();
+
+    if (error || !patientAccess) {
+      return res.status(401).json({ error: 'Credenciais inválidas' });
+    }
+
     res.json({
-      success: false,
-      error: "Patient authentication not yet implemented in migration"
+      success: true,
+      data: patientAccess,
     });
   } catch (error) {
     console.error("Patient auth error:", error);

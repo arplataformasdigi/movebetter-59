@@ -1,6 +1,6 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { User } from "@supabase/supabase-js";
+
+
 import { UserProfile, UserRole } from "@/types/auth";
 
 export const createDefaultProfile = (authUser: User): UserProfile => {

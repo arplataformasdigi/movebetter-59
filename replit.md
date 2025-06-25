@@ -17,15 +17,15 @@ MoveBetter is a comprehensive physiotherapy practice management system built wit
 
 ### Backend Architecture
 - **Backend-as-a-Service**: Supabase (PostgreSQL + Auth + Real-time)
-- **Database**: PostgreSQL with Row Level Security (RLS)
+- **Database**: Supabase PostgreSQL with Row Level Security (RLS)
 - **Authentication**: Supabase Auth with custom user profiles
 - **Real-time**: Supabase Realtime for live data updates
-- **Server Functions**: Supabase Edge Functions for custom logic
+- **Server Functions**: Express.js API endpoints with Supabase client
 
 ### Data Layer
-- **ORM**: Drizzle ORM for type-safe database operations
-- **Database Migrations**: Drizzle Kit for schema management
-- **Real-time Subscriptions**: Custom hooks for live data updates
+- **Database Client**: Supabase JavaScript client for database operations
+- **Schema Management**: Supabase Dashboard for schema management
+- **Real-time Subscriptions**: Supabase Realtime subscriptions
 
 ## Key Components
 
@@ -117,8 +117,8 @@ MoveBetter is a comprehensive physiotherapy practice management system built wit
 - **Static Assets**: Built files served from dist/public directory
 
 ### Environment Configuration
-- **Database**: Neon PostgreSQL (configured via DATABASE_URL)
-- **Authentication**: Supabase project configuration
+- **Database**: Supabase PostgreSQL (mdubcdedgtesrypicboc.supabase.co)
+- **Authentication**: Supabase Auth with provided API keys
 - **Real-time**: Automatic via Supabase Realtime
 - **CDN**: Static assets served efficiently
 
@@ -139,6 +139,7 @@ MoveBetter is a comprehensive physiotherapy practice management system built wit
 ```
 Changelog:
 - June 25, 2025. Initial setup
+- June 25, 2025. Reconnected Supabase with provided credentials (mdubcdedgtesrypicboc project)
 ```
 
 ## User Preferences

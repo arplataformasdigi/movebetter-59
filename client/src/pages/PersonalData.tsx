@@ -26,7 +26,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { User, Shield } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+// Removed Supabase integration - using local API instead
 import { FormLoadingSkeleton } from "@/components/ui/loading-skeleton";
 
 // Interface local que estende o tipo do profile para incluir todos os campos

@@ -22,10 +22,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/patients", async (req, res) => {
     try {
-      const patient = await storage.createPatient({
-        ...req.body,
-        id: crypto.randomUUID(),
-      });
+      const patient = await storage.createPatient(req.body);
       res.status(201).json(patient);
     } catch (error) {
       console.error("Error creating patient:", error);
@@ -66,10 +63,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/appointments", async (req, res) => {
     try {
-      const appointment = await storage.createAppointment({
-        ...req.body,
-        id: crypto.randomUUID(),
-      });
+      const appointment = await storage.createAppointment(req.body);
       res.status(201).json(appointment);
     } catch (error) {
       console.error("Error creating appointment:", error);
@@ -90,10 +84,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/treatment-plans", async (req, res) => {
     try {
-      const plan = await storage.createTreatmentPlan({
-        ...req.body,
-        id: crypto.randomUUID(),
-      });
+      const plan = await storage.createTreatmentPlan(req.body);
       res.status(201).json(plan);
     } catch (error) {
       console.error("Error creating treatment plan:", error);
@@ -114,10 +105,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/financial-transactions", async (req, res) => {
     try {
-      const transaction = await storage.createFinancialTransaction({
-        ...req.body,
-        id: crypto.randomUUID(),
-      });
+      const transaction = await storage.createFinancialTransaction(req.body);
       res.status(201).json(transaction);
     } catch (error) {
       console.error("Error creating financial transaction:", error);

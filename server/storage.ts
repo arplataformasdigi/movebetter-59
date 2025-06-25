@@ -1,108 +1,244 @@
-import { db } from "../db";
-import { profiles, patients, appointments, treatmentPlans, financialTransactions, type Profile, type Patient, type Appointment, type TreatmentPlan, type FinancialTransaction } from "../db/schema";
-import { eq, desc } from "drizzle-orm";
+import { supabase } from "./lib/supabase";
 
 export class DatabaseService {
   // Profile methods
-  async getProfile(id: string): Promise<Profile | undefined> {
-    const result = await db.select().from(profiles).where(eq(profiles.id, id)).limit(1);
-    return result[0];
+  async getProfile(id: string) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) throw error;
+    return data;
   }
 
-  async getProfileByEmail(email: string): Promise<Profile | undefined> {
-    const result = await db.select().from(profiles).where(eq(profiles.email, email)).limit(1);
-    return result[0];
+  async getProfileByEmail(email: string) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('email', email)
+      .single();
+    
+    if (error && error.code !== 'PGRST116') throw error;
+    return data;
   }
 
-  async createProfile(profile: typeof profiles.$inferInsert): Promise<Profile> {
-    const result = await db.insert(profiles).values(profile).returning();
-    return result[0];
+  async createProfile(profile: any) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .insert(profile)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
   }
 
-  async updateProfile(id: string, updates: Partial<typeof profiles.$inferInsert>): Promise<Profile> {
-    const result = await db.update(profiles).set(updates).where(eq(profiles.id, id)).returning();
-    return result[0];
+  async updateProfile(id: string, updates: any) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
   }
 
   // Patient methods
-  async getPatients(): Promise<Patient[]> {
-    return await db.select().from(patients).orderBy(desc(patients.created_at));
+  async getPatients() {
+    const { data, error } = await supabase
+      .from('patients')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
   }
 
-  async getPatient(id: string): Promise<Patient | undefined> {
-    const result = await db.select().from(patients).where(eq(patients.id, id)).limit(1);
-    return result[0];
+  async getPatient(id: string) {
+    const { data, error } = await supabase
+      .from('patients')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) throw error;
+    return data;
   }
 
-  async createPatient(patient: typeof patients.$inferInsert): Promise<Patient> {
-    const result = await db.insert(patients).values(patient).returning();
-    return result[0];
+  async createPatient(patient: any) {
+    const { data, error } = await supabase
+      .from('patients')
+      .insert(patient)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
   }
 
-  async updatePatient(id: string, updates: Partial<typeof patients.$inferInsert>): Promise<Patient> {
-    const result = await db.update(patients).set(updates).where(eq(patients.id, id)).returning();
-    return result[0];
+  async updatePatient(id: string, updates: any) {
+    const { data, error } = await supabase
+      .from('patients')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
   }
 
-  async deletePatient(id: string): Promise<void> {
-    await db.delete(patients).where(eq(patients.id, id));
+  async deletePatient(id: string) {
+    const { error } = await supabase
+      .from('patients')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
   }
 
   // Appointment methods
-  async getAppointments(): Promise<Appointment[]> {
-    return await db.select().from(appointments).orderBy(desc(appointments.appointment_date));
+  async getAppointments() {
+    const { data, error } = await supabase
+      .from('appointments')
+      .select(`
+        *,
+        patients (
+          name
+        )
+      `)
+      .order('appointment_date', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
   }
 
-  async createAppointment(appointment: typeof appointments.$inferInsert): Promise<Appointment> {
-    const result = await db.insert(appointments).values(appointment).returning();
-    return result[0];
+  async createAppointment(appointment: any) {
+    const { data, error } = await supabase
+      .from('appointments')
+      .insert(appointment)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
   }
 
-  async updateAppointment(id: string, updates: Partial<typeof appointments.$inferInsert>): Promise<Appointment> {
-    const result = await db.update(appointments).set(updates).where(eq(appointments.id, id)).returning();
-    return result[0];
+  async updateAppointment(id: string, updates: any) {
+    const { data, error } = await supabase
+      .from('appointments')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
   }
 
-  async deleteAppointment(id: string): Promise<void> {
-    await db.delete(appointments).where(eq(appointments.id, id));
+  async deleteAppointment(id: string) {
+    const { error } = await supabase
+      .from('appointments')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
   }
 
   // Treatment plan methods
-  async getTreatmentPlans(): Promise<TreatmentPlan[]> {
-    return await db.select().from(treatmentPlans).orderBy(desc(treatmentPlans.created_at));
+  async getTreatmentPlans() {
+    const { data, error } = await supabase
+      .from('treatment_plans')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
   }
 
-  async createTreatmentPlan(plan: typeof treatmentPlans.$inferInsert): Promise<TreatmentPlan> {
-    const result = await db.insert(treatmentPlans).values(plan).returning();
-    return result[0];
+  async createTreatmentPlan(plan: any) {
+    const { data, error } = await supabase
+      .from('treatment_plans')
+      .insert(plan)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
   }
 
-  async updateTreatmentPlan(id: string, updates: Partial<typeof treatmentPlans.$inferInsert>): Promise<TreatmentPlan> {
-    const result = await db.update(treatmentPlans).set(updates).where(eq(treatmentPlans.id, id)).returning();
-    return result[0];
+  async updateTreatmentPlan(id: string, updates: any) {
+    const { data, error } = await supabase
+      .from('treatment_plans')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
   }
 
-  async deleteTreatmentPlan(id: string): Promise<void> {
-    await db.delete(treatmentPlans).where(eq(treatmentPlans.id, id));
+  async deleteTreatmentPlan(id: string) {
+    const { error } = await supabase
+      .from('treatment_plans')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
   }
 
   // Financial transaction methods
-  async getFinancialTransactions(): Promise<FinancialTransaction[]> {
-    return await db.select().from(financialTransactions).orderBy(desc(financialTransactions.transaction_date));
+  async getFinancialTransactions() {
+    const { data, error } = await supabase
+      .from('financial_transactions')
+      .select(`
+        *,
+        financial_categories (
+          name,
+          color
+        )
+      `)
+      .order('transaction_date', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
   }
 
-  async createFinancialTransaction(transaction: typeof financialTransactions.$inferInsert): Promise<FinancialTransaction> {
-    const result = await db.insert(financialTransactions).values(transaction).returning();
-    return result[0];
+  async createFinancialTransaction(transaction: any) {
+    const { data, error } = await supabase
+      .from('financial_transactions')
+      .insert(transaction)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
   }
 
-  async updateFinancialTransaction(id: string, updates: Partial<typeof financialTransactions.$inferInsert>): Promise<FinancialTransaction> {
-    const result = await db.update(financialTransactions).set(updates).where(eq(financialTransactions.id, id)).returning();
-    return result[0];
+  async updateFinancialTransaction(id: string, updates: any) {
+    const { data, error } = await supabase
+      .from('financial_transactions')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
   }
 
-  async deleteFinancialTransaction(id: string): Promise<void> {
-    await db.delete(financialTransactions).where(eq(financialTransactions.id, id));
+  async deleteFinancialTransaction(id: string) {
+    const { error } = await supabase
+      .from('financial_transactions')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
   }
 }
 

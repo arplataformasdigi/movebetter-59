@@ -1,5 +1,5 @@
 
-import { supabase } from "@/integrations/supabase/client";
+
 
 export const loginUser = async (email: string, password: string) => {
   console.log('🔐 LOGIN ATTEMPT:', email);
