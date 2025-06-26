@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -74,7 +75,10 @@ export function RegisterForm() {
         cpf: data.cpf
       });
       
-      const { error } = await register(data.email, data.password);
+      const { error } = await register(data.email, data.password, { 
+        name: data.name, 
+        cpf: data.cpf 
+      });
       
       if (error) {
         console.error('Registration failed:', error);
