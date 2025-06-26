@@ -58,7 +58,7 @@ export function LoginForm() {
         let errorMessage = "Ocorreu um erro durante o login. Tente novamente.";
         
         // Handle error as string or object
-        const errorMsg = typeof error === 'string' ? error : error.message || 'Unknown error';
+        const errorMsg = typeof error === 'string' ? error : String(error);
         
         if (errorMsg === "Invalid login credentials") {
           errorMessage = "Email ou senha incorretos";

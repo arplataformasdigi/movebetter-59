@@ -45,7 +45,7 @@ export function CreateExerciseForPlanDialog({
   onExerciseCreated,
 }: CreateExerciseForPlanDialogProps) {
   const { addExercise } = useExercises();
-  const { addExerciseToPlan } = usePlanExercises(planId || "");
+  const { addPlanExercise } = usePlanExercises(planId || "");
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newEquipment, setNewEquipment] = useState("");
@@ -84,7 +84,7 @@ export function CreateExerciseForPlanDialog({
         name: formData.name,
         description: formData.description || undefined,
         instructions: formData.instructions || undefined,
-        category: null,
+        category: formData.category || undefined,
         difficulty_level: formData.difficulty_level,
         duration_minutes: formData.duration_minutes || undefined,
         equipment_needed: formData.equipment_needed,
@@ -101,8 +101,9 @@ export function CreateExerciseForPlanDialog({
       }
 
       // Add exercise to plan
-      await addExerciseToPlan({
+      await addPlanExercise({
         exercise_id: exerciseResult.data.id,
+        treatment_plan_id: planId,
         day_number: 1, // Default day
         sets: 3,
         repetitions: 10,

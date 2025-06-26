@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import {
   Dialog,
@@ -62,7 +63,7 @@ export function AddExercisesToPlanDialog({
   onExercisesAdded,
 }: AddExercisesToPlanDialogProps) {
   const { exercises, isLoading, addExercise } = useExercises();
-  const { addExerciseToPlan } = usePlanExercises(planId || "");
+  const { addPlanExercise } = usePlanExercises(planId || "");
   
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedExercises, setSelectedExercises] = useState<string[]>([]);
@@ -96,7 +97,7 @@ export function AddExercisesToPlanDialog({
         name: newExercise.name,
         description: newExercise.description || undefined,
         instructions: newExercise.instructions || undefined,
-        category: null,
+        category: newExercise.category || undefined,
         difficulty_level: newExercise.difficulty_level,
         duration_minutes: newExercise.duration_minutes || undefined,
         equipment_needed: newExercise.equipment_needed,
@@ -151,9 +152,10 @@ export function AddExercisesToPlanDialog({
 
     try {
       for (const exerciseId of selectedExercises) {
-        await addExerciseToPlan({
+        await addPlanExercise({
           exercise_id: exerciseId,
-          day_number: 1, // Default day
+          treatment_plan_id: planId,
+          day_number: 1,
           sets: 3,
           repetitions: 10,
           duration_minutes: 30,

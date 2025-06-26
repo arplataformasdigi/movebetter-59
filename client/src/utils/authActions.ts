@@ -1,56 +1,64 @@
 
+import { supabase } from "@/integrations/supabase/client";
 
+interface LoginData {
+  email: string;
+  password: string;
+}
 
-export const loginUser = async (email: string, password: string) => {
-  console.log('🔐 LOGIN ATTEMPT:', email);
-  console.time('⏱️ Login Process');
-  
-  const { error } = await supabase.auth.signInWithPassword({
+export const loginUser = async ({ email, password }: LoginData) => {
+  const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
-  
+
   if (error) {
-    console.error('❌ LOGIN ERROR:', error);
-    console.timeEnd('⏱️ Login Process');
-  } else {
-    console.log('✅ LOGIN SUCCESS - waiting for auth state change');
-    console.timeEnd('⏱️ Login Process');
+    throw error;
   }
-  
-  return { error };
+
+  return data;
 };
 
-export const registerUser = async (email: string, password: string, name: string, cpf?: string) => {
-  console.log('📝 REGISTRATION ATTEMPT:', email);
-  console.time('⏱️ Registration Process');
-  
-  const { error } = await supabase.auth.signUp({
+interface RegisterData {
+  email: string;
+  password: string;
+  name: string;
+  cpf?: string;
+}
+
+export const registerUser = async ({ email, password, name, cpf }: RegisterData) => {
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       data: {
-        name: name,
-        cpf: cpf,
+        name,
+        cpf,
       },
-      emailRedirectTo: `${window.location.origin}/`,
     },
   });
-  
+
   if (error) {
-    console.error('❌ REGISTRATION ERROR:', error);
-  } else {
-    console.log('✅ REGISTRATION SUCCESS');
+    throw error;
   }
-  
-  console.timeEnd('⏱️ Registration Process');
-  return { error };
+
+  return data;
 };
 
 export const logoutUser = async () => {
-  console.log('🚪 LOGOUT STARTED');
-  console.time('⏱️ Logout Process');
-  await supabase.auth.signOut();
-  console.timeEnd('⏱️ Logout Process');
-  console.log('✅ LOGOUT COMPLETED');
+  const { error } = await supabase.auth.signOut();
+
+  if (error) {
+    throw error;
+  }
+};
+
+export const getCurrentUser = async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  return user;
+};
+
+export const getCurrentSession = async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session;
 };
