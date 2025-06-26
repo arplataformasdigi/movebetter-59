@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -44,7 +43,7 @@ interface AddTreatmentPlanDialogProps {
   onOpenChange?: (open: boolean) => void;
 }
 
-export function AddTreatmentPlanDialog({ open, onOpenChange, onPlanAdded }: AddTreatmentPlanDialogProps) {
+export function AddTreatmentPlanDialog({ open, onOpenChange }: AddTreatmentPlanDialogProps) {
   const [internalOpen, setInternalOpen] = React.useState(false);
   const { addTreatmentPlan } = useTreatmentPlans();
   const { patients } = usePatients();
