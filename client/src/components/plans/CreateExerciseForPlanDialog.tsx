@@ -1,297 +1,289 @@
 
 import React, { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { X } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 import { useExercises } from "@/hooks/useExercises";
 import { usePlanExercises } from "@/hooks/usePlanExercises";
-import { toast } from "sonner";
 
 interface CreateExerciseForPlanDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  planId: string | null;
-  onExerciseCreated?: () => void;
+  planId: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-interface ExerciseFormData {
-  name: string;
-  description: string;
-  instructions: string;
-  category?: string;
-  difficulty_level: number;
-  duration_minutes?: number;
-  equipment_needed: string[];
-  image_url?: string;
-  video_url?: string;
-  is_active: boolean;
-}
-
-export function CreateExerciseForPlanDialog({
-  isOpen,
-  onClose,
-  planId,
-  onExerciseCreated,
-}: CreateExerciseForPlanDialogProps) {
+export function CreateExerciseForPlanDialog({ planId, open, onOpenChange }: CreateExerciseForPlanDialogProps) {
+  const { toast } = useToast();
   const { addExercise } = useExercises();
-  const { addPlanExercise } = usePlanExercises(planId || "");
+  const { addPlanExercise } = usePlanExercises(planId);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [newEquipment, setNewEquipment] = useState("");
-
-  const [formData, setFormData] = useState<ExerciseFormData>({
+  const [formData, setFormData] = useState({
     name: "",
     description: "",
     instructions: "",
-    category: undefined,
+    category: "",
     difficulty_level: 1,
-    duration_minutes: undefined,
-    equipment_needed: [],
-    image_url: undefined,
-    video_url: undefined,
-    is_active: true,
+    duration_minutes: 5,
+    equipment_needed: [] as string[],
+    image_url: "",
+    video_url: "",
+    sets: 3,
+    repetitions: 10,
+    dayNumber: 1,
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.name.trim()) {
-      toast.error("Nome do exercício é obrigatório");
-      return;
-    }
+  const handleInputChange = (field: string, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
 
-    if (!planId) {
-      toast.error("ID do plano não encontrado");
+  const handleSubmit = async () => {
+    if (!formData.name.trim()) {
+      toast({
+        title: "Erro",
+        description: "Nome do exercício é obrigatório",
+        variant: "destructive",
+      });
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      // Create exercise
+      // First create the exercise
       const exerciseData = {
         name: formData.name,
         description: formData.description || undefined,
         instructions: formData.instructions || undefined,
-        category: formData.category || undefined,
+        category: undefined, // Changed from null to undefined
         difficulty_level: formData.difficulty_level,
         duration_minutes: formData.duration_minutes || undefined,
         equipment_needed: formData.equipment_needed,
         image_url: formData.image_url || undefined,
         video_url: formData.video_url || undefined,
-        is_active: formData.is_active,
+        is_active: true,
       };
 
       const exerciseResult = await addExercise(exerciseData);
       
       if (!exerciseResult.success) {
-        toast.error("Erro ao criar exercício");
-        return;
+        throw new Error("Falha ao criar exercício");
       }
 
-      // Add exercise to plan
-      await addPlanExercise({
+      // Then add it to the plan
+      const planExerciseData = {
         exercise_id: exerciseResult.data.id,
         treatment_plan_id: planId,
-        day_number: 1, // Default day
-        sets: 3,
-        repetitions: 10,
-        duration_minutes: formData.duration_minutes || 30,
+        day_number: formData.dayNumber,
+        sets: formData.sets,
+        repetitions: formData.repetitions,
+        duration_minutes: formData.duration_minutes,
+        is_completed: false, // Add missing property
+      };
+
+      const planResult = await addPlanExercise(planExerciseData);
+      
+      if (!planResult.success) {
+        throw new Error("Falha ao adicionar exercício ao plano");
+      }
+
+      toast({
+        title: "Sucesso",
+        description: "Exercício criado e adicionado ao plano com sucesso!",
       });
 
-      toast.success("Exercício criado e adicionado ao plano com sucesso!");
-      
       // Reset form
       setFormData({
         name: "",
         description: "",
         instructions: "",
-        category: undefined,
+        category: "",
         difficulty_level: 1,
-        duration_minutes: undefined,
+        duration_minutes: 5,
         equipment_needed: [],
-        image_url: undefined,
-        video_url: undefined,
-        is_active: true,
+        image_url: "",
+        video_url: "",
+        sets: 3,
+        repetitions: 10,
+        dayNumber: 1,
       });
-
-      onExerciseCreated?.();
-      onClose();
+      
+      onOpenChange(false);
     } catch (error) {
-      console.error("Error creating exercise:", error);
-      toast.error("Erro ao criar exercício");
+      console.error('Error creating exercise for plan:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível criar o exercício para o plano",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleAddEquipment = () => {
-    if (newEquipment.trim() && !formData.equipment_needed.includes(newEquipment.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        equipment_needed: [...prev.equipment_needed, newEquipment.trim()]
-      }));
-      setNewEquipment("");
-    }
-  };
-
-  const handleRemoveEquipment = (equipment: string) => {
-    setFormData(prev => ({
-      ...prev,
-      equipment_needed: prev.equipment_needed.filter(item => item !== equipment)
-    }));
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleAddEquipment();
-    }
-  };
-
-  if (!isOpen) return null;
-
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Criar Novo Exercício</DialogTitle>
-          <DialogDescription>
-            Crie um novo exercício e adicione-o diretamente ao plano de tratamento.
-          </DialogDescription>
+          <DialogTitle>Criar Exercício para o Plano</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-4">
+          {/* Basic Exercise Info */}
+          <div className="space-y-3">
             <div>
               <Label htmlFor="name">Nome do Exercício *</Label>
               <Input
                 id="name"
                 value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Ex: Agachamento com apoio"
-                required
+                onChange={(e) => handleInputChange("name", e.target.value)}
+                placeholder="Digite o nome do exercício"
               />
             </div>
 
             <div>
-              <Label htmlFor="difficulty">Nível de Dificuldade (1-5)</Label>
-              <Input
-                id="difficulty"
-                type="number"
-                min="1"
-                max="5"
-                value={formData.difficulty_level}
-                onChange={(e) => setFormData(prev => ({ 
-                  ...prev, 
-                  difficulty_level: parseInt(e.target.value) || 1 
-                }))}
+              <Label htmlFor="description">Descrição</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => handleInputChange("description", e.target.value)}
+                placeholder="Descreva o exercício"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="instructions">Instruções</Label>
+              <Textarea
+                id="instructions"
+                value={formData.instructions}
+                onChange={(e) => handleInputChange("instructions", e.target.value)}
+                placeholder="Como executar o exercício"
               />
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="description">Descrição</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              placeholder="Breve descrição do exercício..."
-              rows={2}
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="instructions">Instruções de Execução</Label>
-            <Textarea
-              id="instructions"
-              value={formData.instructions}
-              onChange={(e) => setFormData(prev => ({ ...prev, instructions: e.target.value }))}
-              placeholder="Como executar o exercício passo a passo..."
-              rows={4}
-            />
-          </div>
-
+          {/* Exercise Configuration */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="duration">Duração (minutos)</Label>
+              <Label htmlFor="category">Categoria</Label>
+              <Select value={formData.category} onValueChange={(value) => handleInputChange("category", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cardio">Cardio</SelectItem>
+                  <SelectItem value="strength">Força</SelectItem>
+                  <SelectItem value="flexibility">Flexibilidade</SelectItem>
+                  <SelectItem value="balance">Equilíbrio</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="difficulty">Nível de Dificuldade</Label>
+              <Select 
+                value={formData.difficulty_level.toString()} 
+                onValueChange={(value) => handleInputChange("difficulty_level", parseInt(value))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">Iniciante</SelectItem>
+                  <SelectItem value="2">Intermediário</SelectItem>
+                  <SelectItem value="3">Avançado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Plan-specific Configuration */}
+          <div className="border-t pt-4">
+            <h3 className="font-medium mb-3">Configuração no Plano</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <Label htmlFor="dayNumber">Dia do Plano</Label>
+                <Input
+                  id="dayNumber"
+                  type="number"
+                  value={formData.dayNumber}
+                  onChange={(e) => handleInputChange("dayNumber", parseInt(e.target.value))}
+                  min="1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="sets">Séries</Label>
+                <Input
+                  id="sets"
+                  type="number"
+                  value={formData.sets}
+                  onChange={(e) => handleInputChange("sets", parseInt(e.target.value))}
+                  min="1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="repetitions">Repetições</Label>
+                <Input
+                  id="repetitions"
+                  type="number"
+                  value={formData.repetitions}
+                  onChange={(e) => handleInputChange("repetitions", parseInt(e.target.value))}
+                  min="1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="duration_minutes">Duração (min)</Label>
+                <Input
+                  id="duration_minutes"
+                  type="number"
+                  value={formData.duration_minutes}
+                  onChange={(e) => handleInputChange("duration_minutes", parseInt(e.target.value))}
+                  min="1"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Optional Media URLs */}
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="image_url">URL da Imagem (opcional)</Label>
               <Input
-                id="duration"
-                type="number"
-                min="1"
-                value={formData.duration_minutes || ""}
-                onChange={(e) => setFormData(prev => ({ 
-                  ...prev, 
-                  duration_minutes: e.target.value ? parseInt(e.target.value) : undefined
-                }))}
-                placeholder="30"
+                id="image_url"
+                value={formData.image_url}
+                onChange={(e) => handleInputChange("image_url", e.target.value)}
+                placeholder="https://..."
               />
             </div>
 
             <div>
-              <Label htmlFor="video_url">URL do Vídeo</Label>
+              <Label htmlFor="video_url">URL do Vídeo (opcional)</Label>
               <Input
                 id="video_url"
-                type="url"
-                value={formData.video_url || ""}
-                onChange={(e) => setFormData(prev => ({ 
-                  ...prev, 
-                  video_url: e.target.value || undefined
-                }))}
-                placeholder="https://youtube.com/watch?v=..."
+                value={formData.video_url}
+                onChange={(e) => handleInputChange("video_url", e.target.value)}
+                placeholder="https://..."
               />
             </div>
           </div>
 
-          <div>
-            <Label>Equipamentos Necessários</Label>
-            <div className="flex gap-2 mt-1">
-              <Input
-                value={newEquipment}
-                onChange={(e) => setNewEquipment(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Digite um equipamento e pressione Enter"
-              />
-              <Button type="button" onClick={handleAddEquipment}>
-                Adicionar
-              </Button>
-            </div>
-            
-            {formData.equipment_needed.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {formData.equipment_needed.map((equipment, index) => (
-                  <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                    {equipment}
-                    <X
-                      className="h-3 w-3 cursor-pointer"
-                      onClick={() => handleRemoveEquipment(equipment)}
-                    />
-                  </Badge>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
+          {/* Action Buttons */}
+          <div className="flex justify-end gap-2 pt-4">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={isSubmitting || !formData.name.trim()}>
+            <Button 
+              onClick={handleSubmit}
+              disabled={isSubmitting || !formData.name.trim()}
+            >
               {isSubmitting ? "Criando..." : "Criar e Adicionar ao Plano"}
             </Button>
-          </DialogFooter>
-        </form>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

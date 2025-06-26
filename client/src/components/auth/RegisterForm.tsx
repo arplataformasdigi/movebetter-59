@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -83,7 +82,7 @@ export function RegisterForm() {
         let errorMessage = "Ocorreu um erro ao realizar o cadastro. Tente novamente.";
         
         // Handle error as string or object
-        const errorMsg = typeof error === 'string' ? error : String(error);
+        const errorMsg = typeof error === 'string' ? error : (error as any)?.message || String(error);
         
         if (errorMsg === "User already registered") {
           errorMessage = "Este email já está cadastrado";
