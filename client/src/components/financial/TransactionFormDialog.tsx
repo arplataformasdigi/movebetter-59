@@ -103,7 +103,7 @@ export function TransactionFormDialog({ isOpen, onClose, transaction }: Transact
       transaction_date: formData.transaction_date,
       category_id: formData.category_id,
       payment_status: "paid" as const,
-      notes: formData.notes.trim() || null,
+      notes: formData.notes.trim() || undefined, // Convert empty string to undefined
     };
 
     console.log('Transaction data to save:', transactionData);

@@ -247,7 +247,12 @@ export function PatientDetails({ patient, onUpdatePatient, onClose }: PatientDet
           </TabsContent>
 
           <TabsContent value="evolucao" className="mt-6">
-            <PatientEvolutionsList patientId={patient.id} patientStatus={patient.status || 'active'} />
+            <PatientEvolutionsList 
+              evolutions={[]} 
+              isLoading={false}
+              patientId={patient.id}
+              patientStatus={patient.status || 'active'}
+            />
           </TabsContent>
         </Tabs>
 

@@ -57,11 +57,14 @@ export function LoginForm() {
         
         let errorMessage = "Ocorreu um erro durante o login. Tente novamente.";
         
-        if (error.message === "Invalid login credentials") {
+        // Handle error as string or object
+        const errorMsg = typeof error === 'string' ? error : error.message || 'Unknown error';
+        
+        if (errorMsg === "Invalid login credentials") {
           errorMessage = "Email ou senha incorretos";
-        } else if (error.message.includes("Email not confirmed")) {
+        } else if (errorMsg.includes("Email not confirmed")) {
           errorMessage = "Confirme seu email antes de fazer login";
-        } else if (error.message.includes("Too many requests")) {
+        } else if (errorMsg.includes("Too many requests")) {
           errorMessage = "Muitas tentativas. Tente novamente em alguns minutos.";
         }
         

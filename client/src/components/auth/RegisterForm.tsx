@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -82,13 +81,16 @@ export function RegisterForm() {
         
         let errorMessage = "Ocorreu um erro ao realizar o cadastro. Tente novamente.";
         
-        if (error.message === "User already registered") {
+        // Handle error as string or object
+        const errorMsg = typeof error === 'string' ? error : error.message || 'Unknown error';
+        
+        if (errorMsg === "User already registered") {
           errorMessage = "Este email já está cadastrado";
-        } else if (error.message.includes("Invalid email")) {
+        } else if (errorMsg.includes("Invalid email")) {
           errorMessage = "Email inválido";
-        } else if (error.message.includes("Password")) {
+        } else if (errorMsg.includes("Password")) {
           errorMessage = "Senha inválida - deve ter pelo menos 6 caracteres";
-        } else if (error.message.includes("Database error")) {
+        } else if (errorMsg.includes("Database error")) {
           errorMessage = "Erro no banco de dados. Tente novamente em alguns momentos.";
         }
         
