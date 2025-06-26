@@ -26,8 +26,8 @@ const transformTransactionForList = (transaction: FinancialTransaction) => ({
 
 export default function Financial() {
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingTransaction, setEditingTransaction] = useState(null);
-  
+  const [editingTransaction, setEditingTransaction] = useState<any>(null); // Fix: Add type annotation
+
   const {
     transactions,
     categories,
@@ -70,6 +70,11 @@ export default function Financial() {
   const closeForm = () => {
     setIsFormOpen(false);
     setEditingTransaction(null);
+  };
+
+  // Fix: Handle category add properly
+  const handleAddCategory = async (categoryData: { name: string; color: string; type: 'income' | 'expense' }) => {
+    return await addCategory(categoryData);
   };
 
   if (isLoading) {
@@ -122,7 +127,7 @@ export default function Financial() {
         <TabsContent value="categories" className="space-y-6">
           <CategoryManager
             categories={categories}
-            onAddCategory={addCategory}
+            onAddCategory={handleAddCategory}
             onDeleteCategory={deleteCategory}
           />
         </TabsContent>

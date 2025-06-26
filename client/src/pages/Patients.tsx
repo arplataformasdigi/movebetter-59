@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,11 +24,11 @@ export default function Patients() {
   const [addPatientOpen, setAddPatientOpen] = useState(false);
   const [accessDialogPatient, setAccessDialogPatient] = useState<{ id: string; name: string } | null>(null);
 
-  const { patients, isLoading, createPatient, updatePatient, deletePatient } = useRealtimePatients();
+  const { patients, isLoading, addPatient, updatePatient, deletePatient } = useRealtimePatients();
   const { patientAccess, createPatientAccess, updatePatientAccess, deletePatientAccess } = usePatientAccess();
 
   const handleAddPatient = async (patientData: any) => {
-    const result = await createPatient(patientData);
+    const result = await addPatient(patientData);
     if (result.success) {
       setAddPatientOpen(false);
     }

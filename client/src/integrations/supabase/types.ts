@@ -8,7 +8,7 @@ export interface Exercise {
   category?: string;
   difficulty_level?: number; // Make optional to match hook definition
   duration_minutes?: number;
-  equipment_needed: string[];
+  equipment_needed?: string[]; // Make optional to fix type compatibility
   image_url?: string;
   video_url?: string;
   is_active: boolean;

@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -74,8 +75,8 @@ export function RegisterForm() {
         cpf: data.cpf
       });
       
-      // Fix: Call register with just email and password - the register function signature expects 2 parameters
-      const { error } = await register(data.email, data.password);
+      // Fix: Call register with only email parameter as expected by the function signature
+      const { error } = await register(data.email);
       
       if (error) {
         console.error('Registration failed:', error);

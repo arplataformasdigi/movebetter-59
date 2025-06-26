@@ -62,7 +62,7 @@ export function useUpcomingSessions() {
         date: new Date(apt.appointment_date).toLocaleDateString('pt-BR'),
         time: apt.appointment_time,
         type: apt.session_type || 'Sessão',
-        patientName: apt.patients?.name || 'Paciente não identificado',
+        patientName: (apt.patients as any)?.name || 'Paciente não identificado', // Fix: Cast to any to access name property
         status: apt.status,
       }));
 
