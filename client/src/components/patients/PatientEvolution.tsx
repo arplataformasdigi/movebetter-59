@@ -16,9 +16,17 @@ interface PatientEvolutionProps {
   patientId: string;
 }
 
+interface EvolutionFormData {
+  queixas_relatos: string;
+  conduta_atendimento: string;
+  observacoes: string;
+  progress_score: number;
+  is_active: boolean;
+}
+
 export function PatientEvolution({ patientId }: PatientEvolutionProps) {
   const [open, setOpen] = useState(false);
-  const [editingEvolution, setEditingEvolution] = useState(null);
+  const [editingEvolution, setEditingEvolution] = useState<any>(null);
   const { getActiveRecord } = usePatientMedicalRecords(patientId);
   const { 
     evolutions, 
@@ -30,7 +38,7 @@ export function PatientEvolution({ patientId }: PatientEvolutionProps) {
 
   const activeRecord = getActiveRecord();
 
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: EvolutionFormData) => {
     if (!activeRecord) {
       console.error('No active medical record found');
       return;
@@ -111,7 +119,7 @@ export function PatientEvolution({ patientId }: PatientEvolutionProps) {
             <form onSubmit={(e) => {
               e.preventDefault();
               const formData = new FormData(e.target as HTMLFormElement);
-              const values = {
+              const values: EvolutionFormData = {
                 queixas_relatos: formData.get('queixas_relatos') as string,
                 conduta_atendimento: formData.get('conduta_atendimento') as string,
                 observacoes: formData.get('observacoes') as string,

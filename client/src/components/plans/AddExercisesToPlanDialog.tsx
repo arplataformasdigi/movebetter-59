@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -12,14 +11,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "sonner";
-import { usePlanExercises } from "@/hooks/usePlanExercises";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
+import { Search, Plus } from "lucide-react";
 import { useExercises } from "@/hooks/useExercises";
-import { ExerciseSelector } from "./ExerciseSelector";
-import { ExerciseForm } from "../exercises/ExerciseForm";
-import { Plus, AlertCircle, Dumbbell } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { usePlanExercises } from "@/hooks/usePlanExercises";
+import { toast } from "sonner";
 
 interface Exercise {
   id: string;
@@ -29,318 +28,331 @@ interface Exercise {
   category?: string;
   difficulty_level?: number;
   duration_minutes?: number;
+  equipment_needed?: string[];
+  image_url?: string;
+  video_url?: string;
+  is_active?: boolean;
+  created_at?: string;
 }
 
 interface AddExercisesToPlanDialogProps {
-  plan: any;
-  exercises: Exercise[];
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  isOpen: boolean;
+  onClose: () => void;
+  planId: string | null;
+  onExercisesAdded?: () => void;
+}
+
+interface ExerciseFormData {
+  name: string;
+  description: string;
+  instructions: string;
+  category?: string;
+  difficulty_level: number;
+  duration_minutes?: number;
+  equipment_needed: string[];
+  image_url?: string;
+  video_url?: string;
+  is_active: boolean;
 }
 
 export function AddExercisesToPlanDialog({
-  plan,
-  exercises,
-  open,
-  onOpenChange,
+  isOpen,
+  onClose,
+  planId,
+  onExercisesAdded,
 }: AddExercisesToPlanDialogProps) {
-  const [selectedExerciseId, setSelectedExerciseId] = useState("");
-  const [dayNumber, setDayNumber] = useState("1");
-  const [sets, setSets] = useState("3");
-  const [repetitions, setRepetitions] = useState("10");
-  const [durationMinutes, setDurationMinutes] = useState("");
-  const [notes, setNotes] = useState("");
+  const { exercises, isLoading, addExercise } = useExercises();
+  const { addExerciseToPlan } = usePlanExercises(planId || "");
+  
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedExercises, setSelectedExercises] = useState<string[]>([]);
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showCreateExercise, setShowCreateExercise] = useState(false);
 
-  const { addPlanExercise } = usePlanExercises(plan?.id);
-  const { addExercise } = useExercises();
+  // Form state for creating new exercise
+  const [newExercise, setNewExercise] = useState<ExerciseFormData>({
+    name: "",
+    description: "",
+    instructions: "",
+    category: undefined,
+    difficulty_level: 1,
+    duration_minutes: undefined,
+    equipment_needed: [],
+    image_url: undefined,
+    video_url: undefined,
+    is_active: true,
+  });
 
-  const selectedExercise = exercises.find(ex => ex.id === selectedExerciseId);
-
-  // Validações
-  const errors = {
-    exercise: !selectedExerciseId ? "Selecione um exercício" : "",
-    dayNumber: !dayNumber || parseInt(dayNumber) < 1 ? "Dia deve ser maior que 0" : "",
-    sets: !sets || parseInt(sets) < 1 ? "Séries deve ser maior que 0" : "",
-  };
-
-  const hasErrors = Object.values(errors).some(error => error !== "");
-
-  const handleCreateExercise = async (exerciseData: any) => {
-    const formattedData = {
-      name: exerciseData.name,
-      description: exerciseData.description,
-      instructions: exerciseData.description,
-      category: null,
-      difficulty_level: exerciseData.difficulty === "iniciante" ? 1 : 
-                       exerciseData.difficulty === "intermediário" ? 3 : 5,
-      duration_minutes: null,
-      equipment_needed: exerciseData.targetArea ? [exerciseData.targetArea] : [],
-      image_url: exerciseData.thumbnailUrl || null,
-      video_url: exerciseData.videoUrl || null,
-      is_active: true,
-    };
-
-    const result = await addExercise(formattedData);
-    
-    if (result.success) {
-      setShowCreateExercise(false);
-      setSelectedExerciseId(result.data.id);
-      toast.success("Exercício criado com sucesso!");
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (hasErrors) {
-      toast.error("Corrija os campos obrigatórios antes de continuar");
+  const handleCreateExercise = async () => {
+    if (!newExercise.name.trim()) {
+      toast.error("Nome do exercício é obrigatório");
       return;
     }
 
     setIsSubmitting(true);
 
-    const exerciseData = {
-      treatment_plan_id: plan.id,
-      exercise_id: selectedExerciseId,
-      day_number: parseInt(dayNumber),
-      sets: parseInt(sets),
-      repetitions: repetitions ? parseInt(repetitions) : undefined,
-      duration_minutes: durationMinutes ? parseInt(durationMinutes) : selectedExercise?.duration_minutes,
-      notes: notes || undefined,
-      is_completed: false,
-    };
+    try {
+      const exerciseData = {
+        name: newExercise.name,
+        description: newExercise.description || undefined,
+        instructions: newExercise.instructions || undefined,
+        category: null,
+        difficulty_level: newExercise.difficulty_level,
+        duration_minutes: newExercise.duration_minutes || undefined,
+        equipment_needed: newExercise.equipment_needed,
+        image_url: newExercise.image_url || undefined,
+        video_url: newExercise.video_url || undefined,
+        is_active: newExercise.is_active,
+      };
 
-    const result = await addPlanExercise(exerciseData);
-    
-    if (result.success) {
-      toast.success("Exercício adicionado à trilha com sucesso!");
-      onOpenChange(false);
-      resetForm();
+      const result = await addExercise(exerciseData);
+      
+      if (result.success) {
+        toast.success("Exercício criado com sucesso!");
+        setShowCreateForm(false);
+        setNewExercise({
+          name: "",
+          description: "",
+          instructions: "",
+          category: undefined,
+          difficulty_level: 1,
+          duration_minutes: undefined,
+          equipment_needed: [],
+          image_url: undefined,
+          video_url: undefined,
+          is_active: true,
+        });
+      }
+    } catch (error) {
+      console.error("Error creating exercise:", error);
+      toast.error("Erro ao criar exercício");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsSubmitting(false);
   };
 
-  const resetForm = () => {
-    setSelectedExerciseId("");
-    setDayNumber("1");
-    setSets("3");
-    setRepetitions("10");
-    setDurationMinutes("");
-    setNotes("");
-    setShowCreateExercise(false);
-  };
+  const filteredExercises = exercises.filter((exercise) =>
+    exercise.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    exercise.description?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  const handleDialogClose = (isOpen: boolean) => {
-    if (!isOpen) {
-      resetForm();
-    }
-    onOpenChange(isOpen);
-  };
-
-  if (showCreateExercise) {
-    return (
-      <Dialog open={open} onOpenChange={handleDialogClose}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Dumbbell className="h-5 w-5" />
-              Criar Novo Exercício
-            </DialogTitle>
-            <DialogDescription>
-              Crie um novo exercício para adicionar à trilha "{plan?.name}"
-            </DialogDescription>
-          </DialogHeader>
-
-          <ExerciseForm
-            onSave={handleCreateExercise}
-          />
-
-          <DialogFooter>
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => setShowCreateExercise(false)}
-            >
-              Voltar para Seleção
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+  const handleExerciseToggle = (exerciseId: string) => {
+    setSelectedExercises(prev => 
+      prev.includes(exerciseId) 
+        ? prev.filter(id => id !== exerciseId)
+        : [...prev, exerciseId]
     );
-  }
+  };
+
+  const handleAddToTreatmentPlan = async () => {
+    if (!planId || selectedExercises.length === 0) return;
+
+    setIsSubmitting(true);
+
+    try {
+      for (const exerciseId of selectedExercises) {
+        await addExerciseToPlan({
+          exercise_id: exerciseId,
+          day_number: 1, // Default day
+          sets: 3,
+          repetitions: 10,
+          duration_minutes: 30,
+        });
+      }
+
+      toast.success(`${selectedExercises.length} exercício(s) adicionado(s) ao plano!`);
+      setSelectedExercises([]);
+      onExercisesAdded?.();
+      onClose();
+    } catch (error) {
+      console.error("Error adding exercises to plan:", error);
+      toast.error("Erro ao adicionar exercícios ao plano");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEquipmentAdd = (equipment: string) => {
+    if (equipment.trim() && !newExercise.equipment_needed.includes(equipment.trim())) {
+      setNewExercise(prev => ({
+        ...prev,
+        equipment_needed: [...prev.equipment_needed, equipment.trim()]
+      }));
+    }
+  };
+
+  const handleEquipmentRemove = (equipment: string) => {
+    setNewExercise(prev => ({
+      ...prev,
+      equipment_needed: prev.equipment_needed.filter(item => item !== equipment)
+    }));
+  };
+
+  if (!isOpen) return null;
 
   return (
-    <Dialog open={open} onOpenChange={handleDialogClose}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Plus className="h-5 w-5" />
-            Adicionar Exercício à Trilha
-          </DialogTitle>
+          <DialogTitle>Adicionar Exercícios ao Plano</DialogTitle>
           <DialogDescription>
-            Adicione exercícios à trilha "{plan?.name}"
+            Selecione exercícios existentes ou crie novos para adicionar ao plano de tratamento.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Seletor de Exercícios com botão para criar */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <Label className="text-base font-medium">Exercícios</Label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setShowCreateExercise(true)}
-                className="flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Criar Exercício
-              </Button>
-            </div>
-            
-            {exercises.length === 0 ? (
-              <Card className="border-dashed">
-                <CardContent className="flex flex-col items-center justify-center py-8">
-                  <Dumbbell className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium text-center mb-2">Nenhum exercício disponível</h3>
-                  <p className="text-muted-foreground text-center mb-4">
-                    Crie seu primeiro exercício para começar a montar trilhas de tratamento
-                  </p>
-                  <Button
-                    type="button"
-                    onClick={() => setShowCreateExercise(true)}
-                    className="flex items-center gap-2"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Criar Primeiro Exercício
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <ExerciseSelector
-                exercises={exercises}
-                selectedExerciseId={selectedExerciseId}
-                onExerciseSelect={setSelectedExerciseId}
+        <div className="space-y-4">
+          {/* Search and Create Button */}
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar exercícios..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
               />
-            )}
-            
-            {errors.exercise && (
-              <Alert className="mt-2">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{errors.exercise}</AlertDescription>
-              </Alert>
-            )}
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => setShowCreateForm(!showCreateForm)}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Criar Novo
+            </Button>
           </div>
 
-          {/* Configurações do Exercício */}
-          {exercises.length > 0 && (
+          {/* Create Exercise Form */}
+          {showCreateForm && (
             <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Configurações do Exercício</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="p-4 space-y-4">
+                <h3 className="font-medium">Criar Novo Exercício</h3>
+                
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="dayNumber">Dia da Trilha *</Label>
+                    <Label htmlFor="exercise-name">Nome *</Label>
                     <Input
-                      id="dayNumber"
-                      type="number"
-                      min="1"
-                      value={dayNumber}
-                      onChange={(e) => setDayNumber(e.target.value)}
-                      className={errors.dayNumber ? "border-red-500" : ""}
+                      id="exercise-name"
+                      value={newExercise.name}
+                      onChange={(e) => setNewExercise(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="Nome do exercício"
                     />
-                    {errors.dayNumber && (
-                      <p className="text-sm text-red-500 mt-1">{errors.dayNumber}</p>
-                    )}
                   </div>
+                  
                   <div>
-                    <Label htmlFor="sets">Séries *</Label>
+                    <Label htmlFor="difficulty">Dificuldade (1-5)</Label>
                     <Input
-                      id="sets"
+                      id="difficulty"
                       type="number"
                       min="1"
-                      value={sets}
-                      onChange={(e) => setSets(e.target.value)}
-                      className={errors.sets ? "border-red-500" : ""}
+                      max="5"
+                      value={newExercise.difficulty_level}
+                      onChange={(e) => setNewExercise(prev => ({ ...prev, difficulty_level: parseInt(e.target.value) }))}
                     />
-                    {errors.sets && (
-                      <p className="text-sm text-red-500 mt-1">{errors.sets}</p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="repetitions">Repetições</Label>
-                    <Input
-                      id="repetitions"
-                      type="number"
-                      min="1"
-                      value={repetitions}
-                      onChange={(e) => setRepetitions(e.target.value)}
-                      placeholder="Ex: 10, 15"
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Deixe vazio se não aplicável
-                    </p>
-                  </div>
-                  <div>
-                    <Label htmlFor="duration">Duração (minutos)</Label>
-                    <Input
-                      id="duration"
-                      type="number"
-                      min="1"
-                      value={durationMinutes}
-                      onChange={(e) => setDurationMinutes(e.target.value)}
-                      placeholder={selectedExercise?.duration_minutes ? `Padrão: ${selectedExercise.duration_minutes}min` : "Ex: 5, 10"}
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {selectedExercise?.duration_minutes 
-                        ? `Exercício tem duração padrão de ${selectedExercise.duration_minutes}min`
-                        : "Deixe vazio se não aplicável"
-                      }
-                    </p>
                   </div>
                 </div>
 
                 <div>
-                  <Label htmlFor="notes">Observações</Label>
+                  <Label htmlFor="exercise-description">Descrição</Label>
                   <Textarea
-                    id="notes"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Instruções específicas, modificações, etc."
+                    id="exercise-description"
+                    value={newExercise.description}
+                    onChange={(e) => setNewExercise(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Descrição do exercício"
+                    rows={2}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="exercise-instructions">Instruções</Label>
+                  <Textarea
+                    id="exercise-instructions"
+                    value={newExercise.instructions}
+                    onChange={(e) => setNewExercise(prev => ({ ...prev, instructions: e.target.value }))}
+                    placeholder="Como executar o exercício"
                     rows={3}
                   />
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleCreateExercise}
+                    disabled={isSubmitting || !newExercise.name.trim()}
+                  >
+                    {isSubmitting ? "Criando..." : "Criar Exercício"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowCreateForm(false)}
+                  >
+                    Cancelar
+                  </Button>
                 </div>
               </CardContent>
             </Card>
           )}
 
-          <DialogFooter>
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => onOpenChange(false)}
-            >
-              Cancelar
-            </Button>
-            {exercises.length > 0 && (
-              <Button 
-                type="submit" 
-                disabled={hasErrors || isSubmitting}
-                className="min-w-[120px]"
-              >
-                {isSubmitting ? "Adicionando..." : "Adicionar Exercício"}
-              </Button>
+          <Separator />
+
+          {/* Exercise List */}
+          <div className="space-y-2">
+            <h3 className="font-medium">
+              Exercícios Disponíveis ({filteredExercises.length})
+            </h3>
+            
+            {isLoading ? (
+              <p>Carregando exercícios...</p>
+            ) : filteredExercises.length === 0 ? (
+              <p className="text-muted-foreground text-center py-4">
+                Nenhum exercício encontrado
+              </p>
+            ) : (
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {filteredExercises.map((exercise) => (
+                  <Card key={exercise.id} className="p-3">
+                    <div className="flex items-start gap-3">
+                      <Checkbox
+                        checked={selectedExercises.includes(exercise.id)}
+                        onCheckedChange={() => handleExerciseToggle(exercise.id)}
+                      />
+                      <div className="flex-1">
+                        <h4 className="font-medium">{exercise.name}</h4>
+                        {exercise.description && (
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {exercise.description}
+                          </p>
+                        )}
+                        <div className="flex gap-2 mt-2">
+                          {exercise.difficulty_level && (
+                            <Badge variant="outline">
+                              Nível {exercise.difficulty_level}
+                            </Badge>
+                          )}
+                          {exercise.duration_minutes && (
+                            <Badge variant="outline">
+                              {exercise.duration_minutes} min
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
             )}
-          </DialogFooter>
-        </form>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleAddToTreatmentPlan}
+            disabled={selectedExercises.length === 0 || isSubmitting}
+          >
+            {isSubmitting ? "Adicionando..." : `Adicionar ${selectedExercises.length} Exercício(s)`}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
